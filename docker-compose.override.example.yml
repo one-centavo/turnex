@@ -1,0 +1,42 @@
+services:
+  turnex-web:
+    ports:
+      - "8080:80"
+    volumes:
+      - ./public:/var/www/html/public:ro
+
+  turnex-app:
+    build:
+      context: .
+      dockerfile: docker/config/Dockerfile.dev
+    volumes:
+      - ./:/var/www/html
+      - /var/www/html/vendor
+      - /var/www/html/storage/framework
+      - ./storage/app:/var/www/html/storage/app
+      - ./storage/app/public:/var/www/html/storage/app/public
+      - ./storage/logs:/var/www/html/storage/logs
+    command: ["php-fpm"]
+
+  turnex-vite:
+    image: node:24-alpine
+    container_name: turnex-vite
+    working_dir: /app
+    volumes:
+      - ./:/app
+    ports:
+      - "5173:5173"
+    environment:
+      - NODE_ENV=development
+    command: sh -c "corepack enable && corepack prepare pnpm@latest --activate && pnpm install && pnpm dev --host"
+    networks:
+      - turnex-network
+
+  turnex-mailpit:
+    container_name: turnex-mailpit
+    image: axllent/mailpit:latest
+    ports:
+      - "8025:8025"
+      - "1025:1025"
+    networks:
+      - turnex-network

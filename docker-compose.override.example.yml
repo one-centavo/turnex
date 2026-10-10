@@ -1,6 +1,7 @@
 services:
   turnex-web:
     restart: "no"
+    deploy: !reset null
     ports:
       - "8080:80"
     volumes:
@@ -8,6 +9,7 @@ services:
 
   turnex-app:
     restart: "no"
+    deploy: !reset null
     build:
       context: .
       dockerfile: docker/config/Dockerfile.dev
@@ -22,6 +24,7 @@ services:
 
   turnex-db:
     restart: "no"
+    deploy: !reset null
 
   turnex-vite:
     restart: "no"

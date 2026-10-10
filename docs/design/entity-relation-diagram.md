@@ -22,12 +22,12 @@ CATEGORY ||--o{ OFFERINGS : classifies
     CUSTOMER {
         BIGINT id PK "AUTO INCREMENT"
         VARCHAR(60) first_name
-        VARCHAR(60) second_name "NULL"
         VARCHAR(60) last_name
-        VARCHAR(60) second_last_name "NULL"
         VARCHAR(255) email UK "UNIQUE"
-        VARCHAR(20) phone_number
-        VARCHAR(255) password
+        VARCHAR(20) phone_number UK "UNIQUE, NULL"
+        VARCHAR(255) password "NULL"
+        VARCHAR(255) google_id UK "NULL"
+        VARCHAR(255) avatar_url "NULL"
         TIMESTAMP email_verified_at "NULL"
         TIMESTAMP phone_verified_at "NULL"
         TIMESTAMP created_at

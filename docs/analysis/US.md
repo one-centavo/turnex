@@ -12,38 +12,67 @@
 - [ ] Each security code must automatically expire 5 minutes after creation or immediately once successfully used.
 - [ ] The system must enforce a 1-minute cooldown period before allowing a user to request a new code for the same contact target (email or phone number).
 - [ ] Requesting a new security code must immediately invalidate any previously active code for that specific contact target.
+- [ ] A security code must permit a maximum of 5 incorrect verification attempts; upon the 5th failed attempt, the code must be immediately invalidated.
 - [ ] A code can only be validated once; subsequent verification attempts using the same code must be rejected.
 - [ ] The service must dispatch the code via the requested delivery channel (Email, SMS, or WhatsApp) based on the consuming workflow.
 
 ---
 
-## US01 - CUSTOMER REGISTRATION (EMAIL & PASSWORD)
+## US01 - CUSTOMER REGISTRATION (PROGRESSIVE ONBOARDING & VERIFICATION)
 
 **As a** customer,  
-**I want to** register on the platform with minimal required fields,  
-**So that** I can order ahead, claim products, and join digital queues without unnecessary friction.
+**I want to** register on the platform through a step-by-step verification flow,  
+**So that** I can securely certify my mobile number and email before establishing my profile and joining digital queues.
 
 ### Acceptance Criteria
 
-- [ ] The system must request the following initial registration data:
-  - [ ] First name (Required, up to 60 characters)
-  - [ ] Last name (Required, up to 60 characters)
-  - [ ] Email address (Required, must be unique)
-  - [ ] Phone number (Required, must be unique)
-  - [ ] Password
-- [ ] The system must verify if the email address is already registered. If it exists, display: _"An error occurred while verifying the email address. Please check if it is correct and try again."_
-- [ ] The system must verify if the phone number is already registered. If it exists, display: _"An error occurred while verifying the phone number. Please check if it is correct and try again."_
-- [ ] The system must dispatch a phone verification code via SMS or WhatsApp and validate it following the platform security code service rules (**US-CORE**).
-- [ ] Once the phone verification code is successfully validated, the system must record the exact date and time the phone number was verified.
-- [ ] The system must dispatch an email verification notification following the platform security code service rules (**US-CORE**).
-- [ ] Once the email verification code or link is validated, the system must record the exact date and time the email address was verified.
-- [ ] The system must verify that the password complies with security rules:
-  - [ ] Minimum of 8 characters.
-  - [ ] At least one number.
-  - [ ] At least one uppercase letter.
-  - [ ] At least one lowercase letter.
-  - [ ] At least one special character.
-- [ ] Upon successful registration and phone verification, the system must redirect the customer to the main discovery catalog.
+- [ ] **Step 1: Mobile Number Entry & Pre-check**:
+  - [ ] The system must request the customer's mobile phone number (Normalized to E.164 format, default prefix `+57` for Colombia in MVP).
+  - [ ] The system must verify that the phone number is not already registered in the `CUSTOMER` table.
+  - [ ] If already registered, display: _"An account with this phone number already exists. Please log in or use a different number."_
+  - [ ] If available, the system must dispatch a 6-digit OTP code prioritizing **WhatsApp** as the primary delivery channel (with **SMS** fallback available).
+  - [ ] The system must temporarily retain registration state in secure cache/session (15-minute TTL).
+
+- [ ] **Step 2: Dedicated Mobile Phone Verification Challenge**:
+  - [ ] The system must present a dedicated verification screen displaying the masked mobile number (e.g., `+57 300 *** **45`).
+  - [ ] The system must validate the 6-digit OTP code under **US-CORE** rules (5-minute expiration, 1-minute resend cooldown, maximum 5 failed attempts).
+  - [ ] The screen must provide an **"Edit phone number"** action allowing the user to return to Step 1 to correct typographical errors.
+  - [ ] The screen must provide a **"Resend code via WhatsApp"** option (after cooldown) and a **"Send via SMS"** alternative.
+  - [ ] Upon successful OTP validation, the mobile number is certified for this registration session.
+
+- [ ] **Step 3: Email Address Entry & Pre-check**:
+  - [ ] With the mobile number certified, the system must prompt the customer for their email address on a separate screen.
+  - [ ] The email must be validated against standard RFC format, trimmed, and normalized to lowercase.
+  - [ ] If the email is already registered via Google OAuth (without password), display: _"An account associated with this email already exists via Google Sign-In. Please log in using Google."_ with a direct action to log in with Google.
+  - [ ] If the email is already registered with standard credentials, display: _"An account with this email address already exists. Please log in or reset your password."_
+  - [ ] If available, the system must dispatch a 6-digit OTP code to the provided email address via **US-CORE**.
+
+- [ ] **Step 4: Dedicated Email Verification Challenge**:
+  - [ ] The system must present a dedicated verification screen displaying the masked email address (e.g., `c***s@gmail.com`).
+  - [ ] The system must validate the 6-digit OTP code under **US-CORE** rules (5-minute expiration, 1-minute resend cooldown, maximum 5 failed attempts).
+  - [ ] The screen must provide an **"Edit email address"** action allowing the user to return to Step 3 to correct any typo without losing their certified mobile number.
+  - [ ] The screen must provide a **"Resend code"** option following the 1-minute cooldown.
+  - [ ] Upon successful OTP validation, the email address is certified for this registration session.
+
+- [ ] **Step 5: Profile Data & Password Creation**:
+  - [ ] With both contact channels certified, the system must prompt for the final account profile details:
+    - [ ] First name (Required, between 2 and 60 characters, trimmed, sanitized against HTML/scripts)
+    - [ ] Last name (Required, between 2 and 60 characters, trimmed, sanitized against HTML/scripts)
+    - [ ] Password (Required, between 8 and 18 characters, must include at least 1 number, 1 uppercase letter, 1 lowercase letter, and 1 special character)
+    - [ ] Password confirmation (Required, must match the password field)
+
+- [ ] **Step 6: Account Creation & Finalization**:
+  - [ ] Upon submitting valid profile data, the system must create the record in the `CUSTOMER` table:
+    - [ ] Set `phone_verified_at = now()`
+    - [ ] Set `email_verified_at = now()`
+    - [ ] Store password securely hashed with Bcrypt
+  - [ ] Automatically establish an authenticated session (`Auth::login`).
+  - [ ] Clear temporary registration state from session/cache.
+  - [ ] Redirect the customer directly to the main discovery catalog.
+
+- [ ] **Security, Abuse Prevention & UI Integrity**:
+  - [ ] The system must enforce rate limiting by IP address and device fingerprint across OTP request endpoints to prevent SMS/WhatsApp toll fraud and automated abuse.
+  - [ ] Submit and action buttons must disable automatically during processing (`wire:loading`) to prevent duplicate requests and race conditions.
 
 ---
 

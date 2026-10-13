@@ -24,7 +24,7 @@ CATEGORY ||--o{ OFFERINGS : classifies
         VARCHAR(60) first_name
         VARCHAR(60) last_name
         VARCHAR(255) email UK "UNIQUE"
-        VARCHAR(20) phone_number UK "UNIQUE, NULL"
+        VARCHAR(20) phone_number UK "UNIQUE, NULL - E.164 format"
         VARCHAR(255) password "NULL"
         VARCHAR(255) google_id UK "NULL"
         VARCHAR(255) avatar_url "NULL"
@@ -44,7 +44,7 @@ CATEGORY ||--o{ OFFERINGS : classifies
         VARCHAR(60) owner_last_name
         VARCHAR(60) owner_second_last_name "NULL"
         VARCHAR(255) email UK "UNIQUE"
-        VARCHAR(20) phone_number UK "UNIQUE"
+        VARCHAR(20) phone_number UK "UNIQUE - E.164 format"
         VARCHAR(255) location
         VARCHAR(255) logo_path "NULL"
         VARCHAR(255) cover_photo_path "NULL"
@@ -110,6 +110,7 @@ CATEGORY ||--o{ OFFERINGS : classifies
         VARCHAR(255) contact_value "INDEX"
         VARCHAR(20) contact_type "EMAIL, SMS, WHATSAPP"
         VARCHAR(10) code
+        TINYINT attempts_count "DEFAULT 0"
         TIMESTAMP expires_at
         TIMESTAMP used_at "NULL"
         TIMESTAMP created_at "NULL"

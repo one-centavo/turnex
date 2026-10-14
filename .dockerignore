@@ -13,6 +13,7 @@ Dockerfile*
 docker-compose*.yml
 README.md
 docs/
+spec/
 /storage/*.key
 /auth.json
 storage/logs/*.log

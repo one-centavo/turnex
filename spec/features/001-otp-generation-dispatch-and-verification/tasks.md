@@ -3,7 +3,7 @@
 - [x] Create the migration to the table `security_codes` based on `docs/design/entity-relation.md`.
 - [x] Create the enum `ContactType` with its 3 cases (email,sms and whatsapp)
 - [x] Create the model SecurityCode with its casts and factory.
-- [ ] Run and validate the migration.
+- [x] Run and validate the migration.
 - [ ] Create the notification SendOtpNotification.
 - [ ] Implement the logic of email channel.
 - [ ] Structure the dispatch to SMS and WhatsApp

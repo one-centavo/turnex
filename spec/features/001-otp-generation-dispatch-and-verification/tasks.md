@@ -4,7 +4,7 @@
 - [x] Create the enum `ContactType` with its 3 cases (email,sms and whatsapp)
 - [x] Create the model SecurityCode with its casts and factory.
 - [x] Run and validate the migration.
-- [ ] Create the notification SendOtpNotification.
+- [x] Create the notification SendOtpNotification.
 - [ ] Implement the logic of email channel.
 - [ ] Structure the dispatch to SMS and WhatsApp
 - [ ] Create `app/Services/OtpService.php`.

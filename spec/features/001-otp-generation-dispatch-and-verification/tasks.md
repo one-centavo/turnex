@@ -1,7 +1,7 @@
 # 001 · OTP Generation, Dispatch & Verification — Tasks
 
 - [x] Create the migration to the table `security_codes` based on `docs/design/entity-relation.md`.
-- [ ] Create the enum `ContactType` with its 3 cases (email,sms and whatsapp)
+- [x] Create the enum `ContactType` with its 3 cases (email,sms and whatsapp)
 - [ ] Create the model SecurityCode with its casts and factory.
 - [ ] Run and validate the migration.
 - [ ] Create the notification SendOtpNotification.

@@ -5,7 +5,7 @@
 - [x] Create the model SecurityCode with its casts and factory.
 - [x] Run and validate the migration.
 - [x] Create the notification SendOtpNotification.
-- [ ] Implement the logic of email channel.
+- [x] Implement the logic of email channel.
 - [ ] Structure the dispatch to SMS and WhatsApp
 - [ ] Create `app/Services/OtpService.php`.
 - [ ] Implement target normalization helper (RFC lowercase email, E.164 phone).

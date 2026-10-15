@@ -6,7 +6,7 @@
 - [x] Run and validate the migration.
 - [x] Create the notification SendOtpNotification.
 - [x] Implement the logic of email channel.
-- [ ] Structure the dispatch to SMS and WhatsApp
+- [x] Structure the dispatch to SMS and WhatsApp
 - [ ] Create `app/Services/OtpService.php`.
 - [ ] Implement target normalization helper (RFC lowercase email, E.164 phone).
 - [ ] Implement the method `generate()` (zero-padded 6-digit code, hash, TTL 5 min, invalidation of previous codes, dispatch transaction).

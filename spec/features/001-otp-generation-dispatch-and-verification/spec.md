@@ -1,6 +1,6 @@
 # 001 · OTP Generation, Dispatch & Verification
 
-**Status:** In progress
+**Status:** Done
 
 ## What it does
 
@@ -14,17 +14,17 @@ It is required by customer and business registration flows to verify the contact
 
 ## Acceptance Criteria
 
-- [ ] The system generates a random 6-digit numeric security code formatted as an exact zero-padded string (`000000` to `999999`).
-- [ ] Contact targets are normalized (RFC lowercase for email, E.164 for phone) prior to code generation and lookup.
-- [ ] Each security code automatically expires 5 minutes after creation or immediately once successfully used.
-- [ ] The system enforces a 1-minute cooldown period before allowing a new code request for the same contact target, reporting the remaining cooldown seconds when rejected.
-- [ ] Requesting a new code immediately invalidates any previously active code for that specific contact target.
-- [ ] If message delivery fails, the transaction is rolled back so the user is not locked into an unwarranted cooldown.
-- [ ] Input codes submitted for verification are trimmed of whitespace before attempt evaluation.
-- [ ] A security code permits a maximum of 5 incorrect verification attempts; upon the 5th failed attempt, the code is immediately invalidated.
-- [ ] Expired codes are rejected immediately without incrementing the failed attempt counter.
-- [ ] A code can only be validated once; subsequent verification attempts using the same code are rejected.
-- [ ] The service dispatches the code via the requested delivery channel (Email, SMS, or WhatsApp).
+- [x] The system generates a random 6-digit numeric security code formatted as an exact zero-padded string (`000000` to `999999`).
+- [x] Contact targets are normalized (RFC lowercase for email, E.164 for phone) prior to code generation and lookup.
+- [x] Each security code automatically expires 5 minutes after creation or immediately once successfully used.
+- [x] The system enforces a 1-minute cooldown period before allowing a new code request for the same contact target, reporting the remaining cooldown seconds when rejected.
+- [x] Requesting a new code immediately invalidates any previously active code for that specific contact target.
+- [x] If message delivery fails, the transaction is rolled back so the user is not locked into an unwarranted cooldown.
+- [x] Input codes submitted for verification are trimmed of whitespace before attempt evaluation.
+- [x] A security code permits a maximum of 5 incorrect verification attempts; upon the 5th failed attempt, the code is immediately invalidated.
+- [x] Expired codes are rejected immediately without incrementing the failed attempt counter.
+- [x] A code can only be validated once; subsequent verification attempts using the same code are rejected.
+- [x] The service dispatches the code via the requested delivery channel (Email, SMS, or WhatsApp).
 
 ## Out of Scope
 

@@ -8,7 +8,7 @@
 - [x] Implement the logic of email channel.
 - [x] Structure the dispatch to SMS and WhatsApp
 - [x] Create `app/Services/OtpService.php`.
-- [ ] Implement target normalization helper (RFC lowercase email, E.164 phone).
+- [x] Implement target normalization helper (RFC lowercase email, E.164 phone).
 - [ ] Implement the method `generate()` (zero-padded 6-digit code, hash, TTL 5 min, invalidation of previous codes, dispatch transaction).
 - [ ] Implement cooldown rule of one minute, returning remaining seconds if active.
 - [ ] Implement the method `verify()` (input trimming, expired check precedence, hash verification, 5-attempt limit, atomic mark as used).

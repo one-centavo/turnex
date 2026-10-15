@@ -6,6 +6,10 @@ namespace App\Services;
 
 use App\Enums\ContactType;
 use App\Models\SecurityCode;
+use App\Notifications\SendOtpNotification;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Notification;
 
 class OtpService
 {
@@ -81,12 +85,50 @@ class OtpService
     }
 
     /**
-     * Generate and dispatch a new OTP code.
+     * Generate and dispatch a new OTP code for the given contact target.
      */
     public function generate(string $target, ContactType $channel): SecurityCode
     {
-        // To be implemented in Task 10
-        throw new \BadMethodCallException('Method generate() is not yet implemented.');
+        $normalizedTarget = $this->normalizeTarget($target, $channel);
+
+        $plainCode = $this->generatePlainCode();
+
+        return DB::transaction(function () use ($normalizedTarget, $channel, $plainCode): SecurityCode {
+            $this->invalidatePreviousCodes($normalizedTarget);
+
+            $securityCode = SecurityCode::create([
+                'contact_value' => $normalizedTarget,
+                'contact_type' => $channel,
+                'code' => Hash::make($plainCode),
+                'attempts_count' => 0,
+                'expires_at' => now()->addMinutes(self::EXPIRATION_MINUTES),
+                'used_at' => null,
+            ]);
+
+            Notification::route($channel->value, $normalizedTarget)
+                ->notify(new SendOtpNotification($plainCode, $channel));
+
+            return $securityCode;
+        });
+    }
+
+    /**
+     * Generate a cryptographically secure, zero-padded 6-digit numeric string.
+     */
+    protected function generatePlainCode(): string
+    {
+        return sprintf('%06d', random_int(0, 999999));
+    }
+
+    /**
+     * Invalidate any active, unused security codes for the given contact target.
+     */
+    protected function invalidatePreviousCodes(string $normalizedTarget): int
+    {
+        return SecurityCode::where('contact_value', $normalizedTarget)
+            ->whereNull('used_at')
+            ->where('expires_at', '>', now())
+            ->update(['expires_at' => now()]);
     }
 
     /**

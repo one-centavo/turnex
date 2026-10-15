@@ -168,7 +168,48 @@ class OtpService
      */
     public function verify(string $target, string $code, ContactType $channel): bool
     {
-        // To be implemented in Task 12
-        throw new \BadMethodCallException('Method verify() is not yet implemented.');
+        $trimmedCode = trim($code);
+        $normalizedTarget = $this->normalizeTarget($target, $channel);
+
+        $securityCode = SecurityCode::where('contact_value', $normalizedTarget)
+            ->where('contact_type', $channel)
+            ->latest('created_at')
+            ->first();
+
+        if ($securityCode === null) {
+            return false;
+        }
+
+        // 1. Single-use check: already used codes are rejected
+        if ($securityCode->isUsed()) {
+            return false;
+        }
+
+        // 2. Threshold check: if maximum attempts already reached, code is invalidated
+        if ($securityCode->hasExceededAttempts()) {
+            return false;
+        }
+
+        // 3. Precedence rule: expired codes are rejected without incrementing the attempt counter
+        if ($securityCode->isExpired()) {
+            return false;
+        }
+
+        // 4. Cryptographic hash verification
+        if (! Hash::check($trimmedCode, $securityCode->code)) {
+            $securityCode->increment('attempts_count');
+
+            // Upon reaching the 5th failed attempt, immediately invalidate the code
+            if ($securityCode->attempts_count >= self::MAX_ATTEMPTS) {
+                $securityCode->invalidate();
+            }
+
+            return false;
+        }
+
+        // 5. Successful verification: atomically mark code as used
+        $securityCode->markAsUsed();
+
+        return true;
     }
 }

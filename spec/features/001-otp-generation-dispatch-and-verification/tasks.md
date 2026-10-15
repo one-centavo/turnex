@@ -11,7 +11,7 @@
 - [x] Implement target normalization helper (RFC lowercase email, E.164 phone).
 - [x] Implement the method `generate()` (zero-padded 6-digit code, hash, TTL 5 min, invalidation of previous codes, dispatch transaction).
 - [x] Implement cooldown rule of one minute, returning remaining seconds if active.
-- [ ] Implement the method `verify()` (input trimming, expired check precedence, hash verification, 5-attempt limit, atomic mark as used).
+- [x] Implement the method `verify()` (input trimming, expired check precedence, hash verification, 5-attempt limit, atomic mark as used).
 - [ ] Write Pest tests for OTP generation, expiration, rate limits, and verification.
 - [ ] Run Pint to fix code style (`vendor/bin/pint --dirty`).
 - [ ] Verify all acceptance criteria from `spec.md`.

@@ -75,4 +75,20 @@ class SecurityCode extends Model
     {
         return $this->attempts_count >= 5;
     }
+
+    /**
+     * Invalidate the security code by marking it as expired immediately.
+     */
+    public function invalidate(): bool
+    {
+        return $this->update(['expires_at' => now()]);
+    }
+
+    /**
+     * Mark the security code as successfully used.
+     */
+    public function markAsUsed(): bool
+    {
+        return $this->update(['used_at' => now()]);
+    }
 }

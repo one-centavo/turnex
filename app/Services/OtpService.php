@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\Enums\ContactType;
+use App\Exceptions\OtpCooldownException;
 use App\Models\SecurityCode;
 use App\Notifications\SendOtpNotification;
 use Illuminate\Support\Facades\DB;
@@ -91,6 +92,11 @@ class OtpService
     {
         $normalizedTarget = $this->normalizeTarget($target, $channel);
 
+        $remainingSeconds = $this->getRemainingCooldownSeconds($normalizedTarget);
+        if ($remainingSeconds > 0) {
+            throw new OtpCooldownException($remainingSeconds);
+        }
+
         $plainCode = $this->generatePlainCode();
 
         return DB::transaction(function () use ($normalizedTarget, $channel, $plainCode): SecurityCode {
@@ -129,6 +135,32 @@ class OtpService
             ->whereNull('used_at')
             ->where('expires_at', '>', now())
             ->update(['expires_at' => now()]);
+    }
+
+    /**
+     * Get the remaining cooldown seconds before a new OTP can be requested for the contact target.
+     */
+    public function getRemainingCooldownSeconds(string $target, ?ContactType $channel = null): int
+    {
+        $normalizedTarget = $channel !== null
+            ? $this->normalizeTarget($target, $channel)
+            : trim($target);
+
+        $latest = SecurityCode::where('contact_value', $normalizedTarget)
+            ->latest('created_at')
+            ->first();
+
+        if ($latest === null || $latest->created_at === null) {
+            return 0;
+        }
+
+        $secondsPassed = (int) $latest->created_at->diffInSeconds(now());
+
+        if ($secondsPassed < self::COOLDOWN_SECONDS) {
+            return self::COOLDOWN_SECONDS - $secondsPassed;
+        }
+
+        return 0;
     }
 
     /**

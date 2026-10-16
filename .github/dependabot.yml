@@ -37,6 +37,7 @@ updates:
           - "*"
     ignore:
       - dependency-name: "vite-plus"
+        update-types: ["version-update:semver-major"]
 
   - package-ecosystem: "docker"
     directory: "/docker/config"

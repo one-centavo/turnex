@@ -1,5 +1,5 @@
 # Set the base image and working directory
-FROM php:8.4-fpm-alpine
+FROM php:8.5-fpm-alpine
 WORKDIR /var/www/html
 
 # Install runtime dependencies

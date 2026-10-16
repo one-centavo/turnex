@@ -5,7 +5,7 @@ COPY composer.json composer.lock ./
 RUN composer install --no-dev --no-scripts --no-autoloader --prefer-dist
 
 # FRONTEND BUILD STAGE
-FROM node:24-alpine AS node-builder
+FROM node:25-alpine AS node-builder
 WORKDIR /app
 RUN corepack enable && corepack prepare pnpm@latest --activate
 COPY package.json pnpm-lock.yaml ./
@@ -16,7 +16,7 @@ COPY --from=composer-builder /var/www/html/vendor ./vendor
 RUN pnpm build
 
 # RUNTIME STAGE
-FROM php:8.4-fpm-alpine
+FROM php:8.5-fpm-alpine
 WORKDIR /var/www/html
 
 # Install dependencies and PHP extensions

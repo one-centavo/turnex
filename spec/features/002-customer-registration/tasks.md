@@ -2,9 +2,9 @@
 
 ## Database & Model
 
-- [ ] Create migration for the `customers` table based on `docs/design/entity-relation.md`.
-- [ ] Create `app/Models/Customer.php` with casts (`phone_verified_at`, `email_verified_at`, `password` => 'hashed') and `database/factories/CustomerFactory.php`.
-- [ ] Run migration and verify schema in Docker.
+- [x] Create migration for the `customers` table based on `docs/design/entity-relation.md`.
+- [x] Create `app/Models/Customer.php` with casts (`phone_verified_at`, `email_verified_at`, `password` => 'hashed') and `database/factories/CustomerFactory.php`.
+- [x] Run migration and verify schema in Docker.
 
 ## Validation & Business Logic
 

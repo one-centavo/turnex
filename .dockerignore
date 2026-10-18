@@ -6,6 +6,7 @@
 id_rsa
 /vendor
 /node_modules
+/.pnpm-store
 .git
 .gitignore
 .dockerignore

@@ -39,3 +39,5 @@ pnpm-debug.log*
 /opencode.json
 /opencode.jsonc
 docker-compose.override.yml
+.vitest/
+/.pnpm-store/

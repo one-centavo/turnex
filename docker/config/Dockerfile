@@ -8,7 +8,7 @@ RUN composer install --no-dev --no-scripts --no-autoloader --prefer-dist
 FROM node:24-alpine AS node-builder
 WORKDIR /app
 RUN corepack enable && corepack prepare pnpm@latest --activate
-COPY package.json pnpm-lock.yaml ./
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml* ./
 RUN pnpm install --frozen-lockfile
 
 COPY . .

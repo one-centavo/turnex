@@ -8,10 +8,10 @@
 
 ## Validation & Business Logic
 
-- [ ] Create `app/Rules/CustomerRules.php` with reusable atomic rule sets (`firstName()`, `lastName()`, `email()`, `phone()`, `password()`, `terms()`).
-- [ ] Create `app/Notifications/WelcomeCustomerNotification.php` for deferred asynchronous welcome and email verification.
-- [ ] Create `app/Services/CustomerService.php` to handle customer creation, data normalization (`DataNormalizer`), credential hashing, and verification timestamp recording.
-- [ ] Write unit and service tests for `CustomerRules` and `CustomerService`.
+- [x] Create `app/Rules/CustomerRules.php` with reusable atomic rule sets (`firstName()`, `lastName()`, `email()`, `phone()`, `password()`, `terms()`).
+- [x] Create `app/Notifications/WelcomeCustomerNotification.php` for deferred asynchronous welcome and email verification.
+- [x] Create `app/Services/CustomerService.php` to handle customer creation, data normalization (`DataNormalizer`), credential hashing, and verification timestamp recording.
+- [x] Write unit and service tests for `CustomerRules` and `CustomerService`.
 
 ## User Interface & Registration Flow
 

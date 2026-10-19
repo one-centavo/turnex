@@ -8,4 +8,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::view('dashboard', 'dashboard')->name('dashboard');
 });
 
+Route::livewire('register', 'pages::auth.customer.register')
+    ->middleware('guest')
+    ->name('register');
+
 require __DIR__.'/settings.php';

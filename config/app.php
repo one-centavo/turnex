@@ -13,7 +13,35 @@ return [
     |
     */
 
-    'name' => env('APP_NAME', 'Laravel'),
+    'name' => env('APP_NAME', 'Turnex'),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Application Version
+    |--------------------------------------------------------------------------
+    |
+    | Automatically resolved from .version file, Git tags, or APP_VERSION env.
+    |
+    */
+
+    'version' => env('APP_VERSION', function (): string {
+        if (file_exists(base_path('.version'))) {
+            return trim((string) file_get_contents(base_path('.version')));
+        }
+
+        /** @var list<string> $tags */
+        $tags = [];
+        @exec("git -c safe.directory='*' --no-pager tag --sort=-v:refname 2>/dev/null", $tags);
+        $latestTag = $tags[0] ?? null;
+
+        if (! empty($latestTag)) {
+            return trim($latestTag);
+        }
+
+        $describe = @exec("git -c safe.directory='*' describe --tags --abbrev=0 2>/dev/null");
+
+        return ! empty($describe) ? trim($describe) : 'v0.1.3';
+    }),
 
     /*
     |--------------------------------------------------------------------------

@@ -54,7 +54,7 @@ new #[Title('Crear cuenta de cliente')] #[Layout('layouts.auth.card')] class ext
     public function mount(): void
     {
         if (Auth::guard('customer')->check() || Auth::check()) {
-            $this->redirectIntended(default: route('home'), navigate: true);
+            $this->redirectIntended(default: route('dashboard'), navigate: true);
 
             return;
         }
@@ -104,7 +104,7 @@ new #[Title('Crear cuenta de cliente')] #[Layout('layouts.auth.card')] class ext
             'last_name' => CustomerRules::lastName(),
             'email' => CustomerRules::email(),
             'phone_number' => CustomerRules::phone(),
-            'password' => CustomerRules::password(),
+            'password' => CustomerRules::password(confirmed: false),
             'terms' => CustomerRules::terms(),
         ], CustomerRules::messages());
 
@@ -191,9 +191,17 @@ new #[Title('Crear cuenta de cliente')] #[Layout('layouts.auth.card')] class ext
         Auth::guard('customer')->login($customer);
         Session::regenerate();
 
-        Flux::toast(variant: 'success', text: __('¡Bienvenido a Turnex, :name! Tu cuenta ha sido creada.', ['name' => $customer->first_name]));
+        $this->first_name = $customer->first_name;
+        $this->last_name = $customer->last_name;
+        $this->email = $customer->email;
+        $this->phone_number = $customer->phone_number;
+        $this->maskedPhone = $this->maskPhoneNumber($customer->phone_number);
+        $this->step = 3;
+    }
 
-        $this->redirectIntended(default: route('home'), navigate: true);
+    public function finishRegistration(): void
+    {
+        $this->redirectIntended(default: route('dashboard'), navigate: true);
     }
 
     public function resendOtp(string $channel, OtpService $otpService): void
@@ -245,7 +253,7 @@ new #[Title('Crear cuenta de cliente')] #[Layout('layouts.auth.card')] class ext
             return;
         }
 
-        $this->new_phone_number = $this->phone_number;
+        $this->new_phone_number = (string) preg_replace('/^\+?57/', '', $this->phone_number);
         $this->isEditingPhone = true;
     }
 
@@ -316,6 +324,7 @@ new #[Title('Crear cuenta de cliente')] #[Layout('layouts.auth.card')] class ext
 
     public function goToStepOne(): void
     {
+        $this->phone_number = (string) preg_replace('/^\+?57/', '', $this->phone_number);
         $this->step = 1;
     }
 
@@ -367,216 +376,491 @@ new #[Title('Crear cuenta de cliente')] #[Layout('layouts.auth.card')] class ext
 };
 ?>
 
-<div class="flex flex-col gap-6" @if($step === 2 && $cooldownSeconds > 0) wire:poll.1s="decrementCooldown" @endif>
+<div class="flex flex-col gap-5" @if($step === 2 && $cooldownSeconds > 0) wire:poll.1s="decrementCooldown" @endif>
+    @if ($step < 3)
+        {{-- Operational Stepper Indicator (Control Panel archetype) --}}
+        <nav aria-label="Progreso de registro" class="flex items-center justify-between pb-4 border-b border-[#E2E8F0] dark:border-[#1F2937]">
+            {{-- Step 1 Indicator --}}
+            <div class="flex items-center gap-2">
+                <span class="flex size-5 items-center justify-center rounded-sm font-mono text-[11px] font-bold transition-colors {{ $step === 1 ? 'bg-blue-600 text-white' : 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30' }}">
+                    @if ($step > 1)
+                        ✓
+                    @else
+                        1
+                    @endif
+                </span>
+                <span class="text-xs font-semibold tracking-wider uppercase {{ $step === 1 ? 'text-[#0F172A] dark:text-[#F9FAFB]' : 'text-emerald-600 dark:text-emerald-400' }}">
+                    01 · Datos
+                </span>
+            </div>
+
+            {{-- Divider Track --}}
+            <div class="h-px flex-1 mx-3 bg-[#E2E8F0] dark:bg-[#1F2937]"></div>
+
+            {{-- Step 2 Indicator --}}
+            <div class="flex items-center gap-2">
+                <span class="flex size-5 items-center justify-center rounded-sm font-mono text-[11px] font-bold transition-colors {{ $step === 2 ? 'bg-blue-600 text-white' : 'bg-slate-100 dark:bg-[#1F2937] text-slate-600 dark:text-slate-400 border border-[#E2E8F0] dark:border-[#1F2937]' }}">
+                    2
+                </span>
+                <span class="text-xs font-semibold tracking-wider uppercase {{ $step === 2 ? 'text-[#0F172A] dark:text-[#F9FAFB]' : 'text-slate-600 dark:text-slate-400' }}">
+                    02 · Verificación
+                </span>
+            </div>
+        </nav>
+    @endif
+
+    {{-- System / Rate Limiting Alert --}}
     @error('general')
-        <div class="rounded-md border border-red-500/20 bg-red-500/10 p-3 text-sm text-red-600 dark:text-red-400">
-            {{ $message }}
+        <div class="flex items-start gap-2.5 rounded-md border border-red-500/25 bg-red-500/10 p-3 text-xs text-red-600 dark:text-red-400" role="alert">
+            <svg class="size-4 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+            <span class="leading-relaxed font-medium">{{ $message }}</span>
         </div>
     @enderror
 
     @if ($step === 1)
         {{-- STEP 1: ACCOUNT INFORMATION --}}
-        <x-auth-header
-            :title="__('Crea tu cuenta de cliente')"
-            :description="__('Regístrate para unirte a filas virtuales y realizar pedidos en tiempo real.')"
-        />
+        <header class="flex flex-col gap-1.5 mb-1">
+            <h1 class="text-2xl sm:text-3xl font-semibold tracking-tight text-[#0F172A] dark:text-[#F9FAFB]">
+                {{ __('Crea tu cuenta de cliente') }}
+            </h1>
+            <p class="text-xs sm:text-sm text-[#64748B] dark:text-[#9CA3AF]">
+                {{ __('Regístrate para unirte a filas virtuales y realizar pedidos en tiempo real.') }}
+            </p>
+        </header>
 
-        <form wire:submit="submitStepOne" class="flex flex-col gap-4">
+        <form wire:submit="submitStepOne" class="flex flex-col gap-5">
+            {{-- Name & Last Name (2 Columns) --}}
             <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <flux:input
-                    wire:model="first_name"
-                    :label="__('Nombre')"
-                    type="text"
-                    required
-                    autofocus
-                    autocomplete="given-name"
-                    placeholder="Ej. Carlos"
-                />
+                <div class="flex flex-col">
+                    <label for="first_name" class="block text-xs sm:text-sm font-medium text-[#64748B] dark:text-[#9CA3AF] mb-2">
+                        {{ __('Nombre') }} <span class="text-red-500">*</span>
+                    </label>
+                    <input
+                        id="first_name"
+                        wire:model="first_name"
+                        type="text"
+                        required
+                        autofocus
+                        autocomplete="given-name"
+                        placeholder="Ej. Carlos"
+                        pattern="[a-zA-ZÀ-ÿ\s]+"
+                        oninput="this.value = this.value.replace(/[^a-zA-ZÀ-ÿ\s]/g, '')"
+                        class="h-11 w-full rounded-md border px-3.5 text-sm sm:text-base transition-colors bg-white text-[#0F172A] placeholder:text-slate-400 focus:outline-hidden focus:ring-2 focus:ring-blue-600 focus:border-transparent dark:bg-[#0B0F17] dark:text-[#F9FAFB] dark:placeholder:text-slate-500 {{ $errors->has('first_name') ? 'border-red-500' : 'border-[#CBD5E1] dark:border-[#374151]' }}"
+                    />
+                    @error('first_name')
+                        <p class="mt-1.5 text-xs text-red-500 font-medium">{{ $message }}</p>
+                    @enderror
+                </div>
 
-                <flux:input
-                    wire:model="last_name"
-                    :label="__('Apellido')"
-                    type="text"
-                    required
-                    autocomplete="family-name"
-                    placeholder="Ej. Pérez"
-                />
+                <div class="flex flex-col">
+                    <label for="last_name" class="block text-xs sm:text-sm font-medium text-[#64748B] dark:text-[#9CA3AF] mb-2">
+                        {{ __('Apellido') }} <span class="text-red-500">*</span>
+                    </label>
+                    <input
+                        id="last_name"
+                        wire:model="last_name"
+                        type="text"
+                        required
+                        autocomplete="family-name"
+                        placeholder="Ej. Pérez"
+                        pattern="[a-zA-ZÀ-ÿ\s]+"
+                        oninput="this.value = this.value.replace(/[^a-zA-ZÀ-ÿ\s]/g, '')"
+                        class="h-11 w-full rounded-md border px-3.5 text-sm sm:text-base transition-colors bg-white text-[#0F172A] placeholder:text-slate-400 focus:outline-hidden focus:ring-2 focus:ring-blue-600 focus:border-transparent dark:bg-[#0B0F17] dark:text-[#F9FAFB] dark:placeholder:text-slate-500 {{ $errors->has('last_name') ? 'border-red-500' : 'border-[#CBD5E1] dark:border-[#374151]' }}"
+                    />
+                    @error('last_name')
+                        <p class="mt-1.5 text-xs text-red-500 font-medium">{{ $message }}</p>
+                    @enderror
+                </div>
             </div>
 
-            <flux:input
-                wire:model="phone_number"
-                :label="__('Número de celular')"
-                type="tel"
-                required
-                autocomplete="tel"
-                placeholder="Ej. 300 123 4567"
-            >
-                <x-slot:description>
-                    {{ __('Te enviaremos un código de seguridad por WhatsApp.') }}
-                </x-slot:description>
-            </flux:input>
-
-            <flux:input
-                wire:model="email"
-                :label="__('Correo electrónico')"
-                type="email"
-                required
-                autocomplete="email"
-                placeholder="nombre@ejemplo.com"
-            />
-
-            <flux:input
-                wire:model="password"
-                :label="__('Contraseña')"
-                type="password"
-                required
-                autocomplete="new-password"
-                placeholder="Mínimo 8 caracteres"
-                viewable
-            />
-
-            <flux:input
-                wire:model="password_confirmation"
-                :label="__('Confirmar contraseña')"
-                type="password"
-                required
-                autocomplete="new-password"
-                placeholder="Repite tu contraseña"
-                viewable
-            />
-
-            <div class="pt-2">
-                <flux:checkbox
-                    wire:model="terms"
-                    :label="__('Acepto los Términos y Condiciones y la Política de Privacidad de Turnex.')"
-                />
-                @error('terms')
-                    <flux:error>{{ $message }}</flux:error>
+            {{-- Phone Number with Industrial Prefix Pill --}}
+            <div class="flex flex-col">
+                <label for="phone_number" class="block text-xs sm:text-sm font-medium text-[#64748B] dark:text-[#9CA3AF] mb-2">
+                    {{ __('Número de celular') }} <span class="text-red-500">*</span>
+                </label>
+                <div class="h-11 flex rounded-md border overflow-hidden transition-colors focus-within:ring-2 focus-within:ring-blue-600 focus-within:border-transparent {{ $errors->has('phone_number') ? 'border-red-500' : 'border-[#CBD5E1] dark:border-[#374151]' }}">
+                    <span class="inline-flex items-center px-3.5 bg-[#F1F5F9] dark:bg-[#1F2937] text-slate-600 dark:text-slate-300 font-mono text-sm border-r border-[#CBD5E1] dark:border-[#374151] select-none">
+                        +57
+                    </span>
+                    <input
+                        id="phone_number"
+                        wire:model="phone_number"
+                        type="tel"
+                        inputmode="numeric"
+                        pattern="[0-9]*"
+                        maxlength="10"
+                        oninput="this.value = this.value.replace(/\D/g, '').slice(0, 10)"
+                        required
+                        autocomplete="tel-national"
+                        placeholder="3001234567"
+                        class="h-full w-full px-3.5 text-sm sm:text-base bg-white text-[#0F172A] placeholder:text-slate-400 outline-hidden dark:bg-[#0B0F17] dark:text-[#F9FAFB] dark:placeholder:text-slate-500 font-mono"
+                    />
+                </div>
+                <div class="flex items-center justify-between mt-1.5">
+                    <p class="text-xs text-[#64748B] dark:text-[#9CA3AF]">
+                        {{ __('Te enviaremos un código de seguridad por WhatsApp.') }}
+                    </p>
+                </div>
+                @error('phone_number')
+                    <p class="mt-1.5 text-xs text-red-500 font-medium">{{ $message }}</p>
                 @enderror
             </div>
 
-            <div class="flex flex-col gap-3 pt-2">
-                <flux:button type="submit" variant="primary" class="w-full">
-                    <span wire:loading.remove wire:target="submitStepOne">{{ __('Continuar con verificación') }}</span>
-                    <span wire:loading wire:target="submitStepOne">{{ __('Enviando código...') }}</span>
-                </flux:button>
+            {{-- Email Address --}}
+            <div class="flex flex-col">
+                <label for="email" class="block text-xs sm:text-sm font-medium text-[#64748B] dark:text-[#9CA3AF] mb-2">
+                    {{ __('Correo electrónico') }} <span class="text-red-500">*</span>
+                </label>
+                <input
+                    id="email"
+                    wire:model="email"
+                    type="email"
+                    required
+                    autocomplete="email"
+                    placeholder="nombre@ejemplo.com"
+                    class="h-11 w-full rounded-md border px-3.5 text-sm sm:text-base transition-colors bg-white text-[#0F172A] placeholder:text-slate-400 focus:outline-hidden focus:ring-2 focus:ring-blue-600 focus:border-transparent dark:bg-[#0B0F17] dark:text-[#F9FAFB] dark:placeholder:text-slate-500 {{ $errors->has('email') ? 'border-red-500' : 'border-[#CBD5E1] dark:border-[#374151]' }}"
+                />
+                @error('email')
+                    <p class="mt-1.5 text-xs text-red-500 font-medium">{{ $message }}</p>
+                @enderror
+            </div>
+
+            {{-- Single Password Field with Eye Icon Toggle & Focus Requirements --}}
+            <div
+                class="flex flex-col"
+                x-data="{
+                    showPassword: false,
+                    isFocused: false,
+                    password: '',
+                    get hasMin() { return this.password.length >= 8; },
+                    get hasMixed() { return /[a-z]/.test(this.password) && /[A-Z]/.test(this.password); },
+                    get hasNumber() { return /[0-9]/.test(this.password); },
+                    get hasSymbol() { return /[^A-Za-z0-9]/.test(this.password); }
+                }"
+            >
+                <label for="password" class="block text-xs sm:text-sm font-medium text-[#64748B] dark:text-[#9CA3AF] mb-2">
+                    {{ __('Contraseña') }} <span class="text-red-500">*</span>
+                </label>
+                <div class="relative flex items-center">
+                    <input
+                        id="password"
+                        wire:model="password"
+                        :type="showPassword ? 'text' : 'password'"
+                        required
+                        autocomplete="new-password"
+                        placeholder="Mínimo 8 caracteres"
+                        @input="password = $event.target.value"
+                        @focus="isFocused = true"
+                        @blur="isFocused = false"
+                        class="h-11 w-full rounded-md border pl-3.5 pr-11 text-sm sm:text-base transition-colors bg-white text-[#0F172A] placeholder:text-slate-400 focus:outline-hidden focus:ring-2 focus:ring-blue-600 focus:border-transparent dark:bg-[#0B0F17] dark:text-[#F9FAFB] dark:placeholder:text-slate-500 {{ $errors->has('password') ? 'border-red-500' : 'border-[#CBD5E1] dark:border-[#374151]' }}"
+                    />
+                    <button
+                        type="button"
+                        @mousedown.prevent
+                        @click="showPassword = !showPassword"
+                        class="absolute right-0 top-0 bottom-0 flex items-center justify-center w-11 h-11 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors focus:outline-hidden cursor-pointer"
+                        :aria-label="showPassword ? '{{ __('Ocultar contraseña') }}' : '{{ __('Mostrar contraseña') }}'"
+                        tabindex="-1"
+                    >
+                        {{-- Eye Icon (When Hidden) --}}
+                        <svg x-show="!showPassword" class="size-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                        </svg>
+
+                        {{-- Eye Slash Icon (When Visible) --}}
+                        <svg x-show="showPassword" x-cloak class="size-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228l-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.242 4.242L9.88 9.88" />
+                        </svg>
+                    </button>
+                </div>
+
+                {{-- Requirements Indicator Panel (Appears on focus) --}}
+                <div
+                    x-show="isFocused"
+                    x-transition:enter="transition ease-out duration-200"
+                    x-transition:enter-start="opacity-0 -translate-y-1"
+                    x-transition:enter-end="opacity-100 translate-y-0"
+                    x-transition:leave="transition ease-in duration-150"
+                    x-transition:leave-start="opacity-100 translate-y-0"
+                    x-transition:leave-end="opacity-0 -translate-y-1"
+                    x-cloak
+                    class="mt-2 p-3 rounded-md border border-[#E2E8F0] dark:border-[#1F2937] bg-[#F8FAFC] dark:bg-[#0B0F17] flex flex-col gap-1.5 text-[11px]"
+                >
+                    <span class="font-medium text-slate-700 dark:text-slate-300">
+                        {{ __('Requisitos de la contraseña:') }}
+                    </span>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-1.5 font-mono text-[11px]">
+                        <span class="flex items-center gap-1.5 transition-colors" :class="hasMin ? 'text-emerald-600 dark:text-emerald-400 font-semibold' : 'text-slate-500 dark:text-slate-400'">
+                            <span class="size-1.5 rounded-full transition-colors" :class="hasMin ? 'bg-emerald-500' : 'bg-slate-400 dark:bg-slate-600'"></span>
+                            <span>{{ __('Mínimo 8 caracteres') }}</span>
+                        </span>
+                        <span class="flex items-center gap-1.5 transition-colors" :class="hasMixed ? 'text-emerald-600 dark:text-emerald-400 font-semibold' : 'text-slate-500 dark:text-slate-400'">
+                            <span class="size-1.5 rounded-full transition-colors" :class="hasMixed ? 'bg-emerald-500' : 'bg-slate-400 dark:bg-slate-600'"></span>
+                            <span>{{ __('Mayúsculas y minúsculas') }}</span>
+                        </span>
+                        <span class="flex items-center gap-1.5 transition-colors" :class="hasNumber ? 'text-emerald-600 dark:text-emerald-400 font-semibold' : 'text-slate-500 dark:text-slate-400'">
+                            <span class="size-1.5 rounded-full transition-colors" :class="hasNumber ? 'bg-emerald-500' : 'bg-slate-400 dark:bg-slate-600'"></span>
+                            <span>{{ __('Al menos un número') }}</span>
+                        </span>
+                        <span class="flex items-center gap-1.5 transition-colors" :class="hasSymbol ? 'text-emerald-600 dark:text-emerald-400 font-semibold' : 'text-slate-500 dark:text-slate-400'">
+                            <span class="size-1.5 rounded-full transition-colors" :class="hasSymbol ? 'bg-emerald-500' : 'bg-slate-400 dark:bg-slate-600'"></span>
+                            <span>{{ __('Un símbolo (!@#$%)') }}</span>
+                        </span>
+                    </div>
+                </div>
+
+                @error('password')
+                    <p class="mt-1.5 text-xs text-red-500 font-medium">{{ $message }}</p>
+                @enderror
+            </div>
+
+            {{-- Terms and Conditions --}}
+            <div class="pt-1">
+                <label class="flex items-start gap-3 cursor-pointer select-none">
+                    <input
+                        type="checkbox"
+                        wire:model="terms"
+                        class="size-4.5 mt-0.5 rounded-md border-[#CBD5E1] dark:border-[#374151] text-blue-600 focus:ring-2 focus:ring-blue-600 dark:bg-[#0B0F17] transition-colors"
+                    />
+                    <span class="text-xs sm:text-sm text-[#64748B] dark:text-[#9CA3AF] leading-snug">
+                        {{ __('Acepto los') }}
+                        <a href="#" class="text-blue-600 dark:text-blue-400 hover:underline font-medium">{{ __('Términos y Condiciones') }}</a>
+                        {{ __('y la') }}
+                        <a href="#" class="text-blue-600 dark:text-blue-400 hover:underline font-medium">{{ __('Política de Privacidad') }}</a>
+                        {{ __('de Turnex.') }}
+                    </span>
+                </label>
+                @error('terms')
+                    <p class="mt-1.5 text-xs text-red-500 font-medium">{{ $message }}</p>
+                @enderror
+            </div>
+
+            {{-- Action CTA & Mobile-First Sticky Action Bar (Section 04 & 06.1) --}}
+            <div class="fixed bottom-0 left-0 right-0 p-4 bg-white/95 dark:bg-[#111827]/95 backdrop-blur-md border-t border-[#E2E8F0] dark:border-[#1F2937] sm:static sm:p-0 sm:bg-transparent sm:border-0 sm:backdrop-blur-none z-30 pt-3">
+                <button
+                    type="submit"
+                    wire:loading.attr="disabled"
+                    wire:target="submitStepOne"
+                    class="w-full h-12 px-6 rounded-md bg-blue-600 hover:bg-blue-500 text-white font-semibold text-base transition-all active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center cursor-pointer shadow-none focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-blue-600"
+                >
+                    <span wire:loading.remove wire:target="submitStepOne" class="inline-flex items-center justify-center gap-2">
+                        <span>{{ __('Continuar con verificación') }}</span>
+                        <span class="font-mono text-sm leading-none">→</span>
+                    </span>
+                    <span wire:loading.flex wire:target="submitStepOne" class="items-center justify-center gap-2.5">
+                        <svg class="animate-spin size-5 text-white shrink-0" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        <span class="leading-none">{{ __('Enviando código...') }}</span>
+                    </span>
+                </button>
             </div>
         </form>
 
-        <div class="flex flex-col gap-2 pt-2 text-center text-sm text-neutral-600 dark:text-neutral-400">
+        {{-- Subdued Navigation Footnotes --}}
+        <div class="flex flex-col gap-2 pt-3 text-center text-xs sm:text-sm text-[#64748B] dark:text-[#9CA3AF] border-t border-[#E2E8F0] dark:border-[#1F2937] mt-3">
             <p>
                 {{ __('¿Ya tienes una cuenta?') }}
-                <flux:link href="{{ route('login') }}" class="font-medium text-blue-600 dark:text-blue-400" wire:navigate>
+                <a href="{{ route('login') }}" class="font-semibold text-blue-600 dark:text-blue-400 hover:underline" wire:navigate>
                     {{ __('Iniciar sesión') }}
-                </flux:link>
+                </a>
             </p>
             <p class="text-xs">
                 {{ __('¿Administras un establecimiento comercial?') }}
-                <flux:link href="{{ route('home') }}" class="font-medium text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300">
+                <a href="{{ route('home') }}" class="font-medium text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 transition-colors">
                     {{ __('Registra tu negocio') }}
-                </flux:link>
+                </a>
             </p>
         </div>
-    @else
+    @elseif ($step === 2)
         {{-- STEP 2: PHONE VERIFICATION CHALLENGE --}}
-        <x-auth-header
-            :title="__('Verifica tu número')"
-            :description="__('Ingresamos el código de 6 dígitos enviado por :channel a tu celular.', ['channel' => $channel === 'sms' ? 'SMS' : 'WhatsApp'])"
-        />
+        <header class="flex flex-col gap-1.5 mb-1">
+            <h1 class="text-2xl sm:text-3xl font-semibold tracking-tight text-[#0F172A] dark:text-[#F9FAFB]">
+                {{ __('Verifica tu número') }}
+            </h1>
+            <p class="text-xs sm:text-sm text-[#64748B] dark:text-[#9CA3AF] leading-relaxed">
+                {{ __('Ingresa el código de 6 dígitos enviado por :channel al', ['channel' => $channel === 'sms' ? 'SMS' : 'WhatsApp']) }}
+                <span class="font-mono font-semibold text-[#0F172A] dark:text-[#F9FAFB]">{{ $maskedPhone }}</span>.
+                @if (! $isEditingPhone && $phoneEditCount < 3)
+                    <button
+                        type="button"
+                        wire:click="editPhone"
+                        class="text-blue-600 dark:text-blue-400 hover:underline font-medium inline-flex items-center cursor-pointer ml-1"
+                    >
+                        <span>{{ __('Cambiar número') }}</span>
+                    </button>
+                @endif
+            </p>
+        </header>
 
         <div class="flex flex-col gap-6">
-            {{-- Phone number summary & Edit toggle --}}
-            <div class="flex flex-col gap-2 rounded-lg border border-neutral-200 bg-neutral-50 p-4 dark:border-neutral-800 dark:bg-neutral-900">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <span class="text-xs text-neutral-500 dark:text-neutral-400">{{ __('Código enviado a:') }}</span>
-                        <p class="font-mono text-sm font-semibold text-neutral-900 dark:text-neutral-100">{{ $maskedPhone }}</p>
+            @if ($isEditingPhone)
+                <form wire:submit="saveNewPhone" class="flex flex-col gap-3 p-4 rounded-md border border-[#E2E8F0] dark:border-[#1F2937] bg-[#F8FAFC] dark:bg-[#0B0F17]">
+                    <div class="flex items-center justify-between">
+                        <label for="new_phone_number" class="block text-xs sm:text-sm font-medium text-[#64748B] dark:text-[#9CA3AF]">
+                            {{ __('Nuevo número de celular') }}
+                        </label>
+                        @if ($phoneEditCount > 0)
+                            <span class="text-xs font-mono text-slate-500 dark:text-slate-400">
+                                {{ __(':count/3 intentos', ['count' => $phoneEditCount]) }}
+                            </span>
+                        @endif
                     </div>
-
-                    @if (! $isEditingPhone && $phoneEditCount < 3)
-                        <flux:button size="sm" variant="subtle" wire:click="editPhone">
-                            {{ __('Cambiar número') }}
-                        </flux:button>
-                    @endif
-                </div>
-
-                @if ($phoneEditCount > 0)
-                    <p class="text-xs text-neutral-400">
-                        {{ __('Has cambiado de número :count de 3 veces permitidas.', ['count' => $phoneEditCount]) }}
-                    </p>
-                @endif
-
-                @if ($isEditingPhone)
-                    <form wire:submit="saveNewPhone" class="flex flex-col gap-3 pt-2">
-                        <flux:input
+                    <div class="h-11 flex rounded-md border border-[#CBD5E1] dark:border-[#374151] overflow-hidden focus-within:ring-2 focus-within:ring-blue-600 focus-within:border-transparent">
+                        <span class="inline-flex items-center px-3.5 bg-[#F1F5F9] dark:bg-[#1F2937] text-slate-600 dark:text-slate-300 font-mono text-sm border-r border-[#CBD5E1] dark:border-[#374151] select-none">
+                            +57
+                        </span>
+                        <input
+                            id="new_phone_number"
                             wire:model="new_phone_number"
-                            :label="__('Nuevo celular')"
                             type="tel"
-                            placeholder="Ej. 310 987 6543"
+                            inputmode="numeric"
+                            pattern="[0-9]*"
+                            maxlength="10"
+                            oninput="this.value = this.value.replace(/\D/g, '').slice(0, 10)"
                             required
+                            autofocus
+                            placeholder="3109876543"
+                            class="h-full w-full px-3.5 text-sm sm:text-base bg-white text-[#0F172A] placeholder:text-slate-400 outline-hidden dark:bg-[#0B0F17] dark:text-[#F9FAFB] font-mono"
                         />
+                    </div>
+                    @error('new_phone_number')
+                        <p class="text-xs text-red-500 font-medium">{{ $message }}</p>
+                    @enderror
 
-                        <div class="flex items-center gap-2">
-                            <flux:button size="sm" type="submit" variant="primary">
-                                {{ __('Actualizar y reenviar') }}
-                            </flux:button>
-                            <flux:button size="sm" type="button" variant="subtle" wire:click="cancelEditPhone">
-                                {{ __('Cancelar') }}
-                            </flux:button>
-                        </div>
-                    </form>
-                @endif
-            </div>
+                    <div class="flex items-center gap-2 pt-1">
+                        <button
+                            type="submit"
+                            class="h-9 px-3.5 rounded-md bg-blue-600 hover:bg-blue-500 text-white text-xs sm:text-sm font-semibold transition-colors cursor-pointer"
+                        >
+                            {{ __('Actualizar y reenviar') }}
+                        </button>
+                        <button
+                            type="button"
+                            wire:click="cancelEditPhone"
+                            class="h-9 px-3.5 rounded-md text-xs sm:text-sm font-medium border border-[#CBD5E1] dark:border-[#374151] hover:bg-slate-100 dark:hover:bg-[#1F2937] text-slate-700 dark:text-slate-300 transition-colors cursor-pointer"
+                        >
+                            {{ __('Cancelar') }}
+                        </button>
+                    </div>
+                </form>
+            @endif
 
-            {{-- 6-Digit Code Form --}}
-            <form wire:submit="verifyCode" class="flex flex-col gap-4">
-                <flux:field>
-                    <flux:label class="text-center">{{ __('Código de 6 dígitos') }}</flux:label>
-                    <flux:input
+            {{-- 6-Digit OTP Code Form --}}
+            <form wire:submit="verifyCode" class="flex flex-col gap-5">
+                <div class="flex flex-col items-center">
+                    <label for="code" class="block text-xs sm:text-sm font-medium text-[#64748B] dark:text-[#9CA3AF] mb-2 uppercase tracking-wider font-mono">
+                        {{ __('Código de 6 dígitos') }}
+                    </label>
+                    <input
+                        id="code"
                         wire:model="code"
                         type="text"
                         inputmode="numeric"
                         pattern="[0-9]*"
                         maxlength="6"
+                        autocomplete="one-time-code"
+                        oninput="this.value = this.value.replace(/\D/g, '').slice(0, 6)"
                         required
                         autofocus
-                        class="text-center font-mono text-2xl tracking-widest"
                         placeholder="000000"
+                        class="h-16 w-full rounded-md border text-center font-mono text-3xl sm:text-4xl font-bold tracking-[0.4em] transition-all bg-white text-[#0F172A] placeholder:text-slate-300 focus:outline-hidden focus:ring-2 focus:ring-blue-600 focus:border-transparent dark:bg-[#0B0F17] dark:text-[#F9FAFB] dark:placeholder:text-slate-700 {{ $errors->has('code') ? 'border-red-500' : 'border-[#CBD5E1] dark:border-[#374151]' }}"
                     />
-                    <flux:error name="code" />
-                </flux:field>
+                    @error('code')
+                        <p class="mt-2 text-xs text-red-500 font-medium text-center">{{ $message }}</p>
+                    @enderror
+                </div>
 
-                <flux:button type="submit" variant="primary" class="w-full">
-                    <span wire:loading.remove wire:target="verifyCode">{{ __('Confirmar y crear cuenta') }}</span>
-                    <span wire:loading wire:target="verifyCode">{{ __('Verificando...') }}</span>
-                </flux:button>
+                {{-- Action CTA & Mobile-First Sticky Action Bar (Section 04 & 06.1) --}}
+                <div class="fixed bottom-0 left-0 right-0 p-4 bg-white/95 dark:bg-[#111827]/95 backdrop-blur-md border-t border-[#E2E8F0] dark:border-[#1F2937] sm:static sm:p-0 sm:bg-transparent sm:border-0 sm:backdrop-blur-none z-30">
+                    <button
+                        type="submit"
+                        wire:loading.attr="disabled"
+                        wire:target="verifyCode"
+                        class="w-full h-12 px-6 rounded-md bg-blue-600 hover:bg-blue-500 text-white font-semibold text-base transition-all active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center cursor-pointer shadow-none focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-blue-600"
+                    >
+                        <span wire:loading.remove wire:target="verifyCode" class="inline-flex items-center justify-center gap-2">
+                            <span>{{ __('Confirmar y crear cuenta') }}</span>
+                        </span>
+                        <span wire:loading.flex wire:target="verifyCode" class="items-center justify-center gap-2.5">
+                            <svg class="animate-spin size-5 text-white shrink-0" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            <span class="leading-none">{{ __('Verificando...') }}</span>
+                        </span>
+                    </button>
+                </div>
             </form>
 
-            {{-- Resend & Channel Switch Options --}}
-            <div class="flex flex-col items-center gap-3 pt-2 text-center text-sm">
+            {{-- Resend & Channel Switch Controls --}}
+            <div class="flex flex-col items-center gap-3 pt-2 text-center text-sm border-t border-[#E2E8F0] dark:border-[#1F2937]">
                 @if ($cooldownSeconds > 0)
-                    <p class="font-mono text-xs text-neutral-500">
-                        {{ __('Puedes solicitar un nuevo código en :sec s', ['sec' => $cooldownSeconds]) }}
-                    </p>
+                    <div class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-sm text-xs font-mono font-medium border border-[#E2E8F0] dark:border-[#1F2937] bg-[#F1F5F9] dark:bg-[#1F2937] text-slate-600 dark:text-slate-400">
+                        <svg class="size-3.5 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <span>{{ __('Puedes solicitar un nuevo código en :sec s', ['sec' => $cooldownSeconds]) }}</span>
+                    </div>
                 @else
-                    <div class="flex flex-wrap items-center justify-center gap-3">
-                        <flux:button size="sm" variant="subtle" wire:click="resendOtp('whatsapp')">
-                            {{ __('Reenviar por WhatsApp') }}
-                        </flux:button>
-                        <flux:button size="sm" variant="subtle" wire:click="resendOtp('sms')">
-                            {{ __('Reenviar por SMS') }}
-                        </flux:button>
+                    <div class="flex flex-wrap items-center justify-center gap-2.5">
+                        <button
+                            type="button"
+                            wire:click="resendOtp('whatsapp')"
+                            class="h-9 px-3.5 rounded-md text-xs sm:text-sm font-medium border border-[#CBD5E1] dark:border-[#374151] hover:bg-slate-100 dark:hover:bg-[#1F2937] text-slate-700 dark:text-slate-300 transition-colors inline-flex items-center gap-1.5 cursor-pointer"
+                        >
+                            <span>{{ __('Reenviar por WhatsApp') }}</span>
+                        </button>
+                        <button
+                            type="button"
+                            wire:click="resendOtp('sms')"
+                            class="h-9 px-3.5 rounded-md text-xs sm:text-sm font-medium border border-[#CBD5E1] dark:border-[#374151] hover:bg-slate-100 dark:hover:bg-[#1F2937] text-slate-700 dark:text-slate-300 transition-colors inline-flex items-center gap-1.5 cursor-pointer"
+                        >
+                            <span>{{ __('Reenviar por SMS') }}</span>
+                        </button>
                     </div>
                 @endif
 
                 <button
                     type="button"
                     wire:click="goToStepOne"
-                    class="pt-2 text-xs text-neutral-500 underline hover:text-neutral-700 dark:hover:text-neutral-300"
+                    class="pt-1.5 text-xs sm:text-sm font-medium text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 transition-colors inline-flex items-center gap-1 cursor-pointer"
                 >
                     {{ __('← Corregir datos personales (Paso 1)') }}
                 </button>
             </div>
+        </div>
+    @elseif ($step === 3)
+        {{-- STEP 3: REGISTRATION SUCCESS / AUTO-REDIRECT TO DASHBOARD --}}
+        <div
+            x-data
+            x-init="setTimeout(() => $wire.finishRegistration(), 1500)"
+            class="flex flex-col items-center text-center gap-4 py-8"
+        >
+            {{-- Success Icon Badge --}}
+            <div class="flex size-16 items-center justify-center rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 shadow-xs">
+                <svg class="size-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" />
+                </svg>
+            </div>
+
+            {{-- Title & Redirect Indicator --}}
+            <header class="flex flex-col gap-2 max-w-sm">
+                <h1 class="text-2xl sm:text-3xl font-semibold tracking-tight text-[#0F172A] dark:text-[#F9FAFB]">
+                    {{ __('¡Cuenta creada con éxito!') }}
+                </h1>
+                <p class="text-xs sm:text-sm text-[#64748B] dark:text-[#9CA3AF] flex items-center justify-center gap-2">
+                    <svg class="animate-spin size-3.5 text-blue-600 dark:text-blue-400" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    <span>{{ __('Redirigiendo a tu panel...') }}</span>
+                </p>
+            </header>
         </div>
     @endif
 </div>

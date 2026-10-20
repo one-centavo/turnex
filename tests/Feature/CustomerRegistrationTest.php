@@ -133,7 +133,7 @@ test('step 2 rejects invalid verification code', function (): void {
     expect(Customer::where('phone_number', '+573001234567')->exists())->toBeFalse();
 });
 
-test('step 2 happy path verifies OTP, provisions customer, authenticates, and redirects', function (): void {
+test('step 2 happy path verifies OTP, provisions customer, authenticates, and shows step 3 confirmation', function (): void {
     Notification::fake();
 
     /** @var OtpService $otpService */
@@ -159,12 +159,17 @@ test('step 2 happy path verifies OTP, provisions customer, authenticates, and re
         'expires_at' => now()->addMinutes(15)->toIso8601String(),
     ]);
 
-    Livewire::test('pages::auth.customer.register')
+    $component = Livewire::test('pages::auth.customer.register')
         ->set('step', 2)
         ->set('code', $plainCode)
         ->call('verifyCode')
         ->assertHasNoErrors()
-        ->assertRedirect(route('home'));
+        ->assertSet('step', 3)
+        ->assertSee('¡Cuenta creada con éxito!')
+        ->assertSee('Redirigiendo a tu panel...');
+
+    $component->call('finishRegistration')
+        ->assertRedirect(route('dashboard'));
 
     $customer = Customer::where('phone_number', '+573001234567')->first();
 

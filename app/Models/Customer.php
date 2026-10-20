@@ -68,6 +68,14 @@ class Customer extends Authenticatable
     }
 
     /**
+     * Get the customer's name attribute (alias for fullName).
+     */
+    public function getNameAttribute(): string
+    {
+        return $this->fullName();
+    }
+
+    /**
      * Determine if the customer has verified their phone number.
      */
     public function hasVerifiedPhone(): bool

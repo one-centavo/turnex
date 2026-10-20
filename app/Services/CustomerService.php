@@ -68,4 +68,3 @@ class CustomerService
         return Customer::where('email', $normalizedEmail)->exists();
     }
 }
-

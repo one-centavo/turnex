@@ -59,4 +59,3 @@ test('it checks whether an email is already registered using normalized search',
         ->and($service->isEmailRegistered('  carlos@turnex.test  '))->toBeTrue()
         ->and($service->isEmailRegistered('other@turnex.test'))->toBeFalse();
 });
-

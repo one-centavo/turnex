@@ -40,4 +40,3 @@ class WelcomeCustomerNotification extends Notification implements ShouldQueue
             ->line(__('Gracias por hacer parte de :app.', ['app' => $appName]));
     }
 }
-

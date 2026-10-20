@@ -20,27 +20,33 @@ return [
     | Application Version
     |--------------------------------------------------------------------------
     |
-    | Automatically resolved from .version file, Git tags, or APP_VERSION env.
+    | Automatically resolved from Git tags (when repository is present),
+    | the .version fallback file, or the APP_VERSION environment variable.
     |
     */
 
     'version' => env('APP_VERSION', function (): string {
+        if (is_dir(base_path('.git'))) {
+            $describe = @exec("git -c safe.directory='*' describe --tags --abbrev=0 2>/dev/null");
+            if (! empty($describe)) {
+                return trim($describe);
+            }
+
+            /** @var list<string> $tags */
+            $tags = [];
+            @exec("git -c safe.directory='*' --no-pager tag --sort=-v:refname 2>/dev/null", $tags);
+            $latestTag = $tags[0] ?? null;
+
+            if (! empty($latestTag)) {
+                return trim($latestTag);
+            }
+        }
+
         if (file_exists(base_path('.version'))) {
             return trim((string) file_get_contents(base_path('.version')));
         }
 
-        /** @var list<string> $tags */
-        $tags = [];
-        @exec("git -c safe.directory='*' --no-pager tag --sort=-v:refname 2>/dev/null", $tags);
-        $latestTag = $tags[0] ?? null;
-
-        if (! empty($latestTag)) {
-            return trim($latestTag);
-        }
-
-        $describe = @exec("git -c safe.directory='*' describe --tags --abbrev=0 2>/dev/null");
-
-        return ! empty($describe) ? trim($describe) : 'v0.1.3';
+        return 'v0.2.0';
     }),
 
     /*

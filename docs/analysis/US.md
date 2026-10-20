@@ -18,61 +18,43 @@
 
 ---
 
-## US01 - CUSTOMER REGISTRATION (PROGRESSIVE ONBOARDING & VERIFICATION)
+## US01 - CUSTOMER REGISTRATION (STREAMLINED ONBOARDING & MOBILE VERIFICATION)
 
 **As a** customer,  
-**I want to** register on the platform through a step-by-step verification flow,  
-**So that** I can securely certify my mobile number and email before establishing my profile and joining digital queues.
+**I want to** register on the platform in two fast steps with mobile verification (WhatsApp / SMS),  
+**So that** I can immediately join digital queues with certified contact reachability while deferring email verification.
 
 ### Acceptance Criteria
 
-- [ ] **Step 1: Mobile Number Entry & Pre-check**:
-  - [ ] The system must request the customer's mobile phone number (Normalized to E.164 format, default prefix `+57` for Colombia in MVP).
-  - [ ] The system must verify that the phone number is not already registered in the `CUSTOMER` table.
-  - [ ] If already registered, display: _"An account with this phone number already exists. Please log in or use a different number."_
-  - [ ] If available, the system must dispatch a 6-digit OTP code prioritizing **WhatsApp** as the primary delivery channel (with **SMS** fallback available).
-  - [ ] The system must temporarily retain registration state in secure cache/session (15-minute TTL).
+- [ ] **Access Control & Session Lifecycle**:
+    - [ ] Authenticated users attempting to access the registration flow are redirected to the discovery catalog.
+    - [ ] Accessing Step 2 directly without completing Step 1 data entry redirects the user to Step 1.
+    - [ ] In-progress registration data is temporarily retained and expires if not completed within 15 minutes.
+    - [ ] Submitting any step after the 15-minute session has expired prompts the user and restarts the registration flow.
 
-- [ ] **Step 2: Dedicated Mobile Phone Verification Challenge**:
-  - [ ] The system must present a dedicated verification screen displaying the masked mobile number (e.g., `+57 300 *** **45`).
-  - [ ] The system must validate the 6-digit OTP code under **US-CORE** rules (5-minute expiration, 1-minute resend cooldown, maximum 5 failed attempts).
-  - [ ] The screen must provide an **"Edit phone number"** action allowing the user to return to Step 1 to correct typographical errors.
-  - [ ] The screen must provide a **"Resend code via WhatsApp"** option (after cooldown) and a **"Send via SMS"** alternative.
-  - [ ] Upon successful OTP validation, the mobile number is certified for this registration session.
+- [ ] **Step 1: Account Information & Pre-check**:
+    - [ ] First name and last name are required and must each contain between 2 and 60 characters.
+    - [ ] The entered mobile phone number is validated and formatted into a standard international format, defaulting to Colombia (+57).
+    - [ ] The entered email address is trimmed, normalized to lowercase, and validated against standard email formatting rules.
+    - [ ] Passwords must be at least 8 characters long and include an uppercase letter, a lowercase letter, a number, and a special character.
+    - [ ] Password confirmation is required and must match the chosen password.
+    - [ ] Customers must accept the Terms of Service and Privacy Policy before proceeding.
+    - [ ] If the phone number is already registered, registration is halted and the user is prompted to sign in instead.
+    - [ ] If the email address is already registered, registration is halted and the user is prompted to sign in instead.
+    - [ ] Submitting invalid inputs displays clear feedback without resetting valid fields.
+    - [ ] Code dispatch requests are limited to a maximum of 5 attempts per minute per IP address, temporarily rejecting excessive traffic.
+    - [ ] For valid, unregistered details, the system dispatches a 6-digit verification code to the mobile number prioritizing WhatsApp.
+    - [ ] If code dispatch fails due to delivery provider errors, the user is notified immediately without locking them into an unwarranted cooldown.
 
-- [ ] **Step 3: Email Address Entry & Pre-check**:
-  - [ ] With the mobile number certified, the system must prompt the customer for their email address on a separate screen.
-  - [ ] The email must be validated against standard RFC format, trimmed, and normalized to lowercase.
-  - [ ] If the email is already registered via Google OAuth (without password), display: _"An account associated with this email already exists via Google Sign-In. Please log in using Google."_ with a direct action to log in with Google.
-  - [ ] If the email is already registered with standard credentials, display: _"An account with this email address already exists. Please log in or reset your password."_
-  - [ ] If available, the system must dispatch a 6-digit OTP code to the provided email address via **US-CORE**.
-
-- [ ] **Step 4: Dedicated Email Verification Challenge**:
-  - [ ] The system must present a dedicated verification screen displaying the masked email address (e.g., `c***s@gmail.com`).
-  - [ ] The system must validate the 6-digit OTP code under **US-CORE** rules (5-minute expiration, 1-minute resend cooldown, maximum 5 failed attempts).
-  - [ ] The screen must provide an **"Edit email address"** action allowing the user to return to Step 3 to correct any typo without losing their certified mobile number.
-  - [ ] The screen must provide a **"Resend code"** option following the 1-minute cooldown.
-  - [ ] Upon successful OTP validation, the email address is certified for this registration session.
-
-- [ ] **Step 5: Profile Data & Password Creation**:
-  - [ ] With both contact channels certified, the system must prompt for the final account profile details:
-    - [ ] First name (Required, between 2 and 60 characters, trimmed, sanitized against HTML/scripts)
-    - [ ] Last name (Required, between 2 and 60 characters, trimmed, sanitized against HTML/scripts)
-    - [ ] Password (Required, between 8 and 18 characters, must include at least 1 number, 1 uppercase letter, 1 lowercase letter, and 1 special character)
-    - [ ] Password confirmation (Required, must match the password field)
-
-- [ ] **Step 6: Account Creation & Finalization**:
-  - [ ] Upon submitting valid profile data, the system must create the record in the `CUSTOMER` table:
-    - [ ] Set `phone_verified_at = now()`
-    - [ ] Set `email_verified_at = now()`
-    - [ ] Store password securely hashed with Bcrypt
-  - [ ] Automatically establish an authenticated session (`Auth::login`).
-  - [ ] Clear temporary registration state from session/cache.
-  - [ ] Redirect the customer directly to the main discovery catalog.
-
-- [ ] **Security, Abuse Prevention & UI Integrity**:
-  - [ ] The system must enforce rate limiting by IP address and device fingerprint across OTP request endpoints to prevent SMS/WhatsApp toll fraud and automated abuse.
-  - [ ] Submit and action buttons must disable automatically during processing (`wire:loading`) to prevent duplicate requests and race conditions.
+- [ ] **Step 2: Phone Verification Challenge & Account Finalization**:
+    - [ ] Submitted verification codes are validated against the OTP service, rejecting invalid or expired entries.
+    - [ ] Exceeding maximum verification attempts invalidates the active code and requires requesting a new one.
+    - [ ] Users can edit their entered phone number up to 3 times per registration before being required to restart.
+    - [ ] Requesting a new code requires waiting for the cooldown period to elapse, even if the phone number is changed.
+    - [ ] Once the cooldown period expires, users can request a new code via WhatsApp or choose SMS delivery.
+    - [ ] Upon successful verification, the system provisions the customer account with a verified phone status (deferring email verification) and dispatches a welcome email.
+    - [ ] The customer is automatically authenticated and redirected to the main discovery catalog with a confirmation notice.
+    - [ ] Temporary registration progress is cleared upon successful account creation.
 
 ---
 
@@ -87,16 +69,16 @@
 - [ ] The system must provide a prominent **"Continue with Google"** action on both the customer registration and login interfaces.
 - [ ] Upon clicking, the system must initiate the Google OAuth 2.0 authorization flow requesting standard profile scopes (`openid`, `profile`, `email`).
 - [ ] Upon successful OAuth callback from Google:
-  - [ ] The system must extract the Google ID (`sub`), email address, verified email status, first name, last name, and profile picture URL (`avatar_url`).
-  - [ ] The system must mark the email address as verified immediately (`email_verified_at = now()`) since Google verifies email authenticity.
+    - [ ] The system must extract the Google ID (`sub`), email address, verified email status, first name, last name, and profile picture URL (`avatar_url`).
+    - [ ] The system must mark the email address as verified immediately (`email_verified_at = now()`) since Google verifies email authenticity.
 - [ ] **Existing Account Linking**:
-  - [ ] If an account with the returned email address already exists and is not yet linked to Google, the system must automatically associate the `google_id` with that existing customer account and log the customer in.
+    - [ ] If an account with the returned email address already exists and is not yet linked to Google, the system must automatically associate the `google_id` with that existing customer account and log the customer in.
 - [ ] **New Account Onboarding (Progressive Mobile Number Gate)**:
-  - [ ] If no customer account exists with the returned email, the system must create a new `CUSTOMER` record with `password` set to `NULL` and save the Google profile data.
-  - [ ] If the customer account lacks a verified phone number, the system must immediately redirect the customer to a single-step prompt: _"Enter your phone number to receive pickup notifications."_
-  - [ ] The system must verify that the phone number is not already registered by another customer.
-  - [ ] The system must dispatch a phone verification code via SMS or WhatsApp and validate it following the platform security code service rules (**US-CORE**).
-  - [ ] Once validated, the system must record the verification timestamp (`phone_verified_at = now()`) and redirect the user directly to the main marketplace catalog.
+    - [ ] If no customer account exists with the returned email, the system must create a new `CUSTOMER` record with `password` set to `NULL` and save the Google profile data.
+    - [ ] If the customer account lacks a verified phone number, the system must immediately redirect the customer to a single-step prompt: _"Enter your phone number to receive pickup notifications."_
+    - [ ] The system must verify that the phone number is not already registered by another customer.
+    - [ ] The system must dispatch a phone verification code via SMS or WhatsApp and validate it following the platform security code service rules (**US-CORE**).
+    - [ ] Once validated, the system must record the verification timestamp (`phone_verified_at = now()`) and redirect the user directly to the main marketplace catalog.
 
 ---
 
@@ -109,16 +91,16 @@
 ### Acceptance Criteria
 
 - [ ] The system must request the following initial data:
-  - [ ] Business name (Required, up to 150 characters)
-  - [ ] Business category / Industry type (Required, e.g., Restaurant, Health & Beauty, Professional Services, Retail, Banking)
-  - [ ] Owner first name (Required, up to 60 characters)
-  - [ ] Owner middle name (Optional, up to 60 characters)
-  - [ ] Owner last name (Required, up to 60 characters)
-  - [ ] Owner second last name (Optional, up to 60 characters)
-  - [ ] Email address (Required, must be unique)
-  - [ ] Phone number (Required, must be unique)
-  - [ ] Physical address / Location (Required)
-  - [ ] Password
+    - [ ] Business name (Required, up to 150 characters)
+    - [ ] Business category / Industry type (Required, e.g., Restaurant, Health & Beauty, Professional Services, Retail, Banking)
+    - [ ] Owner first name (Required, up to 60 characters)
+    - [ ] Owner middle name (Optional, up to 60 characters)
+    - [ ] Owner last name (Required, up to 60 characters)
+    - [ ] Owner second last name (Optional, up to 60 characters)
+    - [ ] Email address (Required, must be unique)
+    - [ ] Phone number (Required, must be unique)
+    - [ ] Physical address / Location (Required)
+    - [ ] Password
 - [ ] The system must verify if the email is already registered. If it exists, display: _"An error occurred while verifying the email address. Please check if it is correct and try again."_
 - [ ] The system must verify if the phone number is already registered. If it exists, display: _"An error occurred while verifying the phone number. Please check if it is correct and try again."_
 - [ ] The system must dispatch a phone verification code via SMS or WhatsApp and validate it following the platform security code service rules (**US-CORE**).
@@ -137,13 +119,13 @@
 ### Acceptance Criteria
 
 - [ ] The system must offer multiple authentication methods:
-  - [ ] Standard credentials (Email or Phone number + Password) for customers and businesses.
-  - [ ] Single-click social login (**"Continue with Google"**) for customers (**US01B**).
+    - [ ] Standard credentials (Email or Phone number + Password) for customers and businesses.
+    - [ ] Single-click social login (**"Continue with Google"**) for customers (**US01B**).
 - [ ] For credential-based login:
-  - [ ] The system must verify that both identifier and password fields contain data before validating credentials.
-  - [ ] The system must verify if the email or phone number exists. If not registered, display: _"Incorrect credentials. Please try again."_
-  - [ ] If the account was registered exclusively via Google OAuth and has no password configured, the system must display: _"This account is linked to Google Sign-In. Please log in using Google."_
-  - [ ] The system must verify if the password matches the registered user. If not, display: _"Incorrect credentials. Please try again."_
+    - [ ] The system must verify that both identifier and password fields contain data before validating credentials.
+    - [ ] The system must verify if the email or phone number exists. If not registered, display: _"Incorrect credentials. Please try again."_
+    - [ ] If the account was registered exclusively via Google OAuth and has no password configured, the system must display: _"This account is linked to Google Sign-In. Please log in using Google."_
+    - [ ] The system must verify if the password matches the registered user. If not, display: _"Incorrect credentials. Please try again."_
 - [ ] Upon successful authentication (credentials or Google OAuth), the system must redirect the user to their corresponding role dashboard or landing view (Customer Catalog or Business Dashboard).
 
 ---
@@ -157,12 +139,12 @@
 ### Acceptance Criteria
 
 - [ ] The system must request the following data:
-  - [ ] Service / Product name
-  - [ ] Service category / Line
-  - [ ] Reference image
-  - [ ] Description
-  - [ ] Price (Optional or 0 for free/standard queue services)
-  - [ ] Estimated duration in minutes (Optional)
+    - [ ] Service / Product name
+    - [ ] Service category / Line
+    - [ ] Reference image
+    - [ ] Description
+    - [ ] Price (Optional or 0 for free/standard queue services)
+    - [ ] Estimated duration in minutes (Optional)
 - [ ] The **"Service name"** field is mandatory and must contain between 3 and 50 characters.
 - [ ] The **"Reference image"** field is optional, accepts files up to 10 MB, and allows PNG, JPG, and SVG formats only.
 - [ ] The **"Description"** field is optional and limited to a maximum of 250 characters.
@@ -181,13 +163,13 @@
 ### Acceptance Criteria
 
 - [ ] The system must display current details pre-filled in the edit form:
-  - [ ] Service / Product name
-  - [ ] Service category / Line
-  - [ ] Reference image preview
-  - [ ] Description
-  - [ ] Price
-  - [ ] Estimated duration in minutes
-  - [ ] Service status (Active / Inactive)
+    - [ ] Service / Product name
+    - [ ] Service category / Line
+    - [ ] Reference image preview
+    - [ ] Description
+    - [ ] Price
+    - [ ] Estimated duration in minutes
+    - [ ] Service status (Active / Inactive)
 - [ ] The **"Service name"** field is mandatory and must contain between 3 and 50 characters.
 - [ ] The **"Reference image"** field is optional. If a new image is uploaded, it must accept files up to 10 MB in PNG, JPG, or SVG format only. If no file is uploaded, the system must retain the existing image.
 - [ ] The **"Description"** field is optional and limited to a maximum of 250 characters.
@@ -206,9 +188,9 @@
 ### Acceptance Criteria
 
 - [ ] The system must allow the business to upload:
-  - [ ] **Logo image:** Required, minimum resolution of 360x360 px (PNG, JPG format up to 5 MB).
-  - [ ] **Cover photo:** Required, horizontal orientation, minimum resolution of 360x360 px (PNG, JPG format up to 10 MB).
-  - [ ] **Business description:** Optional, limited to a maximum of 500 characters.
+    - [ ] **Logo image:** Required, minimum resolution of 360x360 px (PNG, JPG format up to 5 MB).
+    - [ ] **Cover photo:** Required, horizontal orientation, minimum resolution of 360x360 px (PNG, JPG format up to 10 MB).
+    - [ ] **Business description:** Optional, limited to a maximum of 500 characters.
 - [ ] The system must validate image dimensions and file formats before allowing the upload.
 - [ ] If an uploaded image does not meet resolution rules, the system must display: _"The image dimensions do not meet the minimum requirements (360x360 px)."_
 - [ ] The system must save the configuration and display a live preview of how the business profile will appear to customers.
@@ -224,17 +206,17 @@
 ### Acceptance Criteria
 
 - [ ] The system must request the upload of the following legal documents (PDF or image format up to 10 MB each):
-  - [ ] **Tax Identification Document** (e.g., RUT / Business Tax ID)
-  - [ ] **Legal Representative ID Document** (National ID / Passport)
-  - [ ] **Bank Account Certificate** (issued within the last 90 days)
-  - [ ] **Commercial Permit / Operating License** (Optional depending on business category)
+    - [ ] **Tax Identification Document** (e.g., RUT / Business Tax ID)
+    - [ ] **Legal Representative ID Document** (National ID / Passport)
+    - [ ] **Bank Account Certificate** (issued within the last 90 days)
+    - [ ] **Commercial Permit / Operating License** (Optional depending on business category)
 - [ ] Each uploaded document must start in a **"Pending"** evaluation state.
 - [ ] The system must request bank details for payout settlements:
-  - [ ] Bank name
-  - [ ] Account type (Savings or Checking)
-  - [ ] Account number
-  - [ ] Account holder name
-  - [ ] Account holder ID number (must match legal documents)
+    - [ ] Bank name
+    - [ ] Account type (Savings or Checking)
+    - [ ] Account number
+    - [ ] Account holder name
+    - [ ] Account holder ID number (must match legal documents)
 - [ ] The system must require at least **1 active service or product** created before enabling submission.
 - [ ] Once all mandatory documents and banking requirements are completed, the business can click **"Submit for Verification"**.
 - [ ] The system must update the business account status to **"Under Review"** and lock all document and bank fields against edits while under evaluation.
@@ -252,11 +234,11 @@
 - [ ] The system must display a list of businesses filtered by status: **"Under Review"**, **"Approved"**, and **"Action Required"**.
 - [ ] The SuperAdmin must be able to view all submitted legal documents, bank details, and active services or products for any business under review.
 - [ ] The SuperAdmin must have two primary actions:
-  - [ ] **Approve:** Updates the business status to **"Approved"**, marks all pending submitted documents as **"Approved"**, makes the business profile publicly visible, and enables digital queue management and online payments.
-  - [ ] **Reject:**
-    - [ ] Requires entering a mandatory general rejection reason for the business.
-    - [ ] Allows providing specific feedback on individual invalid documents and marking those specific files as **"Rejected"**.
-    - [ ] Updates the business status to **"Action Required"** and unlocks document upload fields so the business owner can re-submit the requested files.
+    - [ ] **Approve:** Updates the business status to **"Approved"**, marks all pending submitted documents as **"Approved"**, makes the business profile publicly visible, and enables digital queue management and online payments.
+    - [ ] **Reject:**
+        - [ ] Requires entering a mandatory general rejection reason for the business.
+        - [ ] Allows providing specific feedback on individual invalid documents and marking those specific files as **"Rejected"**.
+        - [ ] Updates the business status to **"Action Required"** and unlocks document upload fields so the business owner can re-submit the requested files.
 - [ ] The system must send an automated email notification to the business containing the rejection reason and a direct link to update the flagged documentation.
 
 ## US09 - ADMIN LOGIN
@@ -268,8 +250,8 @@
 ### Acceptance Criteria
 
 - [ ] The system must request the following login credentials:
-  - [ ] Administrative email address
-  - [ ] Password
+    - [ ] Administrative email address
+    - [ ] Password
 - [ ] The system must verify that both fields contain data before attempting authentication.
 - [ ] If the email address does not exist or the account is marked as inactive, the system must display: _"Invalid credentials or inactive account."_
 - [ ] If the password does not match the registered user, the system must display: _"Invalid credentials or inactive account."_
@@ -286,8 +268,8 @@
 ### Acceptance Criteria
 
 - [ ] The system must request the following data:
-  - [ ] Category name (Required, up to 60 characters)
-  - [ ] Description (Optional, up to 200 characters)
+    - [ ] Category name (Required, up to 60 characters)
+    - [ ] Description (Optional, up to 200 characters)
 - [ ] The system must verify that the category name contains at least 3 characters and is not already registered. If duplicated, display: _"A category with this name already exists."_
 - [ ] The new category must be set to active by default upon creation.
 - [ ] Once saved, the system must display a confirmation notification: _"Category created successfully."_
@@ -303,10 +285,10 @@
 ### Acceptance Criteria
 
 - [ ] The system must display a paginated list of categories showing:
-  - [ ] Category name
-  - [ ] Description
-  - [ ] Current status (Active / Inactive)
-  - [ ] Creation date
+    - [ ] Category name
+    - [ ] Description
+    - [ ] Current status (Active / Inactive)
+    - [ ] Creation date
 - [ ] By default, the list must only display non-archived categories (excluding soft-deleted records).
 - [ ] The administrator must be able to search categories by name using a search bar.
 - [ ] The administrator must be able to filter the list by status (All, Active, Inactive, Archived).
@@ -324,9 +306,9 @@
 ### Acceptance Criteria
 
 - [ ] The system must display an edit form pre-filled with the current category data:
-  - [ ] Category name
-  - [ ] Description
-  - [ ] Active status
+    - [ ] Category name
+    - [ ] Description
+    - [ ] Active status
 - [ ] The category name must remain mandatory, have between 3 and 60 characters, and cannot duplicate another existing category's name.
 - [ ] The administrator must be able to update the name, description, or toggle the status between active and inactive.
 - [ ] Upon saving changes, the system must record the update date and time and display a success notification: _"Category updated successfully."_

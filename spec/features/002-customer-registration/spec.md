@@ -43,7 +43,7 @@ It is required to identify customers across virtual queues, ensure reliable noti
     - [x] Requesting a new code requires waiting for the cooldown period to elapse, even if the phone number is changed.
     - [x] Once the cooldown period expires, users can request a new code via WhatsApp or choose SMS delivery.
     - [x] Upon successful verification, the system provisions the customer account with a verified phone status (deferring email verification) and dispatches a welcome email.
-    - [x] The customer is automatically authenticated and redirected to the main discovery catalog with a confirmation notice.
+    - [x] The customer is automatically authenticated and redirected to their intended destination, or to the main discovery catalog by default with a confirmation notice.
     - [x] Temporary registration progress is cleared upon successful account creation.
 
 ## Out of Scope

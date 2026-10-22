@@ -18,6 +18,23 @@
 
 ---
 
+## US-CORE-02 - INPUT DATA SANITIZATION & NORMALIZATION SERVICE
+
+**As a** system,  
+**I want to** automatically clean and format any information entered by users,  
+**So that** data remains tidy, consistent, and easy to match across the entire platform.
+
+### Acceptance Criteria
+
+- [ ] Accidental spaces at the beginning and end of any text field are automatically removed.
+- [ ] Extra spaces between words are reduced to a single space.
+- [ ] Fields containing only spaces are treated as empty.
+- [ ] Email addresses are converted to lowercase.
+- [ ] Mobile phone numbers are cleaned of spaces or symbols and saved with their country code (defaulting to Colombia +57).
+- [ ] Security codes and numbers are cleaned of spaces before being verified.
+
+---
+
 ## US01 - CUSTOMER REGISTRATION (STREAMLINED ONBOARDING & MOBILE VERIFICATION)
 
 **As a** customer,  
@@ -34,8 +51,8 @@
 
 - [ ] **Step 1: Account Information & Pre-check**:
     - [ ] First name and last name are required and must each contain between 2 and 60 characters.
-    - [ ] The entered mobile phone number is validated and formatted into a standard international format, defaulting to Colombia (+57).
-    - [ ] The entered email address is trimmed, normalized to lowercase, and validated against standard email formatting rules.
+    - [ ] All entered information (name, email, and phone number) is automatically cleaned and formatted (**US-CORE-02**).
+    - [ ] The email address is validated against standard email formatting rules.
     - [ ] Passwords must be at least 8 characters long and include an uppercase letter, a lowercase letter, a number, and a special character.
     - [ ] Password confirmation is required and must match the chosen password.
     - [ ] Customers must accept the Terms of Service and Privacy Policy before proceeding.
@@ -53,7 +70,7 @@
     - [ ] Requesting a new code requires waiting for the cooldown period to elapse, even if the phone number is changed.
     - [ ] Once the cooldown period expires, users can request a new code via WhatsApp or choose SMS delivery.
     - [ ] Upon successful verification, the system provisions the customer account with a verified phone status (deferring email verification) and dispatches a welcome email.
-    - [ ] The customer is automatically authenticated and redirected to the main discovery catalog with a confirmation notice.
+    - [ ] The customer is automatically authenticated and redirected to their intended destination, or to the main discovery catalog by default with a confirmation notice.
     - [ ] Temporary registration progress is cleared upon successful account creation.
 
 ---
@@ -101,6 +118,7 @@
     - [ ] Phone number (Required, must be unique)
     - [ ] Physical address / Location (Required)
     - [ ] Password
+- [ ] All entered business and owner details are automatically cleaned and formatted (**US-CORE-02**).
 - [ ] The system must verify if the email is already registered. If it exists, display: _"An error occurred while verifying the email address. Please check if it is correct and try again."_
 - [ ] The system must verify if the phone number is already registered. If it exists, display: _"An error occurred while verifying the phone number. Please check if it is correct and try again."_
 - [ ] The system must dispatch a phone verification code via SMS or WhatsApp and validate it following the platform security code service rules (**US-CORE**).
@@ -118,15 +136,24 @@
 
 ### Acceptance Criteria
 
-- [ ] The system must offer multiple authentication methods:
+- [ ] Authenticated users attempting to access the login page are redirected to their corresponding role dashboard or catalog.
+- [ ] The system offers multiple authentication methods:
     - [ ] Standard credentials (Email or Phone number + Password) for customers and businesses.
     - [ ] Single-click social login (**"Continue with Google"**) for customers (**US01B**).
 - [ ] For credential-based login:
-    - [ ] The system must verify that both identifier and password fields contain data before validating credentials.
-    - [ ] The system must verify if the email or phone number exists. If not registered, display: _"Incorrect credentials. Please try again."_
-    - [ ] If the account was registered exclusively via Google OAuth and has no password configured, the system must display: _"This account is linked to Google Sign-In. Please log in using Google."_
-    - [ ] The system must verify if the password matches the registered user. If not, display: _"Incorrect credentials. Please try again."_
-- [ ] Upon successful authentication (credentials or Google OAuth), the system must redirect the user to their corresponding role dashboard or landing view (Customer Catalog or Business Dashboard).
+    - [ ] The login form requests the user's identifier (email or mobile phone number) and password.
+    - [ ] The password field allows toggling between hidden and visible text.
+    - [ ] The login form includes an optional **"Remember me"** checkbox.
+    - [ ] Both identifier and password fields are required; submitting empty values prompts the user to complete them.
+    - [ ] The entered identifier (email or phone number) is automatically cleaned and formatted (**US-CORE-02**) before verifying credentials.
+    - [ ] If the email, phone number, or password does not match an existing account, the system displays: _"Incorrect credentials. Please try again."_
+    - [ ] If the account was registered exclusively via Google OAuth and has no password configured, the system displays: _"This account is linked to Google Sign-In. Please log in using Google."_
+    - [ ] An unsuccessful login clears the password field but keeps the entered email or phone number.
+    - [ ] Login attempts are limited to a maximum of 5 attempts per minute; exceeding this limit temporarily blocks further requests for 1 minute.
+    - [ ] A successful login resets the failed attempts counter.
+    - [ ] Submitting valid credentials logs the user in for a standard session of 2 hours of inactivity.
+    - [ ] Selecting **"Remember me"** keeps the user logged in across browser sessions.
+- [ ] Upon successful authentication (credentials or Google OAuth), the system redirects the user to their intended destination, or to their corresponding role dashboard or landing view by default.
 
 ---
 

@@ -6,10 +6,11 @@ Status and delivery sequence of TURNEX features. Provides visibility into "what 
 
 1. **001 · OTP Generation, Dispatch & Verification** — Centralized service managing lifecycle, expiration, retry rate limits, and multi-channel delivery (WhatsApp, SMS, and Email) of temporary security codes (US-CORE).
 2. **002 · Customer Registration** — Streamlined 2-step onboarding flow for customers certifying mobile phone via WhatsApp/SMS OTP, deferred email confirmation, and automatic authentication (US01).
+3. **003 · Customer Login** — Authentication for customers via standard credentials (email/phone + password), redirecting to intended destination or discovery catalog (US03).
 
 ## In Progress 🚧
 
-3. **003 · Customer Login** — Authentication for customers via standard credentials (email/phone + password), redirecting to intended destination or discovery catalog (US03).
+None.
 
 ## Up Next 🔜
 

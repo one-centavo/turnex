@@ -16,25 +16,26 @@
 
 ## User Interface & Presentation Layer
 
-- [ ] Create Livewire 4 Single-File Component (SFC) `resources/views/pages/auth/customer/⚡login.blade.php` using Flux UI.
-- [ ] Implement form inputs: unified identifier (email/phone), password with visibility toggle, and "Remember me" checkbox.
-- [ ] Bind validation rules and handle submission feedback without clearing the entered identifier on failure.
-- [ ] Handle post-authentication session establishment and intelligent redirection to intended destination or discovery catalog by default (`redirectIntended`).
-- [ ] Register `/login` route with `guest:customer` middleware in `routes/web.php`.
+- [x] Create Livewire 4 Single-File Component (SFC) `resources/views/pages/auth/customer/⚡login.blade.php` using Flux UI.
+- [x] Implement form inputs: unified identifier (email/phone), password with visibility toggle, "Remember me" checkbox, and "¿Olvidaste tu contraseña?" link.
+- [x] Bind validation rules and handle submission feedback without clearing the entered identifier on failure.
+- [x] Handle post-authentication session establishment and intelligent redirection to intended destination or discovery catalog by default (`redirectIntended`).
+- [x] Register `/login` route with `guest:customer` middleware in `routes/web.php`.
 
 ## Verification & QA
 
-- [ ] Write comprehensive Pest feature tests in `tests/Feature/CustomerLoginTest.php` covering all acceptance criteria:
-    - [ ] Redirect authenticated users away from `/login`.
-    - [ ] Successful login with email and phone number.
-    - [ ] Validation feedback on empty inputs.
-    - [ ] Generic error message on invalid credentials.
-    - [ ] Guidance message for Google-only accounts without password.
-    - [ ] Preserving identifier input and clearing password on failed attempt.
-    - [ ] Rate limiting (lockout for 1 minute after 5 failed attempts) and attempt counter reset on success.
-    - [ ] Session lifetime (2 hours) and "Remember me" persistence.
-    - [ ] Redirection to intended URL vs default catalog.
-- [ ] Run Pint to fix and enforce code style (`vendor/bin/pint`).
-- [ ] Run Larastan to verify static analysis (`vendor/bin/phpstan analyse`).
-- [ ] Verify all acceptance criteria from `spec.md`.
-- [ ] Update feature status to "Done" in `spec/features/003-customer-login/spec.md` and roadmap.
+- [x] Write comprehensive Pest feature tests in `tests/Feature/CustomerLoginTest.php` covering all acceptance criteria:
+    - [x] Redirect authenticated users away from `/login`.
+    - [x] Successful login with email and phone number.
+    - [x] Validation feedback on empty inputs.
+    - [x] Generic error message on invalid credentials.
+    - [x] Guidance message for Google-only accounts without password.
+    - [x] Preserving identifier input and clearing password on failed attempt.
+    - [x] Rate limiting (lockout for 1 minute after 5 failed attempts) and attempt counter reset on success.
+    - [x] Session lifetime (2 hours) and "Remember me" persistence.
+    - [x] Redirection to intended URL vs default catalog.
+    - [x] Display of "¿Olvidaste tu contraseña?" recovery link.
+- [x] Run Pint to fix and enforce code style (`vendor/bin/pint`).
+- [x] Run Larastan to verify static analysis (`vendor/bin/phpstan analyse`).
+- [x] Verify all acceptance criteria from `spec.md`.
+- [x] Update feature status to "Done" in `spec/features/003-customer-login/spec.md` and roadmap.

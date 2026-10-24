@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
+use Laravel\Socialite\Contracts\User as SocialiteUser;
 
 class CustomerAuthService
 {
@@ -176,5 +177,101 @@ class CustomerAuthService
         $authenticatedCustomer = Auth::guard('customer')->user();
 
         return $authenticatedCustomer;
+    }
+
+    /**
+     * Resolve and authenticate a customer from a Google OAuth user profile.
+     */
+    public function handleGoogleUser(SocialiteUser $googleUser): Customer
+    {
+        $email = DataNormalizer::email((string) $googleUser->getEmail());
+        $googleId = (string) $googleUser->getId();
+
+        $customer = Customer::where('google_id', $googleId)->first()
+            ?? Customer::where('email', $email)->first();
+
+        if ($customer !== null) {
+            $customer = $this->linkGoogleAccount($customer, $googleUser);
+        } else {
+            $customer = $this->provisionGoogleCustomer($googleUser);
+        }
+
+        Auth::guard('customer')->login($customer);
+
+        if (request()->hasSession()) {
+            request()->session()->regenerate();
+        }
+
+        return $customer;
+    }
+
+    /**
+     * Link an existing customer account with a Google profile.
+     */
+    public function linkGoogleAccount(Customer $customer, SocialiteUser $googleUser): Customer
+    {
+        $dirty = false;
+
+        if ($customer->google_id === null) {
+            $customer->google_id = (string) $googleUser->getId();
+            $dirty = true;
+        }
+
+        if ($customer->email_verified_at === null) {
+            $customer->email_verified_at = now();
+            $dirty = true;
+        }
+
+        $avatar = $googleUser->getAvatar();
+        if ($customer->avatar_url === null && $avatar !== null) {
+            $customer->avatar_url = Str::limit((string) $avatar, 255, '');
+            $dirty = true;
+        }
+
+        if ($dirty) {
+            $customer->save();
+        }
+
+        return $customer;
+    }
+
+    /**
+     * Provision a new customer account using Google profile information.
+     */
+    public function provisionGoogleCustomer(SocialiteUser $googleUser): Customer
+    {
+        /** @var array<string, mixed> $rawUser */
+        $rawUser = method_exists($googleUser, 'getRaw') && is_array($googleUser->getRaw())
+            ? $googleUser->getRaw()
+            : [];
+
+        $firstName = isset($rawUser['given_name']) && is_string($rawUser['given_name'])
+            ? DataNormalizer::name($rawUser['given_name'])
+            : null;
+
+        $lastName = isset($rawUser['family_name']) && is_string($rawUser['family_name'])
+            ? DataNormalizer::name($rawUser['family_name'])
+            : null;
+
+        if ($firstName === null || $firstName === '') {
+            $fullName = DataNormalizer::name((string) $googleUser->getName());
+            $nameParts = explode(' ', $fullName, 2);
+            $firstName = $nameParts[0] !== '' ? $nameParts[0] : 'Customer';
+            $lastName = $nameParts[1] ?? '';
+        }
+
+        $avatar = $googleUser->getAvatar();
+
+        return Customer::create([
+            'first_name' => Str::limit($firstName, 60, ''),
+            'last_name' => Str::limit((string) ($lastName ?? ''), 60, ''),
+            'email' => DataNormalizer::email((string) $googleUser->getEmail()),
+            'phone_number' => null,
+            'password' => null,
+            'google_id' => (string) $googleUser->getId(),
+            'avatar_url' => $avatar !== null ? Str::limit((string) $avatar, 255, '') : null,
+            'email_verified_at' => now(),
+            'phone_verified_at' => null,
+        ]);
     }
 }

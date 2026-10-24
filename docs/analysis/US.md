@@ -83,19 +83,21 @@
 
 ### Acceptance Criteria
 
-- [ ] The system must provide a prominent **"Continue with Google"** action on both the customer registration and login interfaces.
-- [ ] Upon clicking, the system must initiate the Google OAuth 2.0 authorization flow requesting standard profile scopes (`openid`, `profile`, `email`).
-- [ ] Upon successful OAuth callback from Google:
-    - [ ] The system must extract the Google ID (`sub`), email address, verified email status, first name, last name, and profile picture URL (`avatar_url`).
-    - [ ] The system must mark the email address as verified immediately (`email_verified_at = now()`) since Google verifies email authenticity.
-- [ ] **Existing Account Linking**:
-    - [ ] If an account with the returned email address already exists and is not yet linked to Google, the system must automatically associate the `google_id` with that existing customer account and log the customer in.
-- [ ] **New Account Onboarding (Progressive Mobile Number Gate)**:
-    - [ ] If no customer account exists with the returned email, the system must create a new `CUSTOMER` record with `password` set to `NULL` and save the Google profile data.
-    - [ ] If the customer account lacks a verified phone number, the system must immediately redirect the customer to a single-step prompt: _"Enter your phone number to receive pickup notifications."_
-    - [ ] The system must verify that the phone number is not already registered by another customer.
-    - [ ] The system must dispatch a phone verification code via SMS or WhatsApp and validate it following the platform security code service rules (**US-CORE**).
-    - [ ] Once validated, the system must record the verification timestamp (`phone_verified_at = now()`) and redirect the user directly to the main marketplace catalog.
+- [ ] Customers who are already logged in cannot trigger the Google authentication flow and are redirected to their active dashboard or discovery catalog.
+- [ ] A visible **"Continue with Google"** button is displayed on both the customer registration and login interfaces.
+- [ ] Clicking the button redirects the customer to Google's sign-in screen to choose and authorize their account.
+- [ ] Canceling or failing the Google sign-in process (including expired session state or connection errors) returns the customer to the previous screen with the message: _"No se pudo completar la autenticación con Google. Por favor, intenta de nuevo."_
+- [ ] **Existing Account Access**:
+    - [ ] If an account with the Google email address already exists, the customer is logged in immediately and the account is linked to Google for future one-click access.
+    - [ ] An existing customer who registered with a password and links their Google account can subsequently sign in using either Google or their password.
+- [ ] **New Account Registration**:
+    - [ ] If no account exists with the Google email address, a new customer account is created using their Google profile details without requiring a password.
+    - [ ] The email address is marked as verified automatically without requiring manual email confirmation.
+    - [ ] If the Google profile does not provide an avatar photo or last name, account creation still succeeds without blocking the customer (avatar is optional, and missing last name defaults safely).
+- [ ] **Destination & Navigation**:
+    - [ ] Upon successful authentication, the customer is redirected to their originally intended destination, or to the discovery catalog by default.
+- [ ] **Passwordless Account Protection**:
+    - [ ] If a customer registered exclusively through Google attempts to sign in using manual credentials, the system displays: _"Esta cuenta está vinculada a Google Sign-In. Por favor, inicia sesión con Google."_
 
 ---
 

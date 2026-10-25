@@ -49,7 +49,7 @@ CATEGORY ||--o{ OFFERINGS : classifies
         VARCHAR(255) logo_path "NULL"
         VARCHAR(255) cover_photo_path "NULL"
         VARCHAR(500) business_description "NULL"
-        VARCHAR(30) verification_status "PENDING_VERIFICATION, UNDER_REVIEW, APPROVED, ACTION_REQUIRED"
+        VARCHAR(30) verification_status "PENDING_VERIFICATION, UNDER_REVIEW, APPROVED, ACTION_REQUIRED, REJECTED"
         TEXT rejection_reason "NULL"
         TIMESTAMP email_verified_at "NULL"
         TIMESTAMP phone_verified_at "NULL"

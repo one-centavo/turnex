@@ -109,24 +109,44 @@
 
 ### Acceptance Criteria
 
-- [ ] The system must request the following initial data:
-    - [ ] Business name (Required, up to 150 characters)
-    - [ ] Business category / Industry type (Required, e.g., Restaurant, Health & Beauty, Professional Services, Retail, Banking)
-    - [ ] Owner first name (Required, up to 60 characters)
-    - [ ] Owner middle name (Optional, up to 60 characters)
-    - [ ] Owner last name (Required, up to 60 characters)
-    - [ ] Owner second last name (Optional, up to 60 characters)
-    - [ ] Email address (Required, must be unique)
-    - [ ] Phone number (Required, must be unique)
-    - [ ] Physical address / Location (Required)
-    - [ ] Password
-- [ ] All entered business and owner details are automatically cleaned and formatted (**US-CORE-02**).
-- [ ] The system must verify if the email is already registered. If it exists, display: _"An error occurred while verifying the email address. Please check if it is correct and try again."_
-- [ ] The system must verify if the phone number is already registered. If it exists, display: _"An error occurred while verifying the phone number. Please check if it is correct and try again."_
-- [ ] The system must dispatch a phone verification code via SMS or WhatsApp and validate it following the platform security code service rules (**US-CORE**).
-- [ ] Once the phone verification code is successfully validated, the system must record the exact date and time the phone number was verified.
-- [ ] The system must set the business account initial status to **"Pending Verification"**.
-- [ ] Upon successful registration, the user must be redirected to the business dashboard in setup mode.
+- [ ] **Access Control & Session Lifecycle**:
+    - [ ] Authenticated business managers or system users attempting to access the business registration flow are redirected to their active dashboard.
+    - [ ] Authenticated customers visiting the business registration flow are permitted to register a new business without affecting their customer session.
+    - [ ] Accessing Step 2 directly without completing Step 1 data entry redirects the user to Step 1.
+    - [ ] In-progress registration data is temporarily retained and expires if not completed within 15 minutes.
+    - [ ] Submitting any step after the 15-minute session has expired prompts the user and restarts the registration flow.
+
+- [ ] **Step 1: Business & Owner Information & Pre-check**:
+    - [ ] Business name is required and must contain between 3 and 150 characters.
+    - [ ] Business category is required and must match a supported industry type (e.g., Restaurant, Health & Beauty, Professional Services, Retail, Banking); invalid or manipulated options are rejected.
+    - [ ] Physical location/address is required and limited to 255 characters.
+    - [ ] Owner name fields provide separate inputs: owner first name and last name are required (between 2 and 60 characters each); middle name and second last name are optional (up to 60 characters each).
+    - [ ] The entered mobile phone number is validated and formatted into standard international format, defaulting to Colombia (+57).
+    - [ ] The entered email address is trimmed, normalized to lowercase, and validated against standard email formatting rules.
+    - [ ] Passwords must be at least 8 characters long and include an uppercase letter, a lowercase letter, a number, and a special character.
+    - [ ] Password confirmation is required and must match the chosen password.
+    - [ ] Business owners must accept the Terms of Service and Privacy Policy before proceeding.
+    - [ ] All entered business and owner details are automatically cleaned and formatted (**US-CORE-02**).
+    - [ ] If the phone number is already registered to an existing business, registration is halted and the user is prompted to sign in instead.
+    - [ ] If the email address is already registered to an existing business, registration is halted and the user is prompted to sign in instead.
+    - [ ] Submitting invalid inputs displays clear feedback without resetting valid fields.
+    - [ ] Submission buttons are disabled and display a loading state while processing to prevent double submissions.
+    - [ ] Code dispatch requests are limited to a maximum of 5 attempts per minute per IP address, temporarily rejecting excessive traffic.
+    - [ ] For valid, unregistered details, the system dispatches a 6-digit verification code to the mobile number prioritizing WhatsApp.
+    - [ ] If code dispatch fails due to delivery provider errors, the user is notified immediately without locking them into an unwarranted cooldown.
+
+- [ ] **Step 2: Phone Verification Challenge & Account Provisioning**:
+    - [ ] Submitted verification codes are validated against the OTP service (**US-CORE**), rejecting invalid or expired entries.
+    - [ ] Exceeding maximum verification attempts (5 attempts) invalidates the active code and requires requesting a new one.
+    - [ ] Users can edit their entered phone number up to 3 times per registration before being required to restart.
+    - [ ] Submitting a new phone number during editing checks for uniqueness against existing businesses; if duplicate, the system rejects it without consuming an edit attempt.
+    - [ ] Submitting an unchanged phone number during editing does not decrement the remaining edit attempts.
+    - [ ] Requesting a new code requires waiting for the cooldown period (60 seconds) to elapse, even if the phone number is changed.
+    - [ ] Once the cooldown period expires, users can request a new code via WhatsApp or choose SMS delivery.
+    - [ ] Verification submission buttons are disabled with a loading indicator while the OTP is being evaluated.
+    - [ ] Upon successful verification, the system transitions to a success confirmation state, provisions the business account with **"Pending Verification"** status, records the phone verification timestamp, and dispatches a welcome email (deferring email verification).
+    - [ ] The business owner is automatically authenticated and redirected to the business dashboard in setup mode.
+    - [ ] Temporary registration progress is cleared upon successful account creation.
 
 ---
 

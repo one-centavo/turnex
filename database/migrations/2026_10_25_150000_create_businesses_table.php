@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Enums\PersonType;
 use App\Enums\VerificationStatus;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
@@ -17,6 +18,9 @@ return new class extends Migration
         Schema::create('businesses', function (Blueprint $table): void {
             $table->id();
             $table->foreignId('reviewed_by')->nullable()->constrained('users')->nullOnDelete();
+            $table->string('person_type', 20)->default(PersonType::Natural->value);
+            $table->string('tax_id', 20)->nullable();
+            $table->char('dv', 1)->nullable();
             $table->string('business_name', 150);
             $table->string('business_category', 50);
             $table->string('owner_first_name', 60);

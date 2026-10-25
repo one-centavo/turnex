@@ -144,7 +144,7 @@
     - [ ] Requesting a new code requires waiting for the cooldown period (60 seconds) to elapse, even if the phone number is changed.
     - [ ] Once the cooldown period expires, users can request a new code via WhatsApp or choose SMS delivery.
     - [ ] Verification submission buttons are disabled with a loading indicator while the OTP is being evaluated.
-    - [ ] Upon successful verification, the system transitions to a success confirmation state, provisions the business account with **"Pending Verification"** status, records the phone verification timestamp, and dispatches a welcome email (deferring email verification).
+    - [ ] Upon successful verification, the system transitions to a success confirmation state, provisions the business account with **"Pending Verification"** status and default person type as **"Persona Natural"** (updatable to Persona Jurídica in Stage 3), records the phone verification timestamp, and dispatches a welcome email (deferring email verification).
     - [ ] The business owner is automatically authenticated and redirected to the business dashboard in setup mode.
     - [ ] Temporary registration progress is cleared upon successful account creation.
 
@@ -254,20 +254,27 @@
 
 ### Acceptance Criteria
 
-- [ ] The system must request the upload of the following legal documents (PDF or image format up to 10 MB each):
-    - [ ] **Tax Identification Document** (e.g., RUT / Business Tax ID)
-    - [ ] **Legal Representative ID Document** (National ID / Passport)
-    - [ ] **Bank Account Certificate** (issued within the last 90 days)
-    - [ ] **Commercial Permit / Operating License** (Optional depending on business category)
+- [ ] The system must prompt the business owner to select their legal entity category:
+    - [ ] **Persona Natural** (individual proprietor / independent small business)
+    - [ ] **Persona Jurídica** (registered company / SAS / corporation)
+- [ ] For **Persona Jurídica (Empresa)**, the system requires the following legal documents (PDF or image format up to 10 MB each):
+    - [ ] **Corporate Tax ID Document (RUT)**: Required, verifying company NIT and economic activity.
+    - [ ] **Legal Representative ID Document**: Required, National ID (Cédula de Ciudadanía / CE / Passport).
+    - [ ] **Corporate Bank Account Certificate**: Required, issued within the last 90 days matching the legal entity name.
+    - [ ] **Commercial Chamber of Commerce / Operating License**: Optional, depending on business category.
+- [ ] For **Persona Natural (Pequeño Negocio / Independiente)**, the system adapts requirements to prevent operational exclusion:
+    - [ ] **National ID Document (Cédula de Ciudadanía / CE)**: Required, acting as primary legal tax identifier.
+    - [ ] **Bank or Digital Account Certificate**: Required, personal savings/checking account or certified digital wallet (e.g., Nequi, Daviplata) in the owner's name.
+    - [ ] **Personal Tax ID (RUT)**: Optional, for merchants who maintain formal tax registration.
 - [ ] Each uploaded document must start in a **"Pending"** evaluation state.
 - [ ] The system must request bank details for payout settlements:
-    - [ ] Bank name
-    - [ ] Account type (Savings or Checking)
+    - [ ] Bank or platform name
+    - [ ] Account type (Savings, Checking, or Electronic Deposit)
     - [ ] Account number
     - [ ] Account holder name
     - [ ] Account holder ID number (must match legal documents)
 - [ ] The system must require at least **1 active service or product** created before enabling submission.
-- [ ] Once all mandatory documents and banking requirements are completed, the business can click **"Submit for Verification"**.
+- [ ] Once all mandatory documents and banking requirements are completed according to the business person type, the business can click **"Submit for Verification"**.
 - [ ] The system must update the business account status to **"Under Review"** and lock all document and bank fields against edits while under evaluation.
 
 ---

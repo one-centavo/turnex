@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Database\Factories;
 
 use App\Enums\BusinessCategory;
+use App\Enums\PersonType;
 use App\Enums\VerificationStatus;
 use App\Models\Business;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -29,6 +30,9 @@ class BusinessFactory extends Factory
     {
         return [
             'reviewed_by' => null,
+            'person_type' => PersonType::Natural,
+            'tax_id' => null,
+            'dv' => null,
             'business_name' => fake()->company(),
             'business_category' => fake()->randomElement(BusinessCategory::cases()),
             'owner_first_name' => fake()->firstName(),
@@ -48,6 +52,27 @@ class BusinessFactory extends Factory
             'password' => static::$password ??= Hash::make('password'),
             'reviewed_at' => null,
         ];
+    }
+
+    /**
+     * Indicate that the business is registered as a legal entity (company).
+     */
+    public function legalEntity(): static
+    {
+        return $this->state(fn (array $attributes): array => [
+            'person_type' => PersonType::LegalEntity,
+        ]);
+    }
+
+    /**
+     * Indicate that the business has a tax identification configured.
+     */
+    public function withTaxId(string $taxId = '901234567', string $dv = '3'): static
+    {
+        return $this->state(fn (array $attributes): array => [
+            'tax_id' => $taxId,
+            'dv' => $dv,
+        ]);
     }
 
     /**

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Enums\BusinessCategory;
+use App\Enums\PersonType;
 use App\Enums\VerificationStatus;
 use Carbon\CarbonInterface;
 use Database\Factories\BusinessFactory;
@@ -19,6 +20,9 @@ use Illuminate\Support\Carbon;
 /**
  * @property int $id
  * @property int|null $reviewed_by
+ * @property PersonType $person_type
+ * @property string|null $tax_id
+ * @property string|null $dv
  * @property string $business_name
  * @property BusinessCategory $business_category
  * @property string $owner_first_name
@@ -44,6 +48,9 @@ use Illuminate\Support\Carbon;
  */
 #[Fillable([
     'reviewed_by',
+    'person_type',
+    'tax_id',
+    'dv',
     'business_name',
     'business_category',
     'owner_first_name',
@@ -77,6 +84,7 @@ class Business extends Authenticatable
     protected function casts(): array
     {
         return [
+            'person_type' => PersonType::class,
             'verification_status' => VerificationStatus::class,
             'business_category' => BusinessCategory::class,
             'email_verified_at' => 'datetime',
@@ -165,5 +173,33 @@ class Business extends Authenticatable
     public function isRejected(): bool
     {
         return $this->verification_status === VerificationStatus::Rejected;
+    }
+
+    /**
+     * Determine if the business is registered as a natural person.
+     */
+    public function isNaturalPerson(): bool
+    {
+        return $this->person_type === PersonType::Natural;
+    }
+
+    /**
+     * Determine if the business is registered as a legal entity.
+     */
+    public function isLegalEntity(): bool
+    {
+        return $this->person_type === PersonType::LegalEntity;
+    }
+
+    /**
+     * Get the formatted tax identification with verification digit (e.g. 901234567-3).
+     */
+    public function formattedTaxId(): ?string
+    {
+        if ($this->tax_id === null) {
+            return null;
+        }
+
+        return $this->dv !== null ? "{$this->tax_id}-{$this->dv}" : $this->tax_id;
     }
 }

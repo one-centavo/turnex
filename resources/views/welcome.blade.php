@@ -282,8 +282,7 @@
                         <div class="grid grid-cols-2 gap-4 sm:gap-6 pt-1">
                             {{-- Left List: Desventajas de la fila tradicional --}}
                             <div class="flex flex-col gap-2">
-                                <span class="text-[11px] font-mono uppercase tracking-wider font-semibold text-rose-600 dark:text-rose-400 flex items-center gap-1.5">
-                                    <span class="size-1.5 rounded-full bg-rose-500"></span>
+                                <span class="text-[11px] font-mono uppercase tracking-wider font-semibold text-rose-600 dark:text-rose-400">
                                     {{ __('Fila Tradicional') }}
                                 </span>
                                 <ul class="flex flex-col gap-1.5 text-xs text-slate-600 dark:text-slate-400">
@@ -304,8 +303,7 @@
 
                             {{-- Right List: Ventajas con Turnex --}}
                             <div class="flex flex-col gap-2">
-                                <span class="text-[11px] font-mono uppercase tracking-wider font-semibold text-blue-600 dark:text-blue-400 flex items-center gap-1.5">
-                                    <span class="size-1.5 rounded-full bg-blue-500"></span>
+                                <span class="text-[11px] font-mono uppercase tracking-wider font-semibold text-blue-600 dark:text-blue-400">
                                     {{ __('Con Turnex') }}
                                 </span>
                                 <ul class="flex flex-col gap-1.5 text-xs text-slate-600 dark:text-slate-400">

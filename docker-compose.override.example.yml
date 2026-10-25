@@ -9,6 +9,7 @@ services:
 
   turnex-app:
     restart: "no"
+    user: "www-data:www-data"
     deploy: !reset null
     build:
       context: .

@@ -6,7 +6,7 @@ Implement a dedicated `BusinessService` in the domain layer to encapsulate busin
 
 ## Implementation
 
-1. Create enums `app/Enums/VerificationStatus.php` and `app/Enums/BusinessCategory.php` for strongly typed statuses and supported industry types.
+1. Create enums `app/Enums/VerificationStatus.php`, `app/Enums/BusinessCategory.php`, and `app/Enums/PersonType.php` for strongly typed statuses, supported industry types, and legal entity classification.
 2. Create migration for the `businesses` table — `database/migrations/xxxx_xx_xx_xxxxxx_create_businesses_table.php` based on `docs/design/database/entity-relation-diagram.md`.
 3. Create authenticatable model `app/Models/Business.php` with appropriate casts (including enums and timestamps), configure its guard and provider in `config/auth.php`, and create factory `database/factories/BusinessFactory.php`.
 4. Create validation rules catalog `app/Rules/BusinessRules.php` providing atomic, reusable validation rule sets (`businessName()`, `category()`, `location()`, `ownerFirstName()`, `ownerLastName()`, `email()`, `phone()`, `password()`, `terms()`) without boolean flags.

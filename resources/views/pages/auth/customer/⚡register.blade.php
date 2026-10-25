@@ -692,7 +692,7 @@ new #[Title('Crear cuenta de cliente')] #[Layout('layouts.auth.card')] class ext
             </p>
             <p class="text-xs">
                 {{ __('¿Administras un establecimiento comercial?') }}
-                <a href="{{ route('home') }}" class="font-medium text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 transition-colors">
+                <a href="{{ route('business.register') }}" class="font-medium text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 transition-colors" wire:navigate>
                     {{ __('Registra tu negocio') }}
                 </a>
             </p>

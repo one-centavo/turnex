@@ -242,38 +242,57 @@
                             {{-- ============================================================ --}}
 
                             {{-- Modern subtle floor aura for Turnex user --}}
-                            <ellipse cx="395" cy="230" rx="55" ry="8" class="fill-blue-500/10 dark:fill-blue-500/15" />
-                            <path d="M 330 230 H 460" stroke="currentColor" stroke-width="1.5" class="text-blue-500/30" />
+                            <ellipse cx="395" cy="230" rx="72" ry="8" class="fill-blue-500/10 dark:fill-blue-500/15" />
+                            <path d="M 315 230 H 475" stroke="currentColor" stroke-width="1.5" class="text-blue-500/30" />
 
-                            {{-- Relaxed Person using phone --}}
+                            {{-- Cozy Modern Armchair / Sofa --}}
+                            {{-- Chair Legs --}}
+                            <line x1="365" y1="196" x2="358" y2="230" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" class="text-blue-500/40 dark:text-blue-400/30" />
+                            <line x1="425" y1="196" x2="435" y2="230" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" class="text-blue-500/40 dark:text-blue-400/30" />
+
+                            {{-- Backrest Cushion (Ergonomic curve behind person) --}}
+                            <path d="M 416 186 C 418 152, 426 130, 436 118 C 444 112, 452 118, 448 126 C 440 140, 432 162, 428 186 Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" class="fill-blue-500/5 dark:fill-blue-500/15 text-blue-500/40 dark:text-blue-400/40" />
+
+                            {{-- Plush Seat Cushion --}}
+                            <rect x="344" y="178" width="86" height="18" rx="6" stroke="currentColor" stroke-width="1.8" class="fill-blue-500/10 dark:fill-blue-500/20 text-blue-500/50 dark:text-blue-400/50" />
+
+                            {{-- Relaxed Person sitting comfortably with crossed legs --}}
                             <g class="text-blue-600 dark:text-blue-400" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                                {{-- Head with proud/upright posture --}}
-                                <circle cx="395" cy="105" r="12" class="fill-blue-500/10" />
-                                {{-- Upright Torso --}}
-                                <path d="M 395 117 L 395 180" />
-                                {{-- Arms holding smartphone in front --}}
-                                <path d="M 395 132 L 415 146 L 410 156" />
-                                <path d="M 395 132 L 382 148 L 402 156" />
-                                {{-- Confident relaxed legs --}}
-                                <path d="M 395 180 L 384 230" />
-                                <path d="M 395 180 L 406 230" />
+                                {{-- Head resting back --}}
+                                <circle cx="412" cy="106" r="11" class="fill-blue-500/10" />
+
+                                {{-- Torso reclining into cushion --}}
+                                <path d="M 410 117 L 396 178" />
+
+                                {{-- Lower supporting leg to floor --}}
+                                <path d="M 396 178 L 348 178 L 344 230" />
+
+                                {{-- Casual crossed leg hanging over knee --}}
+                                <path d="M 396 178 L 346 166 L 332 198" />
+
+                                {{-- Arms holding smartphone --}}
+                                <path d="M 406 128 L 382 152 L 362 142" />
+                                <path d="M 406 128 L 374 144 L 362 142" />
                             </g>
 
+                            {{-- Armchair Armrest in foreground --}}
+                            <rect x="350" y="156" width="72" height="12" rx="6" stroke="currentColor" stroke-width="1.8" class="fill-white dark:fill-[#0B0F17] text-blue-500/60 dark:text-blue-400/50" />
+
                             {{-- Glowing Smartphone in hands --}}
-                            <rect x="404" y="142" width="16" height="26" rx="3" class="fill-blue-600 dark:fill-blue-500 stroke-white dark:stroke-slate-900" stroke-width="1.5" />
-                            <line x1="409" y1="146" x2="415" y2="146" stroke="white" stroke-width="1" stroke-linecap="round" />
+                            <rect x="350" y="128" width="15" height="25" rx="3" class="fill-blue-600 dark:fill-blue-500 stroke-white dark:stroke-slate-900" stroke-width="1.5" />
+                            <line x1="354" y1="132" x2="361" y2="132" stroke="white" stroke-width="1" stroke-linecap="round" />
 
                             {{-- Floating Digital Notification (Centered horizontally over Turnex user) --}}
                             <g class="font-mono">
                                 {{-- Connecting signal ray to phone --}}
-                                <path d="M 395 72 C 395 95, 412 112, 412 138" stroke="currentColor" stroke-width="1.5" stroke-dasharray="3 3" class="text-blue-500/50" />
+                                <path d="M 395 72 C 395 95, 358 100, 358 124" stroke="currentColor" stroke-width="1.5" stroke-dasharray="3 3" class="text-blue-500/50" />
 
                                 {{-- Ticket Notification Text in Geist Mono --}}
                                 <text x="395" y="48" text-anchor="middle" class="fill-blue-600 dark:fill-blue-400 text-[12px] font-bold tracking-tight">
                                     {{ __('TURNO #A-042') }}
                                 </text>
                                 <text x="395" y="62" text-anchor="middle" class="fill-slate-600 dark:fill-slate-300 text-[10px] tracking-normal">
-                                    {{ __('¡Es tu momento, acércate!') }}
+                                    {{ __('Faltan ~15 min · Ve acercándote') }}
                                 </text>
                             </g>
                         </svg>

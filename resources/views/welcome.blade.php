@@ -37,7 +37,14 @@
                     </svg>
                 </button>
 
-                @auth('customer')
+                @if (auth('business')->check())
+                    <a
+                        href="{{ route('dashboard') }}"
+                        class="inline-flex items-center justify-center h-9 px-4 text-sm font-semibold rounded-md bg-blue-600 hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-500 text-white transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-blue-600"
+                    >
+                        {{ __('Panel de Negocio') }}
+                    </a>
+                @elseif (auth('customer')->check())
                     <a
                         href="{{ route('dashboard') }}"
                         class="inline-flex items-center justify-center h-9 px-4 text-sm font-semibold rounded-md bg-blue-600 hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-500 text-white transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-blue-600"
@@ -59,12 +66,18 @@
                         {{ __('Iniciar sesión') }}
                     </a>
                     <a
+                        href="{{ route('business.register') }}"
+                        class="hidden sm:inline-flex items-center justify-center h-9 px-3.5 text-sm font-medium rounded-md border border-[#CBD5E1] dark:border-[#374151] bg-white dark:bg-[#111827] text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:border-slate-400 dark:hover:border-slate-600 transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-blue-600"
+                    >
+                        {{ __('Registrar Negocio') }}
+                    </a>
+                    <a
                         href="{{ route('register') }}"
                         class="inline-flex items-center justify-center h-9 px-3.5 text-sm font-semibold rounded-md bg-blue-600 hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-500 text-white transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-blue-600 shadow-xs"
                     >
                         {{ __('Registrarse') }}
                     </a>
-                @endauth
+                @endif
             </div>
         </header>
 
@@ -98,17 +111,13 @@
                             </svg>
                         </a>
 
-                        <div class="inline-flex items-center gap-2 h-11 px-4 text-sm font-medium rounded-md border border-[#CBD5E1] dark:border-[#374151] bg-white/60 dark:bg-[#111827]/60 text-slate-700 dark:text-slate-300 w-full sm:w-auto justify-between sm:justify-center">
-                            <span class="inline-flex items-center gap-2">
-                                <svg class="size-4 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                                </svg>
-                                <span>{{ __('Soy un Negocio') }}</span>
-                            </span>
-                            <span class="px-1.5 py-0.5 text-[10px] font-mono uppercase tracking-wider rounded-sm bg-amber-500/10 border border-amber-500/20 text-amber-700 dark:text-amber-400">
-                                {{ __('Próximamente') }}
-                            </span>
-                        </div>
+                        <a
+                            href="{{ route('business.register') }}"
+                            class="inline-flex items-center justify-center gap-2.5 h-11 px-5 text-sm sm:text-base font-semibold rounded-md border border-[#CBD5E1] dark:border-[#374151] bg-white dark:bg-[#111827] text-slate-800 dark:text-slate-200 hover:text-blue-600 dark:hover:text-blue-400 hover:border-blue-500 dark:hover:border-blue-500 transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-blue-600 w-full sm:w-auto shadow-xs"
+                        >
+                            <flux:icon name="building-storefront" class="size-5 text-blue-600 dark:text-blue-400 shrink-0" />
+                            <span>{{ __('Registrar mi Negocio') }}</span>
+                        </a>
                     </div>
 
                     {{-- Micro Indicators --}}
@@ -129,7 +138,7 @@
                             <svg class="size-3.5 text-emerald-600 dark:text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" />
                             </svg>
-                            <span>{{ __('Actualización en tiempo real') }}</span>
+                            <span>{{ __('Alta de comercios en 2 min') }}</span>
                         </div>
                     </div>
                 </div>
@@ -336,7 +345,7 @@
                                     </li>
                                     <li class="flex items-start gap-1.5">
                                         <span class="text-emerald-500 dark:text-emerald-400 font-bold shrink-0">✓</span>
-                                        <span>{{ __('Llegada puntual y atención ágil.') }}</span>
+                                        <span>{{ __('Atención ágil y orden en tu negocio.') }}</span>
                                     </li>
                                 </ul>
                             </div>

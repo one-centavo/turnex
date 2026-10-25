@@ -109,24 +109,44 @@
 
 ### Acceptance Criteria
 
-- [ ] The system must request the following initial data:
-    - [ ] Business name (Required, up to 150 characters)
-    - [ ] Business category / Industry type (Required, e.g., Restaurant, Health & Beauty, Professional Services, Retail, Banking)
-    - [ ] Owner first name (Required, up to 60 characters)
-    - [ ] Owner middle name (Optional, up to 60 characters)
-    - [ ] Owner last name (Required, up to 60 characters)
-    - [ ] Owner second last name (Optional, up to 60 characters)
-    - [ ] Email address (Required, must be unique)
-    - [ ] Phone number (Required, must be unique)
-    - [ ] Physical address / Location (Required)
-    - [ ] Password
-- [ ] All entered business and owner details are automatically cleaned and formatted (**US-CORE-02**).
-- [ ] The system must verify if the email is already registered. If it exists, display: _"An error occurred while verifying the email address. Please check if it is correct and try again."_
-- [ ] The system must verify if the phone number is already registered. If it exists, display: _"An error occurred while verifying the phone number. Please check if it is correct and try again."_
-- [ ] The system must dispatch a phone verification code via SMS or WhatsApp and validate it following the platform security code service rules (**US-CORE**).
-- [ ] Once the phone verification code is successfully validated, the system must record the exact date and time the phone number was verified.
-- [ ] The system must set the business account initial status to **"Pending Verification"**.
-- [ ] Upon successful registration, the user must be redirected to the business dashboard in setup mode.
+- [ ] **Access Control & Session Lifecycle**:
+    - [ ] Authenticated business managers or system users attempting to access the business registration flow are redirected to their active dashboard.
+    - [ ] Authenticated customers visiting the business registration flow are permitted to register a new business without affecting their customer session.
+    - [ ] Accessing Step 2 directly without completing Step 1 data entry redirects the user to Step 1.
+    - [ ] In-progress registration data is temporarily retained and expires if not completed within 15 minutes.
+    - [ ] Submitting any step after the 15-minute session has expired prompts the user and restarts the registration flow.
+
+- [ ] **Step 1: Business & Owner Information & Pre-check**:
+    - [ ] Business name is required and must contain between 3 and 150 characters.
+    - [ ] Business category is required and must match a supported industry type (e.g., Restaurant, Health & Beauty, Professional Services, Retail, Banking); invalid or manipulated options are rejected.
+    - [ ] Physical location/address is required and limited to 255 characters.
+    - [ ] Owner name fields provide separate inputs: owner first name and last name are required (between 2 and 60 characters each); middle name and second last name are optional (up to 60 characters each).
+    - [ ] The entered mobile phone number is validated and formatted into standard international format, defaulting to Colombia (+57).
+    - [ ] The entered email address is trimmed, normalized to lowercase, and validated against standard email formatting rules.
+    - [ ] Passwords must be at least 8 characters long and include an uppercase letter, a lowercase letter, a number, and a special character.
+    - [ ] Password confirmation is required and must match the chosen password.
+    - [ ] Business owners must accept the Terms of Service and Privacy Policy before proceeding.
+    - [ ] All entered business and owner details are automatically cleaned and formatted (**US-CORE-02**).
+    - [ ] If the phone number is already registered to an existing business, registration is halted and the user is prompted to sign in instead.
+    - [ ] If the email address is already registered to an existing business, registration is halted and the user is prompted to sign in instead.
+    - [ ] Submitting invalid inputs displays clear feedback without resetting valid fields.
+    - [ ] Submission buttons are disabled and display a loading state while processing to prevent double submissions.
+    - [ ] Code dispatch requests are limited to a maximum of 5 attempts per minute per IP address, temporarily rejecting excessive traffic.
+    - [ ] For valid, unregistered details, the system dispatches a 6-digit verification code to the mobile number prioritizing WhatsApp.
+    - [ ] If code dispatch fails due to delivery provider errors, the user is notified immediately without locking them into an unwarranted cooldown.
+
+- [ ] **Step 2: Phone Verification Challenge & Account Provisioning**:
+    - [ ] Submitted verification codes are validated against the OTP service (**US-CORE**), rejecting invalid or expired entries.
+    - [ ] Exceeding maximum verification attempts (5 attempts) invalidates the active code and requires requesting a new one.
+    - [ ] Users can edit their entered phone number up to 3 times per registration before being required to restart.
+    - [ ] Submitting a new phone number during editing checks for uniqueness against existing businesses; if duplicate, the system rejects it without consuming an edit attempt.
+    - [ ] Submitting an unchanged phone number during editing does not decrement the remaining edit attempts.
+    - [ ] Requesting a new code requires waiting for the cooldown period (60 seconds) to elapse, even if the phone number is changed.
+    - [ ] Once the cooldown period expires, users can request a new code via WhatsApp or choose SMS delivery.
+    - [ ] Verification submission buttons are disabled with a loading indicator while the OTP is being evaluated.
+    - [ ] Upon successful verification, the system transitions to a success confirmation state, provisions the business account with **"Pending Verification"** status and default person type as **"Persona Natural"** (updatable to Persona Jurídica in Stage 3), records the phone verification timestamp, and dispatches a welcome email (deferring email verification).
+    - [ ] The business owner is automatically authenticated and redirected to the business dashboard in setup mode.
+    - [ ] Temporary registration progress is cleared upon successful account creation.
 
 ---
 
@@ -234,20 +254,27 @@
 
 ### Acceptance Criteria
 
-- [ ] The system must request the upload of the following legal documents (PDF or image format up to 10 MB each):
-    - [ ] **Tax Identification Document** (e.g., RUT / Business Tax ID)
-    - [ ] **Legal Representative ID Document** (National ID / Passport)
-    - [ ] **Bank Account Certificate** (issued within the last 90 days)
-    - [ ] **Commercial Permit / Operating License** (Optional depending on business category)
+- [ ] The system must prompt the business owner to select their legal entity category:
+    - [ ] **Persona Natural** (individual proprietor / independent small business)
+    - [ ] **Persona Jurídica** (registered company / SAS / corporation)
+- [ ] For **Persona Jurídica (Empresa)**, the system requires the following legal documents (PDF or image format up to 10 MB each):
+    - [ ] **Corporate Tax ID Document (RUT)**: Required, verifying company NIT and economic activity.
+    - [ ] **Legal Representative ID Document**: Required, National ID (Cédula de Ciudadanía / CE / Passport).
+    - [ ] **Corporate Bank Account Certificate**: Required, issued within the last 90 days matching the legal entity name.
+    - [ ] **Commercial Chamber of Commerce / Operating License**: Optional, depending on business category.
+- [ ] For **Persona Natural (Pequeño Negocio / Independiente)**, the system adapts requirements to prevent operational exclusion:
+    - [ ] **National ID Document (Cédula de Ciudadanía / CE)**: Required, acting as primary legal tax identifier.
+    - [ ] **Bank or Digital Account Certificate**: Required, personal savings/checking account or certified digital wallet (e.g., Nequi, Daviplata) in the owner's name.
+    - [ ] **Personal Tax ID (RUT)**: Optional, for merchants who maintain formal tax registration.
 - [ ] Each uploaded document must start in a **"Pending"** evaluation state.
 - [ ] The system must request bank details for payout settlements:
-    - [ ] Bank name
-    - [ ] Account type (Savings or Checking)
+    - [ ] Bank or platform name
+    - [ ] Account type (Savings, Checking, or Electronic Deposit)
     - [ ] Account number
     - [ ] Account holder name
     - [ ] Account holder ID number (must match legal documents)
 - [ ] The system must require at least **1 active service or product** created before enabling submission.
-- [ ] Once all mandatory documents and banking requirements are completed, the business can click **"Submit for Verification"**.
+- [ ] Once all mandatory documents and banking requirements are completed according to the business person type, the business can click **"Submit for Verification"**.
 - [ ] The system must update the business account status to **"Under Review"** and lock all document and bank fields against edits while under evaluation.
 
 ---

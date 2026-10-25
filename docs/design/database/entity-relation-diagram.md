@@ -37,6 +37,9 @@ CATEGORY ||--o{ OFFERINGS : classifies
     BUSINESS {
         BIGINT id PK "AUTO INCREMENT"
         BIGINT reviewed_by FK "NULL - References SYSTEM_USER"
+        VARCHAR(20) person_type "NATURAL, JURIDICA - Default NATURAL"
+        VARCHAR(20) tax_id "NULL - NIT or National ID for tax purposes"
+        CHAR(1) dv "NULL - DIAN verification digit (0-9)"
         VARCHAR(150) business_name
         VARCHAR(50) business_category
         VARCHAR(60) owner_first_name
@@ -49,7 +52,7 @@ CATEGORY ||--o{ OFFERINGS : classifies
         VARCHAR(255) logo_path "NULL"
         VARCHAR(255) cover_photo_path "NULL"
         VARCHAR(500) business_description "NULL"
-        VARCHAR(30) verification_status "PENDING_VERIFICATION, UNDER_REVIEW, APPROVED, ACTION_REQUIRED"
+        VARCHAR(30) verification_status "PENDING_VERIFICATION, UNDER_REVIEW, APPROVED, ACTION_REQUIRED, REJECTED"
         TEXT rejection_reason "NULL"
         TIMESTAMP email_verified_at "NULL"
         TIMESTAMP phone_verified_at "NULL"
@@ -63,7 +66,7 @@ CATEGORY ||--o{ OFFERINGS : classifies
         BIGINT id PK "AUTO INCREMENT"
         BIGINT business_id FK "UNIQUE"
         VARCHAR(100) bank_name
-        VARCHAR(20) account_type "SAVINGS, CHECKING"
+        VARCHAR(30) account_type "SAVINGS, CHECKING, ELECTRONIC_DEPOSIT"
         VARCHAR(50) account_number
         VARCHAR(150) account_holder_name
         VARCHAR(30) account_holder_id

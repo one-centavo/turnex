@@ -5,7 +5,7 @@ use Illuminate\Support\Facades\Route;
 
 Route::view('/', 'welcome')->name('home');
 
-Route::middleware(['auth:web,customer'])->group(function () {
+Route::middleware(['auth:web,customer,business'])->group(function () {
     Route::view('dashboard', 'dashboard')->name('dashboard');
 });
 
@@ -24,5 +24,9 @@ Route::livewire('login', 'pages::auth.customer.login')
 Route::livewire('register', 'pages::auth.customer.register')
     ->middleware('guest')
     ->name('register');
+
+Route::livewire('business/register', 'pages::auth.business.register')
+    ->middleware('guest:business,web')
+    ->name('business.register');
 
 require __DIR__.'/settings.php';

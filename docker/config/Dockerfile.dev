@@ -3,7 +3,8 @@ FROM php:8.4-fpm-alpine
 WORKDIR /var/www/html
 
 # Install runtime dependencies
-RUN apk add --no-cache icu-libs libzip curl git
+RUN apk add --no-cache icu-libs libzip curl git \
+    && git config --system --add safe.directory /var/www/html
 
 # Install build dependencies, compile PHP extensions, and clean up
 RUN apk add --no-cache --virtual .build-deps \
@@ -35,6 +36,7 @@ RUN composer install --no-interaction --prefer-dist --no-scripts
 COPY --chown=www-data:www-data . .
 
 RUN mkdir -p storage/framework/{sessions,views,cache} storage/logs bootstrap/cache \
+    && chown -R www-data:www-data storage bootstrap/cache \
     && chmod -R 775 storage bootstrap/cache
 
 # Expose port and set the default command

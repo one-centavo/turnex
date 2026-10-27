@@ -222,6 +222,35 @@ test('step 2 allows editing email address up to 3 times and preserves cooldown',
         ->assertHasErrors(['email_edit']);
 });
 
+test('step 2 rejects editing email to an already registered email address', function (): void {
+    Notification::fake();
+
+    Customer::factory()->create([
+        'email' => 'existing.customer@turnex.test',
+    ]);
+
+    Session::put('customer_registration', [
+        'step' => 2,
+        'first_name' => 'Carlos',
+        'last_name' => 'Pérez',
+        'email' => 'carlos@turnex.test',
+        'password' => 'Turnex@2026!',
+        'email_edit_count' => 0,
+        'cooldown_until' => now()->addSeconds(45)->toIso8601String(),
+        'expires_at' => now()->addMinutes(15)->toIso8601String(),
+    ]);
+
+    Livewire::test('pages::auth.customer.register')
+        ->set('step', 2)
+        ->call('editEmail')
+        ->set('new_email', 'Existing.Customer@turnex.test')
+        ->call('saveNewEmail')
+        ->assertHasErrors(['new_email'])
+        ->assertSet('email', 'carlos@turnex.test')
+        ->assertSet('emailEditCount', 0)
+        ->assertSet('isEditingEmail', true);
+});
+
 test('step 2 rejects expired session after 15 minutes', function (): void {
     Session::put('customer_registration', [
         'step' => 2,

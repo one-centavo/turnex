@@ -16,21 +16,25 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Execute deployment commands via SSH
-        uses: appleboy/ssh-action@v1.2.0
-        with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USER }}
-          key: ${{ secrets.SSH_KEY }}
-          port: ${{ secrets.SSH_PORT || 22 }}
-          script_stop: true
-          command_timeout: 30m
-          script: |
+      - name: Execute deployment commands via Native SSH
+        env:
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_USER: ${{ secrets.SSH_USER }}
+          SSH_KEY: ${{ secrets.SSH_KEY }}
+          SSH_PORT: ${{ secrets.SSH_PORT || 22 }}
+          TARGET_DIR: ${{ secrets.SSH_TARGET_DIR || '/var/www/turnex' }}
+        run: |
+          mkdir -p ~/.ssh
+          echo "$SSH_KEY" | tr -d '\r' > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -p "$SSH_PORT" -H "$SSH_HOST" >> ~/.ssh/known_hosts 2>/dev/null || true
+
+          ssh -o StrictHostKeyChecking=no -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" "bash -se" << 'EOF'
             set -e
 
-            TARGET_DIR="${{ secrets.SSH_TARGET_DIR || '/var/www/turnex' }}"
+            TARGET_DIR="/var/www/turnex"
 
-            echo "🚀 Navigating to project directory..."
+            echo "🚀 Navigating to project directory: $TARGET_DIR"
             if [ ! -d "$TARGET_DIR" ]; then
               echo "📁 Target directory does not exist. Creating $TARGET_DIR..."
               mkdir -p "$TARGET_DIR"
@@ -107,4 +111,4 @@ jobs:
             $DOCKER_COMPOSE exec -T turnex-app php artisan queue:restart || true
 
             echo "✅ Deployment finished successfully!"
-
+EOF

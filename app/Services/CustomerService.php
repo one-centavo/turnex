@@ -22,14 +22,16 @@ class CustomerService
     /**
      * Register a new customer, normalizing contact details and dispatching welcome notification.
      *
-     * @param  array{first_name: string, last_name: string, email: string, phone_number: string, password: string}  $data
+     * @param  array{first_name: string, last_name: string, email: string, password: string, phone_number?: string|null}  $data
      */
     public function register(array $data): Customer
     {
         $normalizedFirstName = DataNormalizer::name($data['first_name']);
         $normalizedLastName = DataNormalizer::name($data['last_name']);
         $normalizedEmail = DataNormalizer::email($data['email']);
-        $normalizedPhone = DataNormalizer::phone($data['phone_number']);
+        $normalizedPhone = ! empty($data['phone_number'])
+            ? DataNormalizer::phone($data['phone_number'])
+            : null;
 
         return DB::transaction(function () use ($normalizedFirstName, $normalizedLastName, $normalizedEmail, $normalizedPhone, $data): Customer {
             $customer = Customer::create([
@@ -38,8 +40,8 @@ class CustomerService
                 'email' => $normalizedEmail,
                 'phone_number' => $normalizedPhone,
                 'password' => $data['password'],
-                'phone_verified_at' => now(),
-                'email_verified_at' => null,
+                'email_verified_at' => now(),
+                'phone_verified_at' => null,
             ]);
 
             Notification::send($customer, new WelcomeCustomerNotification);

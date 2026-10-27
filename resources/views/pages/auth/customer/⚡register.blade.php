@@ -26,8 +26,6 @@ new #[Title('Crear cuenta de cliente')] #[Layout('layouts.auth.card')] class ext
 
     public string $last_name = '';
 
-    public string $phone_number = '';
-
     public string $email = '';
 
     public string $password = '';
@@ -39,17 +37,15 @@ new #[Title('Crear cuenta de cliente')] #[Layout('layouts.auth.card')] class ext
     // Step 2 Verification fields
     public string $code = '';
 
-    public string $channel = 'whatsapp';
+    public int $emailEditCount = 0;
 
-    public int $phoneEditCount = 0;
+    public bool $isEditingEmail = false;
 
-    public bool $isEditingPhone = false;
-
-    public string $new_phone_number = '';
+    public string $new_email = '';
 
     public int $cooldownSeconds = 0;
 
-    public string $maskedPhone = '';
+    public string $maskedEmail = '';
 
     public function mount(): void
     {
@@ -59,7 +55,7 @@ new #[Title('Crear cuenta de cliente')] #[Layout('layouts.auth.card')] class ext
             return;
         }
 
-        /** @var array{step?: int, first_name?: string, last_name?: string, email?: string, phone_number?: string, phone_edit_count?: int, cooldown_until?: string, expires_at?: string}|null $sessionData */
+        /** @var array{step?: int, first_name?: string, last_name?: string, email?: string, email_edit_count?: int, cooldown_until?: string, expires_at?: string}|null $sessionData */
         $sessionData = Session::get('customer_registration');
 
         if ($sessionData !== null) {
@@ -70,14 +66,13 @@ new #[Title('Crear cuenta de cliente')] #[Layout('layouts.auth.card')] class ext
                 return;
             }
 
-            if (($sessionData['step'] ?? 1) === 2 && ! empty($sessionData['phone_number'])) {
+            if (($sessionData['step'] ?? 1) === 2 && ! empty($sessionData['email'])) {
                 $this->step = 2;
                 $this->first_name = $sessionData['first_name'] ?? '';
                 $this->last_name = $sessionData['last_name'] ?? '';
-                $this->email = $sessionData['email'] ?? '';
-                $this->phone_number = $sessionData['phone_number'];
-                $this->phoneEditCount = $sessionData['phone_edit_count'] ?? 0;
-                $this->maskedPhone = $this->maskPhoneNumber($this->phone_number);
+                $this->email = $sessionData['email'];
+                $this->emailEditCount = $sessionData['email_edit_count'] ?? 0;
+                $this->maskedEmail = DataNormalizer::maskEmail($this->email);
                 $this->syncCooldown();
             }
         }
@@ -103,24 +98,22 @@ new #[Title('Crear cuenta de cliente')] #[Layout('layouts.auth.card')] class ext
             'first_name' => CustomerRules::firstName(),
             'last_name' => CustomerRules::lastName(),
             'email' => CustomerRules::email(),
-            'phone_number' => CustomerRules::phone(),
             'password' => CustomerRules::password(confirmed: false),
             'terms' => CustomerRules::terms(),
         ], CustomerRules::messages());
 
         RateLimiter::hit($rateKey, 60);
 
-        $normalizedPhone = DataNormalizer::phone($this->phone_number);
         $normalizedEmail = $this->email;
         $normalizedFirstName = $this->first_name;
         $normalizedLastName = $this->last_name;
 
         try {
-            $otpService->generate($normalizedPhone, ContactType::WhatsApp);
+            $otpService->generate($normalizedEmail, ContactType::Email);
         } catch (OtpCooldownException $e) {
             $this->cooldownSeconds = $e->remainingSeconds;
         } catch (\Throwable $e) {
-            $this->addError('general', 'No fue posible despachar el código por WhatsApp en este momento. Intenta nuevamente.');
+            $this->addError('general', 'No fue posible despachar el código de verificación en este momento. Intenta nuevamente.');
 
             return;
         }
@@ -132,21 +125,18 @@ new #[Title('Crear cuenta de cliente')] #[Layout('layouts.auth.card')] class ext
             'first_name' => $normalizedFirstName,
             'last_name' => $normalizedLastName,
             'email' => $normalizedEmail,
-            'phone_number' => $normalizedPhone,
             'password' => $this->password,
-            'phone_edit_count' => 0,
+            'email_edit_count' => 0,
             'cooldown_until' => $cooldownUntil->toIso8601String(),
             'expires_at' => now()->addMinutes(15)->toIso8601String(),
         ]);
 
         $this->step = 2;
-        $this->phone_number = $normalizedPhone;
-        $this->maskedPhone = $this->maskPhoneNumber($normalizedPhone);
+        $this->maskedEmail = DataNormalizer::maskEmail($normalizedEmail);
         $this->cooldownSeconds = max(0, (int) now()->diffInSeconds($cooldownUntil, false));
-        $this->channel = 'whatsapp';
         $this->code = '';
 
-        Flux::toast(variant: 'success', text: __('Código de verificación enviado por WhatsApp.'));
+        Flux::toast(variant: 'success', text: __('Código de verificación enviado a tu correo.'));
     }
 
     public function verifyCode(CustomerService $customerService, OtpService $otpService): void
@@ -166,11 +156,10 @@ new #[Title('Crear cuenta de cliente')] #[Layout('layouts.auth.card')] class ext
             'code.size' => 'El código debe tener exactamente 6 dígitos.',
         ]);
 
-        /** @var array{first_name: string, last_name: string, email: string, phone_number: string, password: string} $sessionData */
+        /** @var array{first_name: string, last_name: string, email: string, password: string} $sessionData */
         $sessionData = Session::get('customer_registration');
-        $channelEnum = $this->channel === 'sms' ? ContactType::Sms : ContactType::WhatsApp;
 
-        $isValid = $otpService->verify($sessionData['phone_number'], $this->code, $channelEnum);
+        $isValid = $otpService->verify($sessionData['email'], $this->code, ContactType::Email);
 
         if (! $isValid) {
             $this->addError('code', 'El código ingresado es incorrecto o ha expirado.');
@@ -182,7 +171,6 @@ new #[Title('Crear cuenta de cliente')] #[Layout('layouts.auth.card')] class ext
             'first_name' => $sessionData['first_name'],
             'last_name' => $sessionData['last_name'],
             'email' => $sessionData['email'],
-            'phone_number' => $sessionData['phone_number'],
             'password' => $sessionData['password'],
         ]);
 
@@ -194,8 +182,7 @@ new #[Title('Crear cuenta de cliente')] #[Layout('layouts.auth.card')] class ext
         $this->first_name = $customer->first_name;
         $this->last_name = $customer->last_name;
         $this->email = $customer->email;
-        $this->phone_number = $customer->phone_number;
-        $this->maskedPhone = $this->maskPhoneNumber($customer->phone_number);
+        $this->maskedEmail = DataNormalizer::maskEmail($customer->email);
         $this->step = 3;
     }
 
@@ -204,7 +191,7 @@ new #[Title('Crear cuenta de cliente')] #[Layout('layouts.auth.card')] class ext
         $this->redirectIntended(default: route('dashboard'), navigate: true);
     }
 
-    public function resendOtp(string $channel, OtpService $otpService): void
+    public function resendOtp(OtpService $otpService): void
     {
         $this->resetErrorBag('code');
 
@@ -214,7 +201,7 @@ new #[Title('Crear cuenta de cliente')] #[Layout('layouts.auth.card')] class ext
             return;
         }
 
-        /** @var array{step: int, first_name: string, last_name: string, email: string, phone_number: string, password: string, phone_edit_count: int, cooldown_until: string, expires_at: string} $sessionData */
+        /** @var array{step: int, first_name: string, last_name: string, email: string, password: string, email_edit_count: int, cooldown_until: string, expires_at: string} $sessionData */
         $sessionData = Session::get('customer_registration');
 
         $this->syncCooldown();
@@ -225,18 +212,14 @@ new #[Title('Crear cuenta de cliente')] #[Layout('layouts.auth.card')] class ext
             return;
         }
 
-        $targetChannel = $channel === 'sms' ? ContactType::Sms : ContactType::WhatsApp;
-        $this->channel = $channel;
-
         try {
-            $otpService->generate($sessionData['phone_number'], $targetChannel);
+            $otpService->generate($sessionData['email'], ContactType::Email);
             $newCooldownUntil = now()->addSeconds(OtpService::COOLDOWN_SECONDS);
             $sessionData['cooldown_until'] = $newCooldownUntil->toIso8601String();
             Session::put('customer_registration', $sessionData);
             $this->cooldownSeconds = OtpService::COOLDOWN_SECONDS;
 
-            $channelLabel = $channel === 'sms' ? 'SMS' : 'WhatsApp';
-            Flux::toast(variant: 'success', text: __("Nuevo código enviado por {$channelLabel}."));
+            Flux::toast(variant: 'success', text: __('Nuevo código enviado a tu correo.'));
         } catch (OtpCooldownException $e) {
             $this->cooldownSeconds = $e->remainingSeconds;
             $this->addError('code', "Espera {$this->cooldownSeconds} segundos antes de volver a solicitar un código.");
@@ -245,26 +228,26 @@ new #[Title('Crear cuenta de cliente')] #[Layout('layouts.auth.card')] class ext
         }
     }
 
-    public function editPhone(): void
+    public function editEmail(): void
     {
-        if ($this->phoneEditCount >= 3) {
-            $this->addError('phone_edit', 'Has alcanzado el límite máximo de 3 ediciones de número de celular.');
+        if ($this->emailEditCount >= 3) {
+            $this->addError('email_edit', 'Has alcanzado el límite máximo de 3 cambios de correo electrónico.');
 
             return;
         }
 
-        $this->new_phone_number = (string) preg_replace('/^\+?57/', '', $this->phone_number);
-        $this->isEditingPhone = true;
+        $this->new_email = $this->email;
+        $this->isEditingEmail = true;
     }
 
-    public function cancelEditPhone(): void
+    public function cancelEditEmail(): void
     {
-        $this->isEditingPhone = false;
-        $this->new_phone_number = '';
-        $this->resetErrorBag(['new_phone_number', 'phone_edit']);
+        $this->isEditingEmail = false;
+        $this->new_email = '';
+        $this->resetErrorBag(['new_email', 'email_edit']);
     }
 
-    public function saveNewPhone(OtpService $otpService): void
+    public function saveNewEmail(OtpService $otpService): void
     {
         if ($this->hasSessionExpired()) {
             $this->handleExpiredSession();
@@ -272,33 +255,30 @@ new #[Title('Crear cuenta de cliente')] #[Layout('layouts.auth.card')] class ext
             return;
         }
 
-        /** @var array{step: int, first_name: string, last_name: string, email: string, phone_number: string, password: string, phone_edit_count: int, cooldown_until: string, expires_at: string} $sessionData */
+        /** @var array{step: int, first_name: string, last_name: string, email: string, password: string, email_edit_count: int, cooldown_until: string, expires_at: string} $sessionData */
         $sessionData = Session::get('customer_registration');
 
-        if ($sessionData['phone_edit_count'] >= 3) {
-            $this->addError('new_phone_number', 'Has alcanzado el límite de 3 cambios de número. Debes reiniciar el registro.');
+        if ($sessionData['email_edit_count'] >= 3) {
+            $this->addError('new_email', 'Has alcanzado el límite de 3 cambios de correo. Debes reiniciar el registro.');
 
             return;
         }
 
         $this->validate([
-            'new_phone_number' => CustomerRules::phone(),
+            'new_email' => CustomerRules::email(),
         ], CustomerRules::messages());
 
-        $normalized = DataNormalizer::phone($this->new_phone_number);
+        $normalized = DataNormalizer::email($this->new_email);
 
-        $newEditCount = $sessionData['phone_edit_count'] + 1;
-        $sessionData['phone_edit_count'] = $newEditCount;
-        $sessionData['phone_number'] = $normalized;
-
-        $targetChannel = $this->channel === 'sms' ? ContactType::Sms : ContactType::WhatsApp;
+        $newEditCount = $sessionData['email_edit_count'] + 1;
+        $sessionData['email_edit_count'] = $newEditCount;
+        $sessionData['email'] = $normalized;
 
         try {
-            $otpService->generate($normalized, $targetChannel);
+            $otpService->generate($normalized, ContactType::Email);
             $sessionData['cooldown_until'] = now()->addSeconds(OtpService::COOLDOWN_SECONDS)->toIso8601String();
             $this->cooldownSeconds = OtpService::COOLDOWN_SECONDS;
         } catch (OtpCooldownException $e) {
-            // Unified cooldown preserved!
             $this->cooldownSeconds = $e->remainingSeconds;
         } catch (\Throwable $e) {
             // Keep going, user can request resend
@@ -306,13 +286,13 @@ new #[Title('Crear cuenta de cliente')] #[Layout('layouts.auth.card')] class ext
 
         Session::put('customer_registration', $sessionData);
 
-        $this->phone_number = $normalized;
-        $this->phoneEditCount = $newEditCount;
-        $this->maskedPhone = $this->maskPhoneNumber($normalized);
-        $this->isEditingPhone = false;
+        $this->email = $normalized;
+        $this->emailEditCount = $newEditCount;
+        $this->maskedEmail = DataNormalizer::maskEmail($normalized);
+        $this->isEditingEmail = false;
         $this->code = '';
 
-        Flux::toast(variant: 'success', text: __('Número actualizado exitosamente.'));
+        Flux::toast(variant: 'success', text: __('Correo actualizado y nuevo código enviado.'));
     }
 
     public function decrementCooldown(): void
@@ -324,7 +304,6 @@ new #[Title('Crear cuenta de cliente')] #[Layout('layouts.auth.card')] class ext
 
     public function goToStepOne(): void
     {
-        $this->phone_number = (string) preg_replace('/^\+?57/', '', $this->phone_number);
         $this->step = 1;
     }
 
@@ -356,29 +335,16 @@ new #[Title('Crear cuenta de cliente')] #[Layout('layouts.auth.card')] class ext
     {
         Session::forget('customer_registration');
         $this->step = 1;
-        $this->reset(['code', 'phoneEditCount', 'isEditingPhone']);
+        $this->reset(['code', 'emailEditCount', 'isEditingEmail']);
         $this->addError('general', 'Tu sesión ha expirado tras 15 minutos de inactividad. Por favor, completa tus datos nuevamente.');
         Flux::toast(variant: 'warning', text: __('Sesión expirada. Por favor reinicia tu registro.'));
-    }
-
-    private function maskPhoneNumber(string $phone): string
-    {
-        $digits = preg_replace('/[^\d]/', '', $phone) ?? '';
-        if (strlen($digits) >= 10) {
-            $lastTwo = substr($digits, -2);
-            $prefix = substr($digits, -10, 3);
-
-            return "+57 {$prefix} ••• ••{$lastTwo}";
-        }
-
-        return $phone;
     }
 };
 ?>
 
 <div class="flex flex-col gap-5" @if($step === 2 && $cooldownSeconds > 0) wire:poll.1s="decrementCooldown" @endif>
     @if ($step < 3)
-        {{-- Operational Stepper Indicator (Control Panel archetype) --}}
+        {{-- Operational Stepper Indicator --}}
         <nav aria-label="Progreso de registro" class="flex items-center justify-between pb-4 border-b border-[#E2E8F0] dark:border-[#1F2937]">
             {{-- Step 1 Indicator --}}
             <div class="flex items-center gap-2">
@@ -475,39 +441,6 @@ new #[Title('Crear cuenta de cliente')] #[Layout('layouts.auth.card')] class ext
                 </div>
             </div>
 
-            {{-- Phone Number with Industrial Prefix Pill --}}
-            <div class="flex flex-col">
-                <label for="phone_number" class="block text-xs sm:text-sm font-medium text-[#64748B] dark:text-[#9CA3AF] mb-2">
-                    {{ __('Número de celular') }} <span class="text-red-500">*</span>
-                </label>
-                <div class="h-11 flex rounded-md border overflow-hidden transition-colors focus-within:ring-2 focus-within:ring-blue-600 focus-within:border-transparent {{ $errors->has('phone_number') ? 'border-red-500' : 'border-[#CBD5E1] dark:border-[#374151]' }}">
-                    <span class="inline-flex items-center px-3.5 bg-[#F1F5F9] dark:bg-[#1F2937] text-slate-600 dark:text-slate-300 font-mono text-sm border-r border-[#CBD5E1] dark:border-[#374151] select-none">
-                        +57
-                    </span>
-                    <input
-                        id="phone_number"
-                        wire:model="phone_number"
-                        type="tel"
-                        inputmode="numeric"
-                        pattern="[0-9]*"
-                        maxlength="10"
-                        oninput="this.value = this.value.replace(/\D/g, '').slice(0, 10)"
-                        required
-                        autocomplete="tel-national"
-                        placeholder="3001234567"
-                        class="h-full w-full px-3.5 text-sm sm:text-base bg-white text-[#0F172A] placeholder:text-slate-400 outline-hidden dark:bg-[#0B0F17] dark:text-[#F9FAFB] dark:placeholder:text-slate-500 font-mono"
-                    />
-                </div>
-                <div class="flex items-center justify-between mt-1.5">
-                    <p class="text-xs text-[#64748B] dark:text-[#9CA3AF]">
-                        {{ __('Te enviaremos un código de seguridad por WhatsApp.') }}
-                    </p>
-                </div>
-                @error('phone_number')
-                    <p class="mt-1.5 text-xs text-red-500 font-medium">{{ $message }}</p>
-                @enderror
-            </div>
-
             {{-- Email Address --}}
             <div class="flex flex-col">
                 <label for="email" class="block text-xs sm:text-sm font-medium text-[#64748B] dark:text-[#9CA3AF] mb-2">
@@ -522,6 +455,9 @@ new #[Title('Crear cuenta de cliente')] #[Layout('layouts.auth.card')] class ext
                     placeholder="nombre@ejemplo.com"
                     class="h-11 w-full rounded-md border px-3.5 text-sm sm:text-base transition-colors bg-white text-[#0F172A] placeholder:text-slate-400 focus:outline-hidden focus:ring-2 focus:ring-blue-600 focus:border-transparent dark:bg-[#0B0F17] dark:text-[#F9FAFB] dark:placeholder:text-slate-500 {{ $errors->has('email') ? 'border-red-500' : 'border-[#CBD5E1] dark:border-[#374151]' }}"
                 />
+                <p class="text-xs text-[#64748B] dark:text-[#9CA3AF] mt-1.5">
+                    {{ __('Te enviaremos un código de seguridad de 6 dígitos a esta dirección.') }}
+                </p>
                 @error('email')
                     <p class="mt-1.5 text-xs text-red-500 font-medium">{{ $message }}</p>
                 @enderror
@@ -638,7 +574,7 @@ new #[Title('Crear cuenta de cliente')] #[Layout('layouts.auth.card')] class ext
                 @enderror
             </div>
 
-            {{-- Action CTA & Mobile-First Sticky Action Bar (Section 04 & 06.1) --}}
+            {{-- Action CTA & Mobile-First Sticky Action Bar --}}
             <div class="fixed bottom-0 left-0 right-0 p-4 bg-white/95 dark:bg-[#111827]/95 backdrop-blur-md border-t border-[#E2E8F0] dark:border-[#1F2937] sm:static sm:p-0 sm:bg-transparent sm:border-0 sm:backdrop-blur-none z-30 pt-3">
                 <button
                     type="submit"
@@ -698,60 +634,53 @@ new #[Title('Crear cuenta de cliente')] #[Layout('layouts.auth.card')] class ext
             </p>
         </div>
     @elseif ($step === 2)
-        {{-- STEP 2: PHONE VERIFICATION CHALLENGE --}}
+        {{-- STEP 2: EMAIL VERIFICATION CHALLENGE --}}
         <header class="flex flex-col gap-1.5 mb-1">
             <h1 class="text-2xl sm:text-3xl font-semibold tracking-tight text-[#0F172A] dark:text-[#F9FAFB]">
-                {{ __('Verifica tu número') }}
+                {{ __('Verifica tu correo') }}
             </h1>
             <p class="text-xs sm:text-sm text-[#64748B] dark:text-[#9CA3AF] leading-relaxed">
-                {{ __('Ingresa el código de 6 dígitos enviado por :channel al', ['channel' => $channel === 'sms' ? 'SMS' : 'WhatsApp']) }}
-                <span class="font-mono font-semibold text-[#0F172A] dark:text-[#F9FAFB]">{{ $maskedPhone }}</span>.
-                @if (! $isEditingPhone && $phoneEditCount < 3)
+                {{ __('Ingresa el código de 6 dígitos enviado a') }}
+                <span class="font-mono font-semibold text-[#0F172A] dark:text-[#F9FAFB]">{{ $maskedEmail }}</span>.
+                @if (! $isEditingEmail && $emailEditCount < 3)
                     <button
                         type="button"
-                        wire:click="editPhone"
+                        wire:click="editEmail"
                         class="text-blue-600 dark:text-blue-400 hover:underline font-medium inline-flex items-center cursor-pointer ml-1"
                     >
-                        <span>{{ __('Cambiar número') }}</span>
+                        <span>{{ __('Cambiar correo') }}</span>
                     </button>
                 @endif
             </p>
         </header>
 
         <div class="flex flex-col gap-6">
-            @if ($isEditingPhone)
-                <form wire:submit="saveNewPhone" class="flex flex-col gap-3 p-4 rounded-md border border-[#E2E8F0] dark:border-[#1F2937] bg-[#F8FAFC] dark:bg-[#0B0F17]">
+            @if ($isEditingEmail)
+                <form wire:submit="saveNewEmail" class="flex flex-col gap-3 p-4 rounded-md border border-[#E2E8F0] dark:border-[#1F2937] bg-[#F8FAFC] dark:bg-[#0B0F17]">
                     <div class="flex items-center justify-between">
-                        <label for="new_phone_number" class="block text-xs sm:text-sm font-medium text-[#64748B] dark:text-[#9CA3AF]">
-                            {{ __('Nuevo número de celular') }}
+                        <label for="new_email" class="block text-xs sm:text-sm font-medium text-[#64748B] dark:text-[#9CA3AF]">
+                            {{ __('Nuevo correo electrónico') }}
                         </label>
-                        @if ($phoneEditCount > 0)
+                        @if ($emailEditCount > 0)
                             <span class="text-xs font-mono text-slate-500 dark:text-slate-400">
-                                {{ __(':count/3 intentos', ['count' => $phoneEditCount]) }}
+                                {{ __(':count/3 intentos', ['count' => $emailEditCount]) }}
                             </span>
                         @endif
                     </div>
-                    <div class="h-11 flex rounded-md border border-[#CBD5E1] dark:border-[#374151] overflow-hidden focus-within:ring-2 focus-within:ring-blue-600 focus-within:border-transparent">
-                        <span class="inline-flex items-center px-3.5 bg-[#F1F5F9] dark:bg-[#1F2937] text-slate-600 dark:text-slate-300 font-mono text-sm border-r border-[#CBD5E1] dark:border-[#374151] select-none">
-                            +57
-                        </span>
+                    <div class="flex flex-col">
                         <input
-                            id="new_phone_number"
-                            wire:model="new_phone_number"
-                            type="tel"
-                            inputmode="numeric"
-                            pattern="[0-9]*"
-                            maxlength="10"
-                            oninput="this.value = this.value.replace(/\D/g, '').slice(0, 10)"
+                            id="new_email"
+                            wire:model="new_email"
+                            type="email"
                             required
                             autofocus
-                            placeholder="3109876543"
-                            class="h-full w-full px-3.5 text-sm sm:text-base bg-white text-[#0F172A] placeholder:text-slate-400 outline-hidden dark:bg-[#0B0F17] dark:text-[#F9FAFB] font-mono"
+                            placeholder="nuevo@ejemplo.com"
+                            class="h-11 w-full rounded-md border px-3.5 text-sm sm:text-base bg-white text-[#0F172A] placeholder:text-slate-400 focus:outline-hidden focus:ring-2 focus:ring-blue-600 focus:border-transparent dark:bg-[#0B0F17] dark:text-[#F9FAFB] {{ $errors->has('new_email') ? 'border-red-500' : 'border-[#CBD5E1] dark:border-[#374151]' }}"
                         />
+                        @error('new_email')
+                            <p class="mt-1.5 text-xs text-red-500 font-medium">{{ $message }}</p>
+                        @enderror
                     </div>
-                    @error('new_phone_number')
-                        <p class="text-xs text-red-500 font-medium">{{ $message }}</p>
-                    @enderror
 
                     <div class="flex items-center gap-2 pt-1">
                         <button
@@ -762,7 +691,7 @@ new #[Title('Crear cuenta de cliente')] #[Layout('layouts.auth.card')] class ext
                         </button>
                         <button
                             type="button"
-                            wire:click="cancelEditPhone"
+                            wire:click="cancelEditEmail"
                             class="h-9 px-3.5 rounded-md text-xs sm:text-sm font-medium border border-[#CBD5E1] dark:border-[#374151] hover:bg-slate-100 dark:hover:bg-[#1F2937] text-slate-700 dark:text-slate-300 transition-colors cursor-pointer"
                         >
                             {{ __('Cancelar') }}
@@ -796,7 +725,7 @@ new #[Title('Crear cuenta de cliente')] #[Layout('layouts.auth.card')] class ext
                     @enderror
                 </div>
 
-                {{-- Action CTA & Mobile-First Sticky Action Bar (Section 04 & 06.1) --}}
+                {{-- Action CTA & Mobile-First Sticky Action Bar --}}
                 <div class="fixed bottom-0 left-0 right-0 p-4 bg-white/95 dark:bg-[#111827]/95 backdrop-blur-md border-t border-[#E2E8F0] dark:border-[#1F2937] sm:static sm:p-0 sm:bg-transparent sm:border-0 sm:backdrop-blur-none z-30">
                     <button
                         type="submit"
@@ -818,7 +747,7 @@ new #[Title('Crear cuenta de cliente')] #[Layout('layouts.auth.card')] class ext
                 </div>
             </form>
 
-            {{-- Resend & Channel Switch Controls --}}
+            {{-- Resend Controls --}}
             <div class="flex flex-col items-center gap-3 pt-2 text-center text-sm border-t border-[#E2E8F0] dark:border-[#1F2937]">
                 @if ($cooldownSeconds > 0)
                     <div class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-sm text-xs font-mono font-medium border border-[#E2E8F0] dark:border-[#1F2937] bg-[#F1F5F9] dark:bg-[#1F2937] text-slate-600 dark:text-slate-400">
@@ -828,22 +757,16 @@ new #[Title('Crear cuenta de cliente')] #[Layout('layouts.auth.card')] class ext
                         <span>{{ __('Puedes solicitar un nuevo código en :sec s', ['sec' => $cooldownSeconds]) }}</span>
                     </div>
                 @else
-                    <div class="flex flex-wrap items-center justify-center gap-2.5">
-                        <button
-                            type="button"
-                            wire:click="resendOtp('whatsapp')"
-                            class="h-9 px-3.5 rounded-md text-xs sm:text-sm font-medium border border-[#CBD5E1] dark:border-[#374151] hover:bg-slate-100 dark:hover:bg-[#1F2937] text-slate-700 dark:text-slate-300 transition-colors inline-flex items-center gap-1.5 cursor-pointer"
-                        >
-                            <span>{{ __('Reenviar por WhatsApp') }}</span>
-                        </button>
-                        <button
-                            type="button"
-                            wire:click="resendOtp('sms')"
-                            class="h-9 px-3.5 rounded-md text-xs sm:text-sm font-medium border border-[#CBD5E1] dark:border-[#374151] hover:bg-slate-100 dark:hover:bg-[#1F2937] text-slate-700 dark:text-slate-300 transition-colors inline-flex items-center gap-1.5 cursor-pointer"
-                        >
-                            <span>{{ __('Reenviar por SMS') }}</span>
-                        </button>
-                    </div>
+                    <button
+                        type="button"
+                        wire:click="resendOtp"
+                        class="h-9 px-3.5 rounded-md text-xs sm:text-sm font-medium border border-[#CBD5E1] dark:border-[#374151] hover:bg-slate-100 dark:hover:bg-[#1F2937] text-slate-700 dark:text-slate-300 transition-colors inline-flex items-center gap-1.5 cursor-pointer"
+                    >
+                        <svg class="size-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                        </svg>
+                        <span>{{ __('Reenviar código al correo') }}</span>
+                    </button>
                 @endif
 
                 <button

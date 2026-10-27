@@ -61,14 +61,29 @@ jobs:
               exit 1
             fi
 
-            # 4. Principal Action: Building and Starting the Infrastructure
+            # 4. Version Synchronization: Resolve latest tag and update .version and .env
+            echo "🏷️ Synchronizing application version from git tags..."
+            git fetch --tags --force 2>/dev/null || true
+            LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || git tag -l --sort=-v:refname | head -n 1)
+
+            if [ -n "$LATEST_TAG" ]; then
+              echo "$LATEST_TAG" > .version
+              if grep -q "^APP_VERSION=" .env; then
+                sed -i "s|^APP_VERSION=.*|APP_VERSION=$LATEST_TAG|" .env
+              else
+                echo "APP_VERSION=$LATEST_TAG" >> .env
+              fi
+              echo "✅ Application version set to: $LATEST_TAG"
+            fi
+
+            # 5. Principal Action: Building and Starting the Infrastructure
             echo "🌐 Ensuring external Docker network exists..."
             docker network create proxy-network 2>/dev/null || true
 
             echo "🏗️ Building and starting containers in production..."
             docker compose up -d --build
 
-            # 5. Database Automation: Automatic Migrations of Laravel
+            # 6. Database Automation: Automatic Migrations of Laravel
             echo "🗄️ Running database migrations..."
             docker compose exec -T turnex-app php artisan migrate --force
             docker compose exec -T turnex-app php artisan storage:link --force || true

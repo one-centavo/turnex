@@ -46,7 +46,7 @@ return [
             return trim((string) file_get_contents(base_path('.version')));
         }
 
-        return 'v0.2.0';
+        return 'v0.5.15';
     }),
 
     /*

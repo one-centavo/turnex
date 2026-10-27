@@ -21,6 +21,7 @@ jobs:
           username: ${{ secrets.VPS_USER || secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY || secrets.SSH_KEY }}
           port: ${{ secrets.VPS_SSH_PORT || secrets.SSH_PORT || 22 }}
+          command_timeout: 30m
           script: |
             # 1. Paths and Repository Configurations
             TARGET_DIR="/home/${{ secrets.VPS_USER || secrets.SSH_USER }}/turnex"

@@ -1,4 +1,9 @@
-# TURNEX
+<div align="center">
+
+<font size="6"><b>TURN<font color="#2563eb">EX</font></b></font><br>
+<sub><b><code>Q U E U E &nbsp; P L A T F O R M</code></b></sub>
+
+<br><br>
 
 [![PHP](https://img.shields.io/badge/PHP-8.4-777BB4?style=for-the-badge&logo=php&logoColor=white)](https://www.php.net/)
 [![Laravel](https://img.shields.io/badge/Laravel-13.x-FF2D20?style=for-the-badge&logo=laravel&logoColor=white)](https://laravel.com/)
@@ -15,7 +20,21 @@
 [![PHPStan](https://img.shields.io/badge/Larastan-v3-2F4F4F?style=for-the-badge&logo=php&logoColor=white)](https://phpstan.org/)
 [![License: AGPL v3](https://img.shields.io/badge/License-AGPL_v3-336699?style=for-the-badge&logo=gnu&logoColor=white)](LICENSE)
 
-**TURNEX** is a multi-business web platform designed for virtual queue management, self-service ticketing/orders, and real-time product catalogs. Built for speed, scalability, and ease of use, Turnex allows businesses to streamline customer flow and decrease wait times with an interactive, responsive interface.
+<br><br>
+
+<a href="https://turnex.example.com"><b>👉 Try the Live Demo</b></a>
+
+</div>
+
+---
+
+## Why I Made Turnex
+
+This project was born out of pure frustration with waiting in lines in my country. In so many places, you have to stand or sit for hours waiting for your turn, often trapped in crowded waiting rooms enduring the heat.
+
+I thought: *why not build a web app where people can order or pay for a service, wait wherever they want, and get notified when only a few people are ahead of them?*
+
+This also helps people who have their own ride: instead of paying expensive delivery fees, you can just wait comfortably wherever you are and go pick up your order right when it's ready, without waiting in line.
 
 ---
 

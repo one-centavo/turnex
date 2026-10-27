@@ -41,6 +41,28 @@ test('step 1 validates required fields and security rules', function (): void {
         ->assertSet('step', 1);
 });
 
+test('step 1 rejects password with spaces or exceeding 64 characters', function (): void {
+    Livewire::test('pages::auth.customer.register')
+        ->set('first_name', 'Carlos')
+        ->set('last_name', 'Pérez')
+        ->set('email', 'carlos@turnex.test')
+        ->set('password', 'Turnex @2026!')
+        ->set('terms', true)
+        ->call('submitStepOne')
+        ->assertHasErrors(['password'])
+        ->assertSet('step', 1);
+
+    Livewire::test('pages::auth.customer.register')
+        ->set('first_name', 'Carlos')
+        ->set('last_name', 'Pérez')
+        ->set('email', 'carlos@turnex.test')
+        ->set('password', str_repeat('A', 30).str_repeat('a', 30).'123!@#$$$')
+        ->set('terms', true)
+        ->call('submitStepOne')
+        ->assertHasErrors(['password'])
+        ->assertSet('step', 1);
+});
+
 test('step 1 rejects duplicate email address', function (): void {
     Customer::factory()->create([
         'email' => 'carlos.perez@turnex.test',

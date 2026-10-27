@@ -35,11 +35,11 @@
 
 ---
 
-## US01 - CUSTOMER REGISTRATION (STREAMLINED ONBOARDING & MOBILE VERIFICATION)
+## US01 - CUSTOMER REGISTRATION (STREAMLINED ONBOARDING & EMAIL VERIFICATION)
 
 **As a** customer,  
-**I want to** register on the platform in two fast steps with mobile verification (WhatsApp / SMS),  
-**So that** I can immediately join digital queues with certified contact reachability while deferring email verification.
+**I want to** register on the platform in two fast steps with email verification (Email OTP),  
+**So that** I can securely join digital queues with certified email reachability without mandatory upfront phone requirements.
 
 ### Acceptance Criteria
 
@@ -51,25 +51,24 @@
 
 - [ ] **Step 1: Account Information & Pre-check**:
     - [ ] First name and last name are required and must each contain between 2 and 60 characters.
-    - [ ] All entered information (name, email, and phone number) is automatically cleaned and formatted (**US-CORE-02**).
+    - [ ] All entered information (name and email) is automatically cleaned and formatted (**US-CORE-02**).
     - [ ] The email address is validated against standard email formatting rules.
-    - [ ] Passwords must be at least 8 characters long and include an uppercase letter, a lowercase letter, a number, and a special character.
+    - [ ] Passwords must be between 8 and 64 characters long, cannot contain spaces, and must include an uppercase letter, a lowercase letter, a number, and a special character.
     - [ ] Password confirmation is required and must match the chosen password.
     - [ ] Customers must accept the Terms of Service and Privacy Policy before proceeding.
-    - [ ] If the phone number is already registered, registration is halted and the user is prompted to sign in instead.
     - [ ] If the email address is already registered, registration is halted and the user is prompted to sign in instead.
     - [ ] Submitting invalid inputs displays clear feedback without resetting valid fields.
     - [ ] Code dispatch requests are limited to a maximum of 5 attempts per minute per IP address, temporarily rejecting excessive traffic.
-    - [ ] For valid, unregistered details, the system dispatches a 6-digit verification code to the mobile number prioritizing WhatsApp.
+    - [ ] For valid, unregistered details, the system dispatches a 6-digit verification code to the customer's email address.
     - [ ] If code dispatch fails due to delivery provider errors, the user is notified immediately without locking them into an unwarranted cooldown.
 
-- [ ] **Step 2: Phone Verification Challenge & Account Finalization**:
+- [ ] **Step 2: Email Verification Challenge & Account Finalization**:
     - [ ] Submitted verification codes are validated against the OTP service, rejecting invalid or expired entries.
     - [ ] Exceeding maximum verification attempts invalidates the active code and requires requesting a new one.
-    - [ ] Users can edit their entered phone number up to 3 times per registration before being required to restart.
-    - [ ] Requesting a new code requires waiting for the cooldown period to elapse, even if the phone number is changed.
-    - [ ] Once the cooldown period expires, users can request a new code via WhatsApp or choose SMS delivery.
-    - [ ] Upon successful verification, the system provisions the customer account with a verified phone status (deferring email verification) and dispatches a welcome email.
+    - [ ] Users can edit their entered email address up to 3 times per registration before being required to restart.
+    - [ ] Requesting a new code requires waiting for the cooldown period (60 seconds) to elapse, even if the email address is changed.
+    - [ ] Once the cooldown period expires, users can request a new code to their email.
+    - [ ] Upon successful verification, the system provisions the customer account with a verified email status (`email_verified_at = now()`) and dispatches a welcome email.
     - [ ] The customer is automatically authenticated and redirected to their intended destination, or to the main discovery catalog by default with a confirmation notice.
     - [ ] Temporary registration progress is cleared upon successful account creation.
 
@@ -123,7 +122,7 @@
     - [ ] Owner name fields provide separate inputs: owner first name and last name are required (between 2 and 60 characters each); middle name and second last name are optional (up to 60 characters each).
     - [ ] The entered mobile phone number is validated and formatted into standard international format, defaulting to Colombia (+57).
     - [ ] The entered email address is trimmed, normalized to lowercase, and validated against standard email formatting rules.
-    - [ ] Passwords must be at least 8 characters long and include an uppercase letter, a lowercase letter, a number, and a special character.
+    - [ ] Passwords must be between 8 and 64 characters long, cannot contain spaces, and must include an uppercase letter, a lowercase letter, a number, and a special character.
     - [ ] Password confirmation is required and must match the chosen password.
     - [ ] Business owners must accept the Terms of Service and Privacy Policy before proceeding.
     - [ ] All entered business and owner details are automatically cleaned and formatted (**US-CORE-02**).

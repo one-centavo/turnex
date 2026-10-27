@@ -32,7 +32,7 @@ Collecting only essential information upfront minimizes onboarding friction and 
     - [x] Owner name fields provide separate inputs: owner first name and last name are required (between 2 and 60 characters each); middle name and second last name are optional (up to 60 characters each).
     - [x] The entered mobile phone number is validated and formatted into standard international format, defaulting to Colombia (+57).
     - [x] The entered email address is trimmed, normalized to lowercase, and validated against standard email formatting rules.
-    - [x] Passwords must be at least 8 characters long and include an uppercase letter, a lowercase letter, a number, and a special character.
+    - [x] Passwords must be between 8 and 64 characters long, cannot contain spaces, and must include an uppercase letter, a lowercase letter, a number, and a special character.
     - [x] Password confirmation is required and must match the chosen password.
     - [x] Business owners must accept the Terms of Service and Privacy Policy before proceeding.
     - [x] All entered business and owner details are automatically cleaned and formatted (**US-CORE-02**).

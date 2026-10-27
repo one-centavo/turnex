@@ -25,7 +25,7 @@ It is required to identify customers across virtual queues, ensure authentic acc
 - [x] **Step 1: Account Information & Pre-check**:
     - [x] First name and last name are required and must each contain between 2 and 60 characters.
     - [x] The entered email address is trimmed, normalized to lowercase, and validated against standard RFC email formatting rules.
-    - [x] Passwords must be at least 8 characters long and include an uppercase letter, a lowercase letter, a number, and a special character.
+    - [x] Passwords must be between 8 and 64 characters long, cannot contain spaces, and must include an uppercase letter, a lowercase letter, a number, and a special character.
     - [x] Password confirmation is required and must match the chosen password.
     - [x] Customers must accept the Terms of Service and Privacy Policy before proceeding.
     - [x] If the email address is already registered, registration is halted and the user is prompted to sign in instead.

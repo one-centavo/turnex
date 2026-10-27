@@ -127,6 +127,28 @@ test('it validates password security rules and confirmation', function (): void 
 
     expect($invalidValidator->fails())->toBeTrue();
 
+    // Rejects spaces in password
+    $spacesValidator = Validator::make([
+        'password' => 'Turnex @2026!',
+        'password_confirmation' => 'Turnex @2026!',
+    ], [
+        'password' => CustomerRules::password(),
+    ], CustomerRules::messages());
+
+    expect($spacesValidator->fails())->toBeTrue()
+        ->and($spacesValidator->errors()->first('password'))->toBe('La contraseña no debe contener espacios en blanco.');
+
+    // Rejects password exceeding 64 characters
+    $tooLongValidator = Validator::make([
+        'password' => str_repeat('A', 30).str_repeat('a', 30).'123!@#$$$', // 69 chars
+        'password_confirmation' => str_repeat('A', 30).str_repeat('a', 30).'123!@#$$$',
+    ], [
+        'password' => CustomerRules::password(),
+    ], CustomerRules::messages());
+
+    expect($tooLongValidator->fails())->toBeTrue()
+        ->and($tooLongValidator->errors()->first('password'))->toBe('La contraseña no debe superar los 64 caracteres.');
+
     $validValidator = Validator::make([
         'password' => 'Turnex@2026!',
         'password_confirmation' => 'Turnex@2026!',

@@ -30,6 +30,32 @@ final class DataNormalizer
     }
 
     /**
+     * Mask an email address for privacy display (e.g. c***z@example.com).
+     */
+    public static function maskEmail(string $email): string
+    {
+        $normalized = self::email($email);
+        $parts = explode('@', $normalized, 2);
+
+        if (count($parts) !== 2) {
+            return $normalized;
+        }
+
+        [$username, $domain] = $parts;
+        $length = mb_strlen($username, 'UTF-8');
+
+        if ($length <= 2) {
+            $maskedUsername = mb_substr($username, 0, 1, 'UTF-8').'*';
+        } else {
+            $first = mb_substr($username, 0, 1, 'UTF-8');
+            $last = mb_substr($username, -1, 1, 'UTF-8');
+            $maskedUsername = $first.str_repeat('*', min(4, max(2, $length - 2))).$last;
+        }
+
+        return $maskedUsername.'@'.$domain;
+    }
+
+    /**
      * Normalize a phone number to standard E.164 international format.
      */
     public static function phone(string $phone, string $defaultCountryCode = self::DEFAULT_COUNTRY_CODE): string

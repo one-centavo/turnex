@@ -273,6 +273,28 @@ test('it validates password complexity and confirmation', function (): void {
     ]);
 
     expect($tooSimple->fails())->toBeTrue();
+
+    // Rejects spaces in password
+    $spaces = Validator::make([
+        'password' => 'Turnex @2026!',
+        'password_confirmation' => 'Turnex @2026!',
+    ], [
+        'password' => BusinessRules::password(confirmed: true),
+    ], BusinessRules::messages());
+
+    expect($spaces->fails())->toBeTrue()
+        ->and($spaces->errors()->first('password'))->toBe('La contraseña no debe contener espacios en blanco.');
+
+    // Rejects password exceeding 64 characters
+    $tooLong = Validator::make([
+        'password' => str_repeat('A', 30).str_repeat('a', 30).'123!@#$$$',
+        'password_confirmation' => str_repeat('A', 30).str_repeat('a', 30).'123!@#$$$',
+    ], [
+        'password' => BusinessRules::password(confirmed: true),
+    ], BusinessRules::messages());
+
+    expect($tooLong->fails())->toBeTrue()
+        ->and($tooLong->errors()->first('password'))->toBe('La contraseña no debe superar los 64 caracteres.');
 });
 
 test('it validates acceptance of terms and privacy policy', function (): void {

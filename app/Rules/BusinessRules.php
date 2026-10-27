@@ -166,7 +166,13 @@ final class BusinessRules
             ->numbers()
             ->symbols();
 
-        $rules = ['required', 'string', $passwordRule];
+        $rules = [
+            'required',
+            'string',
+            'max:64',
+            'not_regex:/\s/',
+            $passwordRule,
+        ];
 
         if ($confirmed) {
             $rules[] = 'confirmed';
@@ -222,6 +228,8 @@ final class BusinessRules
             'phone_number.regex' => 'Ingresa un número de celular válido (ej. 300 123 4567).',
             'phone_number.unique' => 'Este número de celular ya se encuentra registrado a un negocio.',
             'password.required' => 'La contraseña es obligatoria.',
+            'password.max' => 'La contraseña no debe superar los 64 caracteres.',
+            'password.not_regex' => 'La contraseña no debe contener espacios en blanco.',
             'password.confirmed' => 'La confirmación de la contraseña no coincide.',
             'terms.accepted' => 'Debes aceptar los Términos y Condiciones y la Política de Privacidad.',
         ];

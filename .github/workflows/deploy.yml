@@ -39,33 +39,56 @@ jobs:
             cd "$TARGET_DIR"
 
             echo "📥 Synchronizing repository code from main..."
+            git config --global --add safe.directory "$TARGET_DIR" 2>/dev/null || true
+
             if [ ! -d .git ]; then
-              echo "📦 Git repository not found. Initializing and checking out main..."
-              git init -b main
-              git remote add origin https://github.com/one-centavo/turnex.git || git remote set-url origin https://github.com/one-centavo/turnex.git
+              echo "📦 Git repository not found. Initializing repository..."
+              git init
+              git remote add origin https://github.com/one-centavo/turnex.git 2>/dev/null || git remote set-url origin https://github.com/one-centavo/turnex.git
               git fetch origin main
               git checkout -f -B main origin/main
             else
               echo "🔄 Updating existing repository..."
+              git remote set-url origin https://github.com/one-centavo/turnex.git 2>/dev/null || true
               git fetch origin main
               git reset --hard origin/main
             fi
 
             echo "🔍 Validating environment configuration..."
             if [ ! -f .env ]; then
-              echo "❌ Error: .env file not found in $(pwd). Please configure .env before deploying." >&2
-              exit 1
+              echo "⚠️ .env file not found. Initializing from .env.example..."
+              cp .env.example .env
+              sed -i 's|APP_URL=.*|APP_URL=https://turnex.adsoproject.dev|' .env
+              sed -i 's|APP_ENV=.*|APP_ENV=production|' .env
+              sed -i 's|APP_DEBUG=.*|APP_DEBUG=false|' .env
+              sed -i 's|DB_HOST=.*|DB_HOST=turnex-db|' .env
+            fi
+
+            # Detect docker & compose command (with or without sudo)
+            SUDO_PREFIX=""
+            if ! docker ps >/dev/null 2>&1 && sudo docker ps >/dev/null 2>&1; then
+              SUDO_PREFIX="sudo "
+            fi
+
+            DOCKER_CMD="${SUDO_PREFIX}docker"
+
+            if docker compose version >/dev/null 2>&1 || sudo docker compose version >/dev/null 2>&1; then
+              DOCKER_COMPOSE="${SUDO_PREFIX}docker compose"
+            elif command -v docker-compose >/dev/null 2>&1; then
+              DOCKER_COMPOSE="${SUDO_PREFIX}docker-compose"
+            else
+              DOCKER_COMPOSE="${SUDO_PREFIX}docker compose"
             fi
 
             echo "🌐 Ensuring external Docker network exists..."
-            docker network create proxy-network 2>/dev/null || true
+            $DOCKER_CMD network create proxy-network 2>/dev/null || true
 
             echo "🐳 Building and starting Docker containers..."
-            docker compose up -d --build --remove-orphans
+            $DOCKER_COMPOSE up -d --build --remove-orphans
 
             echo "⏳ Waiting for containers to become ready..."
             for i in $(seq 1 30); do
-              if docker compose exec -T turnex-app php artisan --version >/dev/null 2>&1; then
+              if $DOCKER_COMPOSE exec -T turnex-app php artisan --version >/dev/null 2>&1; then
                 echo "✅ Application service is ready!"
                 break
               fi
@@ -73,12 +96,15 @@ jobs:
               sleep 2
             done
 
+            echo "🔑 Ensuring application key exists..."
+            $DOCKER_COMPOSE exec -T turnex-app php artisan key:generate --force --no-interaction || true
+
             echo "🗄️ Running database migrations..."
-            docker compose exec -T turnex-app php artisan migrate --force
+            $DOCKER_COMPOSE exec -T turnex-app php artisan migrate --force
 
             echo "⚡ Optimizing application cache..."
-            docker compose exec -T turnex-app php artisan optimize
-            docker compose exec -T turnex-app php artisan queue:restart || true
+            $DOCKER_COMPOSE exec -T turnex-app php artisan optimize
+            $DOCKER_COMPOSE exec -T turnex-app php artisan queue:restart || true
 
             echo "✅ Deployment finished successfully!"
 

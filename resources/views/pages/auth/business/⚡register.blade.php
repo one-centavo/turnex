@@ -735,10 +735,11 @@ new #[Title('Registrar mi negocio')] #[Layout('layouts.auth.card')] class extend
                     showPassword: false,
                     isFocused: false,
                     password: '',
-                    get hasMin() { return this.password.length >= 8; },
+                    get hasLength() { return this.password.length >= 8 && this.password.length <= 64; },
                     get hasMixed() { return /[a-z]/.test(this.password) && /[A-Z]/.test(this.password); },
                     get hasNumber() { return /[0-9]/.test(this.password); },
-                    get hasSymbol() { return /[^A-Za-z0-9]/.test(this.password); }
+                    get hasSymbol() { return /[^A-Za-z0-9\s]/.test(this.password); },
+                    get hasNoSpaces() { return !/\s/.test(this.password) && this.password.length > 0; }
                 }"
             >
                 <label for="password" class="block text-xs sm:text-sm font-medium text-[#64748B] dark:text-[#9CA3AF] mb-2">
@@ -750,9 +751,11 @@ new #[Title('Registrar mi negocio')] #[Layout('layouts.auth.card')] class extend
                         wire:model="password"
                         :type="showPassword ? 'text' : 'password'"
                         required
+                        maxlength="64"
                         autocomplete="new-password"
-                        placeholder="Mínimo 8 caracteres"
-                        @input="password = $event.target.value"
+                        placeholder="De 8 a 64 caracteres"
+                        @keydown.space.prevent
+                        @input="password = $event.target.value = $event.target.value.replace(/\s/g, '')"
                         @focus="isFocused = true"
                         @blur="isFocused = false"
                         class="h-11 w-full rounded-md border pl-3.5 pr-11 text-sm sm:text-base transition-colors bg-white text-[#0F172A] placeholder:text-slate-400 focus:outline-hidden focus:ring-2 focus:ring-blue-600 focus:border-transparent dark:bg-[#0B0F17] dark:text-[#F9FAFB] dark:placeholder:text-slate-500 {{ $errors->has('password') ? 'border-red-500' : 'border-[#CBD5E1] dark:border-[#374151]' }}"
@@ -794,9 +797,9 @@ new #[Title('Registrar mi negocio')] #[Layout('layouts.auth.card')] class extend
                         {{ __('Requisitos de la contraseña:') }}
                     </span>
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-1.5 font-mono text-[11px]">
-                        <span class="flex items-center gap-1.5 transition-colors" :class="hasMin ? 'text-emerald-600 dark:text-emerald-400 font-semibold' : 'text-slate-500 dark:text-slate-400'">
-                            <span class="size-1.5 rounded-full transition-colors" :class="hasMin ? 'bg-emerald-500' : 'bg-slate-400 dark:bg-slate-600'"></span>
-                            <span>{{ __('Mínimo 8 caracteres') }}</span>
+                        <span class="flex items-center gap-1.5 transition-colors" :class="hasLength ? 'text-emerald-600 dark:text-emerald-400 font-semibold' : 'text-slate-500 dark:text-slate-400'">
+                            <span class="size-1.5 rounded-full transition-colors" :class="hasLength ? 'bg-emerald-500' : 'bg-slate-400 dark:bg-slate-600'"></span>
+                            <span>{{ __('8 a 64 caracteres') }}</span>
                         </span>
                         <span class="flex items-center gap-1.5 transition-colors" :class="hasMixed ? 'text-emerald-600 dark:text-emerald-400 font-semibold' : 'text-slate-500 dark:text-slate-400'">
                             <span class="size-1.5 rounded-full transition-colors" :class="hasMixed ? 'bg-emerald-500' : 'bg-slate-400 dark:bg-slate-600'"></span>
@@ -809,6 +812,10 @@ new #[Title('Registrar mi negocio')] #[Layout('layouts.auth.card')] class extend
                         <span class="flex items-center gap-1.5 transition-colors" :class="hasSymbol ? 'text-emerald-600 dark:text-emerald-400 font-semibold' : 'text-slate-500 dark:text-slate-400'">
                             <span class="size-1.5 rounded-full transition-colors" :class="hasSymbol ? 'bg-emerald-500' : 'bg-slate-400 dark:bg-slate-600'"></span>
                             <span>{{ __('Un símbolo (!@#$%)') }}</span>
+                        </span>
+                        <span class="flex items-center gap-1.5 transition-colors sm:col-span-2" :class="hasNoSpaces ? 'text-emerald-600 dark:text-emerald-400 font-semibold' : 'text-slate-500 dark:text-slate-400'">
+                            <span class="size-1.5 rounded-full transition-colors" :class="hasNoSpaces ? 'bg-emerald-500' : 'bg-slate-400 dark:bg-slate-600'"></span>
+                            <span>{{ __('Sin espacios en blanco') }}</span>
                         </span>
                     </div>
                 </div>

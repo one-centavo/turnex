@@ -8,7 +8,7 @@ use App\Services\CustomerService;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Notification;
 
-test('it registers a customer with normalized fields and sets phone as verified', function (): void {
+test('it registers a customer with normalized fields and sets email as verified', function (): void {
     Notification::fake();
 
     /** @var CustomerService $service */
@@ -27,9 +27,33 @@ test('it registers a customer with normalized fields and sets phone as verified'
         ->and($customer->last_name)->toBe('pérez gómez')
         ->and($customer->email)->toBe('carlos.perez@turnex.test')
         ->and($customer->phone_number)->toBe('+573001234567')
-        ->and($customer->phone_verified_at)->not->toBeNull()
-        ->and($customer->email_verified_at)->toBeNull()
+        ->and($customer->phone_verified_at)->toBeNull()
+        ->and($customer->email_verified_at)->not->toBeNull()
         ->and(Hash::check('Turnex@2026!', $customer->password))->toBeTrue();
+
+    Notification::assertSentTo($customer, WelcomeCustomerNotification::class);
+});
+
+test('it registers a customer without phone number', function (): void {
+    Notification::fake();
+
+    /** @var CustomerService $service */
+    $service = app(CustomerService::class);
+
+    $customer = $service->register([
+        'first_name' => 'María',
+        'last_name' => 'González',
+        'email' => 'maria@turnex.test',
+        'password' => 'Turnex@2026!',
+    ]);
+
+    expect($customer)->toBeInstanceOf(Customer::class)
+        ->and($customer->first_name)->toBe('María')
+        ->and($customer->last_name)->toBe('González')
+        ->and($customer->email)->toBe('maria@turnex.test')
+        ->and($customer->phone_number)->toBeNull()
+        ->and($customer->phone_verified_at)->toBeNull()
+        ->and($customer->email_verified_at)->not->toBeNull();
 
     Notification::assertSentTo($customer, WelcomeCustomerNotification::class);
 });

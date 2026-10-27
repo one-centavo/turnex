@@ -35,8 +35,8 @@ class WelcomeCustomerNotification extends Notification implements ShouldQueue
         return (new MailMessage)
             ->subject(__('¡Bienvenido a :app!', ['app' => $appName]))
             ->greeting(__('¡Hola, :name!', ['name' => $firstName]))
-            ->line(__('Tu cuenta ha sido creada exitosamente. Tu número de teléfono celular ya se encuentra certificado en nuestra plataforma.'))
-            ->action(__('Ir a la plataforma'), route('home'))
+            ->line(__('Tu cuenta ha sido creada exitosamente. Tu correo electrónico ha sido verificado.'))
+            ->action(__('Ir a la plataforma'), route('dashboard'))
             ->line(__('Gracias por hacer parte de :app.', ['app' => $appName]));
     }
 }

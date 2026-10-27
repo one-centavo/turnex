@@ -1,4 +1,4 @@
-name: Deploy to Production
+name: Deploy to VPS (CI/CD)
 
 on:
   push:
@@ -7,108 +7,72 @@ on:
   workflow_dispatch:
 
 concurrency:
-  group: production_deployment
-  cancel-in-progress: false
+  group: deploy-production
+  cancel-in-progress: true
 
 jobs:
   deploy:
-    name: Deploy via SSH
     runs-on: ubuntu-latest
-
     steps:
-      - name: Execute deployment commands via Native SSH
-        env:
-          SSH_HOST: ${{ secrets.SSH_HOST }}
-          SSH_USER: ${{ secrets.SSH_USER }}
-          SSH_KEY: ${{ secrets.SSH_KEY }}
-          SSH_PORT: ${{ secrets.SSH_PORT || 22 }}
-          TARGET_DIR: ${{ secrets.SSH_TARGET_DIR || '/var/www/turnex' }}
-        run: |
-          mkdir -p ~/.ssh
-          echo "$SSH_KEY" | tr -d '\r' > ~/.ssh/id_rsa
-          chmod 600 ~/.ssh/id_rsa
-          ssh-keyscan -p "$SSH_PORT" -H "$SSH_HOST" >> ~/.ssh/known_hosts 2>/dev/null || true
+      - name: Deploying via SSH to VPS
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.VPS_HOST || secrets.SSH_HOST }}
+          username: ${{ secrets.VPS_USER || secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY || secrets.SSH_KEY }}
+          port: ${{ secrets.VPS_SSH_PORT || secrets.SSH_PORT || 22 }}
+          script: |
+            # 1. Paths and Repository Configurations
+            TARGET_DIR="/home/${{ secrets.VPS_USER || secrets.SSH_USER }}/turnex"
+            REPO_URL="https://github.com/one-centavo/turnex.git"
 
-          ssh -o StrictHostKeyChecking=no -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" "bash -se" << 'EOF'
-            set -e
-
-            TARGET_DIR="/var/www/turnex"
-
-            echo "🚀 Navigating to project directory: $TARGET_DIR"
+            # 2. Preparation Funnel: Ensure files exist on the disk
             if [ ! -d "$TARGET_DIR" ]; then
-              echo "📁 Target directory does not exist. Creating $TARGET_DIR..."
+              echo "First deployment: Creating directory and cloning repository..."
               mkdir -p "$TARGET_DIR"
-            fi
+              git clone $REPO_URL "$TARGET_DIR"
+              cd "$TARGET_DIR"
 
-            cd "$TARGET_DIR"
-
-            echo "📥 Synchronizing repository code from main..."
-            git config --global --add safe.directory "$TARGET_DIR" 2>/dev/null || true
-
-            if [ ! -d .git ]; then
-              echo "📦 Git repository not found. Initializing repository..."
-              git init
-              git remote add origin https://github.com/one-centavo/turnex.git 2>/dev/null || git remote set-url origin https://github.com/one-centavo/turnex.git
-              git fetch origin main
-              git checkout -f -B main origin/main
-            else
-              echo "🔄 Updating existing repository..."
-              git remote set-url origin https://github.com/one-centavo/turnex.git 2>/dev/null || true
-              git fetch origin main
-              git reset --hard origin/main
-            fi
-
-            echo "🔍 Validating environment configuration..."
-            if [ ! -f .env ]; then
-              echo "⚠️ .env file not found. Initializing from .env.example..."
-              cp .env.example .env
-              sed -i 's|APP_URL=.*|APP_URL=https://turnex.adsoproject.dev|' .env
-              sed -i 's|APP_ENV=.*|APP_ENV=production|' .env
-              sed -i 's|APP_DEBUG=.*|APP_DEBUG=false|' .env
-              sed -i 's|DB_HOST=.*|DB_HOST=turnex-db|' .env
-            fi
-
-            # Detect docker & compose command (with or without sudo)
-            SUDO_PREFIX=""
-            if ! docker ps >/dev/null 2>&1 && sudo docker ps >/dev/null 2>&1; then
-              SUDO_PREFIX="sudo "
-            fi
-
-            DOCKER_CMD="${SUDO_PREFIX}docker"
-
-            if docker compose version >/dev/null 2>&1 || sudo docker compose version >/dev/null 2>&1; then
-              DOCKER_COMPOSE="${SUDO_PREFIX}docker compose"
-            elif command -v docker-compose >/dev/null 2>&1; then
-              DOCKER_COMPOSE="${SUDO_PREFIX}docker-compose"
-            else
-              DOCKER_COMPOSE="${SUDO_PREFIX}docker compose"
-            fi
-
-            echo "🌐 Ensuring external Docker network exists..."
-            $DOCKER_CMD network create proxy-network 2>/dev/null || true
-
-            echo "🐳 Building and starting Docker containers..."
-            $DOCKER_COMPOSE up -d --build --remove-orphans
-
-            echo "⏳ Waiting for containers to become ready..."
-            for i in $(seq 1 30); do
-              if $DOCKER_COMPOSE exec -T turnex-app php artisan --version >/dev/null 2>&1; then
-                echo "✅ Application service is ready!"
-                break
+              if [ -f ".env.example" ]; then
+                cp .env.example .env
+                sed -i 's|APP_URL=.*|APP_URL=https://turnex.adsoproject.dev|' .env
+                sed -i 's|APP_ENV=.*|APP_ENV=production|' .env
+                sed -i 's|APP_DEBUG=.*|APP_DEBUG=false|' .env
+                sed -i 's|DB_HOST=.*|DB_HOST=turnex-db|' .env
+                echo "Setting up .env based on .env.example."
+              else
+                touch .env
+                echo "An empty .env file has been created."
               fi
-              echo "Waiting for services to initialize ($i/30)..."
-              sleep 2
-            done
 
-            echo "🔑 Ensuring application key exists..."
-            $DOCKER_COMPOSE exec -T turnex-app php artisan key:generate --force --no-interaction || true
+              echo "⚠️  BLOQUEO DE SEGURIDAD: Se ha detenido el despliegue."
+              echo "Please, enter by SSH to your VPS, edit the file '$TARGET_DIR/.env' with your real credentials and run the pipeline again."
+              exit 1
+            else
+              echo "🔄 Continuous deployment: Updating the repository..."
+              cd "$TARGET_DIR"
+              git pull origin main
+            fi
 
+            # 3. Security Check: Checking that the .env is not empty before building
+            if [ ! -s ".env" ]; then
+              echo "❌ ERROR: The production .env file is empty or not configured. Aborting build."
+              exit 1
+            fi
+
+            # 4. Principal Action: Building and Starting the Infrastructure
+            echo "🌐 Ensuring external Docker network exists..."
+            docker network create proxy-network 2>/dev/null || true
+
+            echo "🏗️ Building and starting containers in production..."
+            docker compose up -d --build
+
+            # 5. Database Automation: Automatic Migrations of Laravel
             echo "🗄️ Running database migrations..."
-            $DOCKER_COMPOSE exec -T turnex-app php artisan migrate --force
+            docker compose exec -T turnex-app php artisan migrate --force
+            docker compose exec -T turnex-app php artisan storage:link --force || true
+            docker compose exec -T turnex-app php artisan config:cache
+            docker compose exec -T turnex-app php artisan route:cache
+            docker compose exec -T turnex-app php artisan view:cache
 
-            echo "⚡ Optimizing application cache..."
-            $DOCKER_COMPOSE exec -T turnex-app php artisan optimize
-            $DOCKER_COMPOSE exec -T turnex-app php artisan queue:restart || true
-
-            echo "✅ Deployment finished successfully!"
-          EOF
+            echo "✅ Deployment completed successfully!"

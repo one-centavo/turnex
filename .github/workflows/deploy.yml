@@ -111,4 +111,4 @@ jobs:
             $DOCKER_COMPOSE exec -T turnex-app php artisan queue:restart || true
 
             echo "✅ Deployment finished successfully!"
-EOF
+          EOF

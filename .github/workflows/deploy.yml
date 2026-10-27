@@ -1,0 +1,61 @@
+name: Deploy to Production
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+concurrency:
+  group: production_deployment
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Deploy via SSH
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Execute deployment commands via SSH
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          port: ${{ secrets.SSH_PORT || 22 }}
+          script_stop: true
+          script: |
+            set -e
+
+            TARGET_DIR="${{ secrets.SSH_TARGET_DIR || '/var/www/turnex' }}"
+
+            echo "🚀 Navigating to project directory..."
+            if [ ! -d "$TARGET_DIR" ]; then
+              echo "📁 Target directory does not exist. Creating $TARGET_DIR..."
+              mkdir -p "$TARGET_DIR"
+            fi
+
+            cd "$TARGET_DIR"
+
+            echo "🔍 Validating environment configuration..."
+            if [ ! -f .env ]; then
+              echo "❌ Error: .env file not found in $(pwd). Please configure .env before deploying." >&2
+              exit 1
+            fi
+
+            echo "📥 Fetching and applying latest changes from main..."
+            git fetch origin main
+            git reset --hard origin/main
+
+            echo "🐳 Building and starting Docker containers..."
+            docker compose up -d --build
+
+            echo "🗄️ Running database migrations..."
+            docker compose exec -T turnex-app php artisan migrate --force
+
+            echo "⚡ Optimizing application cache..."
+            docker compose exec -T turnex-app php artisan optimize
+            docker compose exec -T turnex-app php artisan queue:restart || true
+
+            echo "✅ Deployment finished successfully!"
+

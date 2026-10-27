@@ -19,29 +19,10 @@ RUN pnpm build
 FROM php:8.4-fpm-alpine
 WORKDIR /var/www/html
 
-# Install dependencies and PHP extensions
-RUN apk add --no-cache \
-    icu-libs \
-    libzip \
-    curl \
-    git \
-    --virtual .build-deps \
-    autoconf \
-    gcc \
-    g++ \
-    make \
-    icu-dev \
-    libzip-dev \
-    oniguruma-dev \
-    linux-headers \
-    && docker-php-ext-install \
-    intl \
-    bcmath \
-    pdo_mysql \
-    zip \
-    opcache \
-    pcntl \
-    && apk del .build-deps
+# Install dependencies and precompiled PHP extensions via official installer (fast & lightweight)
+COPY --from=mlocati/php-extension-installer /usr/bin/install-php-extensions /usr/local/bin/
+RUN apk add --no-cache curl git \
+    && install-php-extensions intl bcmath pdo_mysql zip opcache pcntl
 
 # Composer binary
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer

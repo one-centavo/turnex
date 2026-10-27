@@ -1,4 +1,4 @@
-name: Deploy to Production
+name: Deploy to VPS (CI/CD)
 
 on:
   push:
@@ -7,55 +7,88 @@ on:
   workflow_dispatch:
 
 concurrency:
-  group: production_deployment
-  cancel-in-progress: false
+  group: deploy-production
+  cancel-in-progress: true
 
 jobs:
   deploy:
-    name: Deploy via SSH
     runs-on: ubuntu-latest
-
     steps:
-      - name: Execute deployment commands via SSH
-        uses: appleboy/ssh-action@v1.2.0
+      - name: Deploying via SSH to VPS
+        uses: appleboy/ssh-action@master
         with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USER }}
-          key: ${{ secrets.SSH_KEY }}
-          port: ${{ secrets.SSH_PORT || 22 }}
-          script_stop: true
+          host: ${{ secrets.VPS_HOST || secrets.SSH_HOST }}
+          username: ${{ secrets.VPS_USER || secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY || secrets.SSH_KEY }}
+          port: ${{ secrets.VPS_SSH_PORT || secrets.SSH_PORT || 22 }}
+          command_timeout: 30m
           script: |
-            set -e
+            # 1. Paths and Repository Configurations
+            TARGET_DIR="/home/${{ secrets.VPS_USER || secrets.SSH_USER }}/turnex"
+            REPO_URL="https://github.com/one-centavo/turnex.git"
 
-            TARGET_DIR="${{ secrets.SSH_TARGET_DIR || '/var/www/turnex' }}"
-
-            echo "🚀 Navigating to project directory..."
+            # 2. Preparation Funnel: Ensure files exist on the disk
             if [ ! -d "$TARGET_DIR" ]; then
-              echo "📁 Target directory does not exist. Creating $TARGET_DIR..."
+              echo "First deployment: Creating directory and cloning repository..."
               mkdir -p "$TARGET_DIR"
+              git clone $REPO_URL "$TARGET_DIR"
+              cd "$TARGET_DIR"
+
+              if [ -f ".env.example" ]; then
+                cp .env.example .env
+                sed -i 's|APP_URL=.*|APP_URL=https://turnex.adsoproject.dev|' .env
+                sed -i 's|APP_ENV=.*|APP_ENV=production|' .env
+                sed -i 's|APP_DEBUG=.*|APP_DEBUG=false|' .env
+                sed -i 's|DB_HOST=.*|DB_HOST=turnex-db|' .env
+                echo "Setting up .env based on .env.example."
+              else
+                touch .env
+                echo "An empty .env file has been created."
+              fi
+
+              echo "⚠️  BLOQUEO DE SEGURIDAD: Se ha detenido el despliegue."
+              echo "Please, enter by SSH to your VPS, edit the file '$TARGET_DIR/.env' with your real credentials and run the pipeline again."
+              exit 1
+            else
+              echo "🔄 Continuous deployment: Updating the repository..."
+              cd "$TARGET_DIR"
+              git pull origin main
             fi
 
-            cd "$TARGET_DIR"
-
-            echo "🔍 Validating environment configuration..."
-            if [ ! -f .env ]; then
-              echo "❌ Error: .env file not found in $(pwd). Please configure .env before deploying." >&2
+            # 3. Security Check: Checking that the .env is not empty before building
+            if [ ! -s ".env" ]; then
+              echo "❌ ERROR: The production .env file is empty or not configured. Aborting build."
               exit 1
             fi
 
-            echo "📥 Fetching and applying latest changes from main..."
-            git fetch origin main
-            git reset --hard origin/main
+            # 4. Version Synchronization: Resolve latest tag and update .version and .env
+            echo "🏷️ Synchronizing application version from git tags..."
+            git fetch --tags --force 2>/dev/null || true
+            LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || git tag -l --sort=-v:refname | head -n 1)
 
-            echo "🐳 Building and starting Docker containers..."
+            if [ -n "$LATEST_TAG" ]; then
+              echo "$LATEST_TAG" > .version
+              if grep -q "^APP_VERSION=" .env; then
+                sed -i "s|^APP_VERSION=.*|APP_VERSION=$LATEST_TAG|" .env
+              else
+                echo "APP_VERSION=$LATEST_TAG" >> .env
+              fi
+              echo "✅ Application version set to: $LATEST_TAG"
+            fi
+
+            # 5. Principal Action: Building and Starting the Infrastructure
+            echo "🌐 Ensuring external Docker network exists..."
+            docker network create proxy-network 2>/dev/null || true
+
+            echo "🏗️ Building and starting containers in production..."
             docker compose up -d --build
 
+            # 6. Database Automation: Automatic Migrations of Laravel
             echo "🗄️ Running database migrations..."
             docker compose exec -T turnex-app php artisan migrate --force
+            docker compose exec -T turnex-app php artisan storage:link --force || true
+            docker compose exec -T turnex-app php artisan config:cache
+            docker compose exec -T turnex-app php artisan route:cache
+            docker compose exec -T turnex-app php artisan view:cache
 
-            echo "⚡ Optimizing application cache..."
-            docker compose exec -T turnex-app php artisan optimize
-            docker compose exec -T turnex-app php artisan queue:restart || true
-
-            echo "✅ Deployment finished successfully!"
-
+            echo "✅ Deployment completed successfully!"

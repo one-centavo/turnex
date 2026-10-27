@@ -22,7 +22,7 @@
 
 <br><br>
 
-<a href="https://turnex.example.com"><b>👉 Try the Live Demo</b></a>
+<a href="https://turnex.adsoproject.dev"><b>👉 Try the Live Demo</b></a>
 
 </div>
 

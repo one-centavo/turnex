@@ -24,6 +24,7 @@ jobs:
           key: ${{ secrets.SSH_KEY }}
           port: ${{ secrets.SSH_PORT || 22 }}
           script_stop: true
+          command_timeout: 30m
           script: |
             set -e
 
@@ -37,18 +38,40 @@ jobs:
 
             cd "$TARGET_DIR"
 
+            echo "📥 Synchronizing repository code from main..."
+            if [ ! -d .git ]; then
+              echo "📦 Git repository not found. Initializing and checking out main..."
+              git init -b main
+              git remote add origin https://github.com/one-centavo/turnex.git || git remote set-url origin https://github.com/one-centavo/turnex.git
+              git fetch origin main
+              git checkout -f -B main origin/main
+            else
+              echo "🔄 Updating existing repository..."
+              git fetch origin main
+              git reset --hard origin/main
+            fi
+
             echo "🔍 Validating environment configuration..."
             if [ ! -f .env ]; then
               echo "❌ Error: .env file not found in $(pwd). Please configure .env before deploying." >&2
               exit 1
             fi
 
-            echo "📥 Fetching and applying latest changes from main..."
-            git fetch origin main
-            git reset --hard origin/main
+            echo "🌐 Ensuring external Docker network exists..."
+            docker network create proxy-network 2>/dev/null || true
 
             echo "🐳 Building and starting Docker containers..."
-            docker compose up -d --build
+            docker compose up -d --build --remove-orphans
+
+            echo "⏳ Waiting for containers to become ready..."
+            for i in $(seq 1 30); do
+              if docker compose exec -T turnex-app php artisan --version >/dev/null 2>&1; then
+                echo "✅ Application service is ready!"
+                break
+              fi
+              echo "Waiting for services to initialize ($i/30)..."
+              sleep 2
+            done
 
             echo "🗄️ Running database migrations..."
             docker compose exec -T turnex-app php artisan migrate --force

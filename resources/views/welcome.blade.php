@@ -66,6 +66,12 @@
                         {{ __('Iniciar sesión') }}
                     </a>
                     <a
+                        href="{{ route('business.login') }}"
+                        class="hidden md:inline-flex items-center justify-center h-9 px-3 text-sm font-medium text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-blue-600 rounded-md"
+                    >
+                        {{ __('Acceso Negocios') }}
+                    </a>
+                    <a
                         href="{{ route('business.register') }}"
                         class="hidden sm:inline-flex items-center justify-center h-9 px-3.5 text-sm font-medium rounded-md border border-[#CBD5E1] dark:border-[#374151] bg-white dark:bg-[#111827] text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:border-slate-400 dark:hover:border-slate-600 transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-blue-600"
                     >
@@ -119,6 +125,16 @@
                             <span>{{ __('Registrar mi Negocio') }}</span>
                         </a>
                     </div>
+
+                    {{-- Business Login Link for returning merchants --}}
+                    @guest('business')
+                        <div class="text-xs text-slate-600 dark:text-slate-400 -mt-2">
+                            {{ __('¿Ya registraste tu empresa?') }}
+                            <a href="{{ route('business.login') }}" class="font-medium text-blue-600 dark:text-blue-400 hover:underline">
+                                {{ __('Inicia sesión aquí') }}
+                            </a>
+                        </div>
+                    @endguest
 
                     {{-- Micro Indicators --}}
                     <div class="pt-3 flex flex-wrap items-center gap-y-2 gap-x-6 text-xs text-slate-500 dark:text-slate-400 font-mono">
@@ -362,6 +378,9 @@
             </div>
 
             <div class="flex items-center gap-4">
+                <a href="{{ route('business.login') }}" class="hover:text-slate-900 dark:hover:text-slate-300 transition-colors">
+                    {{ __('Portal Empresas') }}
+                </a>
                 <span class="inline-flex items-center gap-1.5">
                     <span class="size-1.5 rounded-full bg-emerald-500"></span>
                     <span>{{ config('app.version') }}</span>

@@ -157,17 +157,17 @@
 
 - [ ] Authenticated users attempting to access the login page are redirected to their corresponding role dashboard or catalog.
 - [ ] The system offers multiple authentication methods:
-    - [ ] Standard credentials (Email or Phone number + Password) for customers and businesses.
+    - [ ] Standard credentials (Email + Password) for customers and businesses.
     - [ ] Single-click social login (**"Continue with Google"**) for customers (**US01B**).
 - [ ] For credential-based login:
-    - [ ] The login form requests the user's identifier (email or mobile phone number) and password.
+    - [ ] The login form requests the user's email address and password.
     - [ ] The password field allows toggling between hidden and visible text.
     - [ ] The login form includes an optional **"Remember me"** checkbox.
-    - [ ] Both identifier and password fields are required; submitting empty values prompts the user to complete them.
-    - [ ] The entered identifier (email or phone number) is automatically cleaned and formatted (**US-CORE-02**) before verifying credentials.
-    - [ ] If the email, phone number, or password does not match an existing account, the system displays: _"Incorrect credentials. Please try again."_
+    - [ ] Both email and password fields are required; submitting empty values prompts the user to complete them.
+    - [ ] The entered email address is automatically cleaned, normalized to lowercase, and trimmed (**US-CORE-02**) before verifying credentials.
+    - [ ] If the email address or password does not match an existing account, the system displays: _"Incorrect credentials. Please try again."_
     - [ ] If the account was registered exclusively via Google OAuth and has no password configured, the system displays: _"This account is linked to Google Sign-In. Please log in using Google."_
-    - [ ] An unsuccessful login clears the password field but keeps the entered email or phone number.
+    - [ ] An unsuccessful login clears the password field but keeps the entered email address.
     - [ ] Login attempts are limited to a maximum of 5 attempts per minute; exceeding this limit temporarily blocks further requests for 1 minute.
     - [ ] A successful login resets the failed attempts counter.
     - [ ] Submitting valid credentials logs the user in for a standard session of 2 hours of inactivity.

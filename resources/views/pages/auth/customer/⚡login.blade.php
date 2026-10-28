@@ -11,7 +11,7 @@ use Livewire\Component;
 
 new #[Title('Iniciar sesión')] #[Layout('layouts.auth.card')] class extends Component
 {
-    public string $identifier = '';
+    public string $email = '';
 
     public string $password = '';
 
@@ -30,17 +30,18 @@ new #[Title('Iniciar sesión')] #[Layout('layouts.auth.card')] class extends Com
     {
         $this->validate(
             [
-                'identifier' => ['required', 'string'],
+                'email' => ['required', 'string', 'email'],
                 'password' => ['required', 'string'],
             ],
             [
-                'identifier.required' => __('El correo electrónico o número de celular es obligatorio.'),
+                'email.required' => __('El correo electrónico es obligatorio.'),
+                'email.email' => __('Ingresa un correo electrónico válido.'),
                 'password.required' => __('La contraseña es obligatoria.'),
             ],
         );
 
         try {
-            $authService->authenticate(identifier: $this->identifier, password: $this->password, remember: $this->remember);
+            $authService->authenticate(email: $this->email, password: $this->password, remember: $this->remember);
         } catch (ValidationException $e) {
             $this->password = '';
 
@@ -59,7 +60,7 @@ new #[Title('Iniciar sesión')] #[Layout('layouts.auth.card')] class extends Com
             {{ __('Inicia sesión') }}
         </h1>
         <p class="text-xs sm:text-sm text-[#64748B] dark:text-[#9CA3AF]">
-            {{ __('Ingresa tu correo o celular y contraseña.') }}
+            {{ __('Ingresa tu correo electrónico y contraseña.') }}
         </p>
     </header>
 
@@ -95,39 +96,50 @@ new #[Title('Iniciar sesión')] #[Layout('layouts.auth.card')] class extends Com
 
     {{-- Customer Login Form --}}
     <form wire:submit="login" class="flex flex-col gap-5">
-        {{-- Unified Identifier (Email or Phone) --}}
-        <flux:input wire:model="identifier" :label="__('Correo electrónico o celular')" type="text" required
-            autofocus autocomplete="username" placeholder="juan@correo.com o 300 123 4567" />
+        {{-- Email Address --}}
+        <flux:input wire:model="email" :label="__('Correo electrónico')" type="email" required
+            autofocus autocomplete="email" placeholder="tu@correo.com" />
 
-        {{-- Password with Visibility Toggle --}}
-        <div class="relative [&_button]:cursor-pointer">
-            <flux:input wire:model="password" :label="__('Contraseña')" type="password" required
-                autocomplete="current-password" placeholder="••••••••" viewable class="[&_button]:cursor-pointer" />
-        </div>
-
-        {{-- Remember Me Checkbox & Forgot Password Link --}}
-        <div class="flex items-center justify-between">
-            <flux:checkbox wire:model="remember" :label="__('Recordarme')" class="cursor-pointer [&_label]:cursor-pointer [&_ui-checkbox]:cursor-pointer" />
-
-            @if (Route::has('password.request'))
+        {{-- Password with Eye Icon Toggle --}}
+        <div class="flex flex-col gap-1.5">
+            <div class="flex items-center justify-between">
+                <label for="password" class="text-xs sm:text-sm font-medium text-[#64748B] dark:text-[#9CA3AF]">
+                    {{ __('Contraseña') }}
+                </label>
                 <a href="{{ route('password.request') }}"
-                    class="text-xs font-medium text-blue-600 hover:text-blue-500 hover:underline dark:text-blue-400 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-blue-600 rounded-sm cursor-pointer"
+                    class="text-xs sm:text-sm font-medium text-blue-600 dark:text-blue-400 hover:underline"
                     wire:navigate>
                     {{ __('¿Olvidaste tu contraseña?') }}
                 </a>
-            @endif
+            </div>
+
+            <div class="relative flex items-center" x-data="{ showPassword: false }">
+                <input id="password" wire:model="password" :type="showPassword ? 'text' : 'password'" required
+                    autocomplete="current-password" placeholder="••••••••"
+                    class="h-10 w-full rounded-md border px-3 pr-10 text-sm transition-colors bg-white text-[#0F172A] placeholder:text-slate-400 focus:outline-hidden focus:ring-2 focus:ring-blue-600 focus:border-transparent dark:bg-[#0B0F17] dark:text-[#F9FAFB] dark:placeholder:text-slate-500 {{ $errors->has('password') ? 'border-red-500' : 'border-[#CBD5E1] dark:border-[#374151]' }}" />
+                <button type="button" @click="showPassword = !showPassword"
+                    class="absolute right-0 top-0 bottom-0 flex items-center justify-center w-10 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors cursor-pointer"
+                    :aria-label="showPassword ? '{{ __('Ocultar contraseña') }}' : '{{ __('Mostrar contraseña') }}'">
+                    <flux:icon name="eye" x-show="!showPassword" class="size-4.5" />
+                    <flux:icon name="eye-slash" x-show="showPassword" x-cloak class="size-4.5" />
+                </button>
+            </div>
+            @error('password')
+                <p class="text-xs text-red-500 font-medium">{{ $message }}</p>
+            @enderror
         </div>
 
-        {{-- Submit Button --}}
-        <flux:button variant="primary" type="submit" class="w-full h-11 text-base font-semibold cursor-pointer"
-            wire:loading.attr="disabled">
+        {{-- Remember Me Checkbox --}}
+        <flux:checkbox wire:model="remember" :label="__('Recordarme en este dispositivo')" />
+
+        {{-- Primary Submit Button --}}
+        <flux:button variant="primary" type="submit" class="w-full h-11 text-base cursor-pointer">
             <span wire:loading.remove wire:target="login">
                 {{ __('Iniciar sesión') }}
             </span>
             <span wire:loading wire:target="login" class="inline-flex items-center gap-2">
-                <svg class="size-4 animate-spin" viewBox="0 0 24 24" fill="none">
-                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor"
-                        stroke-width="4"></circle>
+                <svg class="animate-spin size-4 text-white" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                     <path class="opacity-75" fill="currentColor"
                         d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
                     </path>
@@ -137,34 +149,41 @@ new #[Title('Iniciar sesión')] #[Layout('layouts.auth.card')] class extends Com
         </flux:button>
     </form>
 
-    {{-- Divider --}}
-    <div class="relative flex items-center justify-center my-1">
-        <div class="border-t border-[#E2E8F0] dark:border-[#334155] w-full"></div>
-        <span class="bg-white dark:bg-[#1E293B] px-3 text-xs text-[#64748B] dark:text-[#9CA3AF] uppercase font-medium tracking-wider">
-            {{ __('o') }}
-        </span>
-        <div class="border-t border-[#E2E8F0] dark:border-[#334155] w-full"></div>
+    {{-- Social Authentication Divider --}}
+    <div class="relative my-1">
+        <div class="absolute inset-0 flex items-center">
+            <div class="w-full border-t border-[#E2E8F0] dark:border-[#1F2937]"></div>
+        </div>
+        <div class="relative flex justify-center text-xs uppercase">
+            <span class="bg-white dark:bg-[#0B0F17] px-2 text-[#64748B] dark:text-[#9CA3AF]">
+                {{ __('O continúa con') }}
+            </span>
+        </div>
     </div>
 
     {{-- Google OAuth Button --}}
     <a href="{{ route('auth.google.redirect') }}"
-        class="w-full h-11 px-4 rounded-md border border-[#CBD5E1] dark:border-[#334155] bg-white dark:bg-[#1E293B] hover:bg-slate-50 dark:hover:bg-slate-800 text-[#0F172A] dark:text-[#F9FAFB] font-medium text-sm sm:text-base flex items-center justify-center gap-3 transition-colors cursor-pointer shadow-xs focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-blue-600">
+        class="inline-flex h-11 w-full items-center justify-center gap-3 rounded-md border border-[#CBD5E1] dark:border-[#374151] bg-white dark:bg-[#0B0F17] px-4 text-sm font-medium text-[#0F172A] dark:text-[#F9FAFB] hover:bg-slate-50 dark:hover:bg-[#1F2937] transition-colors focus:outline-hidden focus:ring-2 focus:ring-blue-600"
+        data-test="google-login-button">
         <svg class="size-5 shrink-0" viewBox="0 0 24 24">
-            <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
-            <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
-            <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" />
-            <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" />
+            <path fill="#4285F4"
+                d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+            <path fill="#34A853"
+                d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+            <path fill="#FBBC05"
+                d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" />
+            <path fill="#EA4335"
+                d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" />
         </svg>
         <span>{{ __('Continuar con Google') }}</span>
     </a>
 
-    {{-- Registration CTA Link conforming to Design System --}}
-    <div class="mt-2 text-center text-xs sm:text-sm text-[#64748B] dark:text-[#9CA3AF]">
-        <span>{{ __('¿No tienes una cuenta?') }}</span>
-        <a href="{{ route('register') }}"
-            class="font-medium text-blue-600 hover:text-blue-500 hover:underline dark:text-blue-400 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-blue-600 rounded-sm ms-1"
+    {{-- Registration Link --}}
+    <div class="pt-3 text-center text-xs sm:text-sm text-[#64748B] dark:text-[#9CA3AF] border-t border-[#E2E8F0] dark:border-[#1F2937]">
+        {{ __('¿No tienes una cuenta?') }}
+        <a href="{{ route('register') }}" class="font-semibold text-blue-600 dark:text-blue-400 hover:underline"
             wire:navigate>
-            {{ __('Regístrate') }}
+            {{ __('Regístrate como cliente') }}
         </a>
     </div>
 </div>

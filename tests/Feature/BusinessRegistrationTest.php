@@ -60,7 +60,6 @@ test('step 1 validates required fields and security rules', function (): void {
             'owner_last_name',
             'location',
             'email',
-            'phone_number',
             'password',
             'terms',
         ])
@@ -86,7 +85,6 @@ test('step 1 accepts optional middle name and second last name', function (): vo
         ->set('owner_second_last_name', 'Rodríguez')
         ->set('location', 'Carrera 15 # 85-30, Bogotá')
         ->set('email', 'carlos@cafedonpedro.com')
-        ->set('phone_number', '3001234567')
         ->set('password', 'Turnex@2026!')
         ->set('password_confirmation', 'Turnex@2026!')
         ->set('terms', true)
@@ -95,10 +93,9 @@ test('step 1 accepts optional middle name and second last name', function (): vo
         ->assertSet('step', 2);
 });
 
-test('step 1 rejects duplicate email and phone number against existing business', function (): void {
+test('step 1 rejects duplicate email against existing business', function (): void {
     Business::factory()->create([
         'email' => 'contacto@minegocio.com',
-        'phone_number' => '+573001234567',
     ]);
 
     Livewire::test('pages::auth.business.register')
@@ -108,12 +105,11 @@ test('step 1 rejects duplicate email and phone number against existing business'
         ->set('owner_last_name', 'Pérez')
         ->set('location', 'Calle 100 # 20-30')
         ->set('email', 'Contacto@MiNegocio.Com')
-        ->set('phone_number', '(300) 123-4567')
         ->set('password', 'Turnex@2026!')
         ->set('password_confirmation', 'Turnex@2026!')
         ->set('terms', true)
         ->call('submitStepOne')
-        ->assertHasErrors(['email', 'phone_number'])
+        ->assertHasErrors(['email'])
         ->assertSet('step', 1);
 });
 
@@ -127,7 +123,6 @@ test('step 1 enforces IP rate limiting of 5 requests per minute', function (): v
         ->set('owner_last_name', 'Pérez')
         ->set('location', 'Calle 100 # 20-30')
         ->set('email', 'nuevo@tienda.com')
-        ->set('phone_number', '3109876543')
         ->set('password', 'Turnex@2026!')
         ->set('password_confirmation', 'Turnex@2026!')
         ->set('terms', true);
@@ -141,7 +136,7 @@ test('step 1 enforces IP rate limiting of 5 requests per minute', function (): v
         ->assertSet('step', 1);
 });
 
-test('step 1 happy path dispatches WhatsApp OTP and advances to step 2', function (): void {
+test('step 1 happy path dispatches Email OTP and advances to step 2', function (): void {
     Notification::fake();
 
     Livewire::test('pages::auth.business.register')
@@ -151,17 +146,16 @@ test('step 1 happy path dispatches WhatsApp OTP and advances to step 2', functio
         ->set('owner_last_name', '  Pérez  ')
         ->set('location', '  Carrera 15 # 85-30  ')
         ->set('email', '  Carlos@CafeDonPedro.Com  ')
-        ->set('phone_number', '3001234567')
         ->set('password', 'Turnex@2026!')
         ->set('password_confirmation', 'Turnex@2026!')
         ->set('terms', true)
         ->call('submitStepOne')
         ->assertHasNoErrors()
         ->assertSet('step', 2)
-        ->assertSet('phone_number', '+573001234567');
+        ->assertSet('email', 'carlos@cafedonpedro.com');
 
     Notification::assertSentOnDemand(SendOtpNotification::class, function (SendOtpNotification $notification): bool {
-        return $notification->channel === ContactType::WhatsApp;
+        return $notification->channel === ContactType::Email;
     });
 
     expect(Session::has('business_registration'))->toBeTrue();
@@ -172,7 +166,7 @@ test('step 2 rejects invalid verification code', function (): void {
 
     /** @var OtpService $otpService */
     $otpService = app(OtpService::class);
-    $otpService->generate('+573001234567', ContactType::WhatsApp);
+    $otpService->generate('carlos@cafedonpedro.com', ContactType::Email);
 
     Session::put('business_registration', [
         'step' => 2,
@@ -184,9 +178,8 @@ test('step 2 rejects invalid verification code', function (): void {
         'owner_second_last_name' => null,
         'location' => 'Carrera 15 # 85-30',
         'email' => 'carlos@cafedonpedro.com',
-        'phone_number' => '+573001234567',
         'password' => 'Turnex@2026!',
-        'phone_edit_count' => 0,
+        'email_edit_count' => 0,
         'cooldown_until' => now()->addSeconds(60)->toIso8601String(),
         'expires_at' => now()->addMinutes(15)->toIso8601String(),
     ]);
@@ -197,7 +190,7 @@ test('step 2 rejects invalid verification code', function (): void {
         ->call('verifyCode')
         ->assertHasErrors(['code']);
 
-    expect(Business::where('phone_number', '+573001234567')->exists())->toBeFalse();
+    expect(Business::where('email', 'carlos@cafedonpedro.com')->exists())->toBeFalse();
 });
 
 test('step 2 happy path verifies OTP, provisions business, authenticates, and redirects to dashboard setup', function (): void {
@@ -205,7 +198,7 @@ test('step 2 happy path verifies OTP, provisions business, authenticates, and re
 
     /** @var OtpService $otpService */
     $otpService = app(OtpService::class);
-    $otpService->generate('+573001234567', ContactType::WhatsApp);
+    $otpService->generate('carlos@cafedonpedro.com', ContactType::Email);
 
     $plainCode = '';
     Notification::assertSentOnDemand(SendOtpNotification::class, function (SendOtpNotification $notification) use (&$plainCode): bool {
@@ -224,9 +217,8 @@ test('step 2 happy path verifies OTP, provisions business, authenticates, and re
         'owner_second_last_name' => 'Rodríguez',
         'location' => 'Carrera 15 # 85-30',
         'email' => 'carlos@cafedonpedro.com',
-        'phone_number' => '+573001234567',
         'password' => 'Turnex@2026!',
-        'phone_edit_count' => 0,
+        'email_edit_count' => 0,
         'cooldown_until' => now()->addSeconds(60)->toIso8601String(),
         'expires_at' => now()->addMinutes(15)->toIso8601String(),
     ]);
@@ -243,7 +235,7 @@ test('step 2 happy path verifies OTP, provisions business, authenticates, and re
     $component->call('finishRegistration')
         ->assertRedirect(route('dashboard', ['setup' => 1]));
 
-    $business = Business::where('phone_number', '+573001234567')->first();
+    $business = Business::where('email', 'carlos@cafedonpedro.com')->first();
 
     expect($business)->not->toBeNull()
         ->and($business->business_name)->toBe('Café Don Pedro')
@@ -255,8 +247,9 @@ test('step 2 happy path verifies OTP, provisions business, authenticates, and re
         ->and($business->owner_last_name)->toBe('Pérez')
         ->and($business->owner_second_last_name)->toBe('Rodríguez')
         ->and($business->email)->toBe('carlos@cafedonpedro.com')
-        ->and($business->phone_verified_at)->not->toBeNull()
-        ->and($business->email_verified_at)->toBeNull()
+        ->and($business->phone_number)->toBeNull()
+        ->and($business->phone_verified_at)->toBeNull()
+        ->and($business->email_verified_at)->not->toBeNull()
         ->and(Auth::guard('business')->check())->toBeTrue()
         ->and(Auth::guard('business')->id())->toBe($business->id);
 
@@ -264,11 +257,11 @@ test('step 2 happy path verifies OTP, provisions business, authenticates, and re
     expect(Session::has('business_registration'))->toBeFalse();
 });
 
-test('step 2 allows editing phone number up to 3 times, rejects unchanged or duplicate without consuming attempts', function (): void {
+test('step 2 allows editing email up to 3 times, rejects unchanged or duplicate without consuming attempts', function (): void {
     Notification::fake();
 
     Business::factory()->create([
-        'phone_number' => '+573999999999',
+        'email' => 'existing@minegocio.com',
     ]);
 
     Session::put('business_registration', [
@@ -281,53 +274,52 @@ test('step 2 allows editing phone number up to 3 times, rejects unchanged or dup
         'owner_second_last_name' => null,
         'location' => 'Carrera 15 # 85-30',
         'email' => 'carlos@cafedonpedro.com',
-        'phone_number' => '+573001234567',
         'password' => 'Turnex@2026!',
-        'phone_edit_count' => 0,
+        'email_edit_count' => 0,
         'cooldown_until' => now()->addSeconds(45)->toIso8601String(),
         'expires_at' => now()->addMinutes(15)->toIso8601String(),
     ]);
 
     $component = Livewire::test('pages::auth.business.register')
         ->set('step', 2)
-        ->call('editPhone')
-        ->assertSet('isEditingPhone', true)
-        // Submitting unchanged phone doesn't consume an attempt
-        ->set('new_phone_number', '3001234567')
-        ->call('saveNewPhone')
-        ->assertSet('phoneEditCount', 0)
-        ->assertSet('isEditingPhone', false);
+        ->call('editEmail')
+        ->assertSet('isEditingEmail', true)
+        // Submitting unchanged email doesn't consume an attempt
+        ->set('new_email', 'carlos@cafedonpedro.com')
+        ->call('saveNewEmail')
+        ->assertSet('emailEditCount', 0)
+        ->assertSet('isEditingEmail', false);
 
-    // Submitting duplicate phone doesn't consume an attempt
-    $component->call('editPhone')
-        ->set('new_phone_number', '3999999999')
-        ->call('saveNewPhone')
-        ->assertHasErrors(['new_phone_number'])
-        ->assertSet('phoneEditCount', 0);
+    // Submitting duplicate email doesn't consume an attempt
+    $component->call('editEmail')
+        ->set('new_email', 'existing@minegocio.com')
+        ->call('saveNewEmail')
+        ->assertHasErrors(['new_email'])
+        ->assertSet('emailEditCount', 0);
 
     // 1st valid edit
-    $component->set('new_phone_number', '3109876543')
-        ->call('saveNewPhone')
+    $component->set('new_email', 'nuevo1@cafedonpedro.com')
+        ->call('saveNewEmail')
         ->assertHasNoErrors()
-        ->assertSet('phone_number', '+573109876543')
-        ->assertSet('phoneEditCount', 1)
-        ->assertSet('isEditingPhone', false);
+        ->assertSet('email', 'nuevo1@cafedonpedro.com')
+        ->assertSet('emailEditCount', 1)
+        ->assertSet('isEditingEmail', false);
 
     // 2nd edit
-    $component->call('editPhone')
-        ->set('new_phone_number', '3111112233')
-        ->call('saveNewPhone')
-        ->assertSet('phoneEditCount', 2);
+    $component->call('editEmail')
+        ->set('new_email', 'nuevo2@cafedonpedro.com')
+        ->call('saveNewEmail')
+        ->assertSet('emailEditCount', 2);
 
     // 3rd edit
-    $component->call('editPhone')
-        ->set('new_phone_number', '3122223344')
-        ->call('saveNewPhone')
-        ->assertSet('phoneEditCount', 3);
+    $component->call('editEmail')
+        ->set('new_email', 'nuevo3@cafedonpedro.com')
+        ->call('saveNewEmail')
+        ->assertSet('emailEditCount', 3);
 
     // 4th edit should be rejected
-    $component->call('editPhone')
-        ->assertHasErrors(['phone_edit']);
+    $component->call('editEmail')
+        ->assertHasErrors(['email_edit']);
 });
 
 test('step 2 rejects expired session after 15 minutes', function (): void {
@@ -341,9 +333,8 @@ test('step 2 rejects expired session after 15 minutes', function (): void {
         'owner_second_last_name' => null,
         'location' => 'Carrera 15 # 85-30',
         'email' => 'carlos@cafedonpedro.com',
-        'phone_number' => '+573001234567',
         'password' => 'Turnex@2026!',
-        'phone_edit_count' => 0,
+        'email_edit_count' => 0,
         'cooldown_until' => now()->subMinute()->toIso8601String(),
         'expires_at' => now()->subMinute()->toIso8601String(),
     ]);
@@ -358,12 +349,12 @@ test('step 2 rejects expired session after 15 minutes', function (): void {
     expect(Session::has('business_registration'))->toBeFalse();
 });
 
-test('resendOtp enforces cooldown and allows SMS fallback', function (): void {
+test('resendOtp enforces cooldown for email OTP', function (): void {
     Notification::fake();
 
     /** @var OtpService $otpService */
     $otpService = app(OtpService::class);
-    $otpService->generate('+573001234567', ContactType::WhatsApp);
+    $otpService->generate('carlos@cafedonpedro.com', ContactType::Email);
 
     Session::put('business_registration', [
         'step' => 2,
@@ -375,9 +366,8 @@ test('resendOtp enforces cooldown and allows SMS fallback', function (): void {
         'owner_second_last_name' => null,
         'location' => 'Carrera 15 # 85-30',
         'email' => 'carlos@cafedonpedro.com',
-        'phone_number' => '+573001234567',
         'password' => 'Turnex@2026!',
-        'phone_edit_count' => 0,
+        'email_edit_count' => 0,
         'cooldown_until' => now()->addSeconds(30)->toIso8601String(),
         'expires_at' => now()->addMinutes(15)->toIso8601String(),
     ]);
@@ -385,18 +375,17 @@ test('resendOtp enforces cooldown and allows SMS fallback', function (): void {
     // Attempting to resend during active cooldown is rejected
     $component = Livewire::test('pages::auth.business.register')
         ->set('step', 2)
-        ->call('resendOtp', 'sms')
+        ->call('resendOtp')
         ->assertHasErrors(['code']);
 
     // Advance time past cooldown
     Carbon::setTestNow(now()->addSeconds(65));
 
-    $component->call('resendOtp', 'sms')
-        ->assertHasNoErrors()
-        ->assertSet('channel', 'sms');
+    $component->call('resendOtp')
+        ->assertHasNoErrors();
 
     Notification::assertSentOnDemand(SendOtpNotification::class, function (SendOtpNotification $notification): bool {
-        return $notification->channel === ContactType::Sms;
+        return $notification->channel === ContactType::Email;
     });
 
     Carbon::setTestNow();

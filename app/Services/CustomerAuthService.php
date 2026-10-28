@@ -35,40 +35,21 @@ class CustomerAuthService
     public const string MESSAGE_GOOGLE_ACCOUNT = 'Esta cuenta está vinculada a Google Sign-In. Por favor, inicia sesión con Google.';
 
     /**
-     * Determine whether an identifier is an email address or a mobile phone number.
-     *
-     * @return 'email'|'phone_number'
+     * Clean and normalize the given email address.
      */
-    public function determineIdentifierType(string $identifier): string
+    public function normalizeEmail(string $email): string
     {
-        $trimmed = trim($identifier);
-
-        return str_contains($trimmed, '@') ? 'email' : 'phone_number';
+        return DataNormalizer::email($email);
     }
 
     /**
-     * Clean and normalize the given identifier according to its detected type.
+     * Find a customer record matching the given email address.
      */
-    public function normalizeIdentifier(string $identifier): string
+    public function findCustomer(string $email): ?Customer
     {
-        $trimmed = trim($identifier);
+        $normalized = $this->normalizeEmail($email);
 
-        if ($this->determineIdentifierType($trimmed) === 'email') {
-            return DataNormalizer::email($trimmed);
-        }
-
-        return DataNormalizer::phone($trimmed);
-    }
-
-    /**
-     * Find a customer record matching the given identifier.
-     */
-    public function findCustomer(string $identifier): ?Customer
-    {
-        $type = $this->determineIdentifierType($identifier);
-        $normalized = $this->normalizeIdentifier($identifier);
-
-        return Customer::where($type, $normalized)->first();
+        return Customer::where('email', $normalized)->first();
     }
 
     /**
@@ -80,11 +61,11 @@ class CustomerAuthService
     }
 
     /**
-     * Generate the cache rate limiting throttle key based on identifier and IP address.
+     * Generate the cache rate limiting throttle key based on email and IP address.
      */
-    public function throttleKey(string $identifier, ?string $ipAddress = null): string
+    public function throttleKey(string $email, ?string $ipAddress = null): string
     {
-        $normalized = $this->normalizeIdentifier($identifier);
+        $normalized = $this->normalizeEmail($email);
         $ip = $ipAddress ?? request()->ip() ?? '127.0.0.1';
 
         return 'customer_login:'.Str::transliterate(Str::lower($normalized).'|'.$ip);
@@ -93,81 +74,80 @@ class CustomerAuthService
     /**
      * Determine if the user has too many failed login attempts.
      */
-    public function hasTooManyAttempts(string $identifier, ?string $ipAddress = null): bool
+    public function hasTooManyAttempts(string $email, ?string $ipAddress = null): bool
     {
-        return RateLimiter::tooManyAttempts($this->throttleKey($identifier, $ipAddress), self::MAX_ATTEMPTS);
+        return RateLimiter::tooManyAttempts($this->throttleKey($email, $ipAddress), self::MAX_ATTEMPTS);
     }
 
     /**
      * Get the number of seconds until the rate limit is cleared.
      */
-    public function availableIn(string $identifier, ?string $ipAddress = null): int
+    public function availableIn(string $email, ?string $ipAddress = null): int
     {
-        return RateLimiter::availableIn($this->throttleKey($identifier, $ipAddress));
+        return RateLimiter::availableIn($this->throttleKey($email, $ipAddress));
     }
 
     /**
      * Increment the failed login attempt counter.
      */
-    public function hitRateLimiter(string $identifier, ?string $ipAddress = null): void
+    public function hitRateLimiter(string $email, ?string $ipAddress = null): void
     {
-        RateLimiter::hit($this->throttleKey($identifier, $ipAddress), self::LOCKOUT_SECONDS);
+        RateLimiter::hit($this->throttleKey($email, $ipAddress), self::LOCKOUT_SECONDS);
     }
 
     /**
      * Clear the rate limiter attempts counter.
      */
-    public function clearRateLimiter(string $identifier, ?string $ipAddress = null): void
+    public function clearRateLimiter(string $email, ?string $ipAddress = null): void
     {
-        RateLimiter::clear($this->throttleKey($identifier, $ipAddress));
+        RateLimiter::clear($this->throttleKey($email, $ipAddress));
     }
 
     /**
-     * Authenticate a customer using their identifier and password.
+     * Authenticate a customer using their email and password.
      *
      * @throws ValidationException
      */
     public function authenticate(
-        string $identifier,
+        string $email,
         string $password,
         bool $remember = false,
         ?string $ipAddress = null,
     ): Customer {
-        if ($this->hasTooManyAttempts($identifier, $ipAddress)) {
-            $seconds = max(1, $this->availableIn($identifier, $ipAddress));
+        if ($this->hasTooManyAttempts($email, $ipAddress)) {
+            $seconds = max(1, $this->availableIn($email, $ipAddress));
 
             throw ValidationException::withMessages([
-                'identifier' => "Demasiados intentos de inicio de sesión. Por favor espera {$seconds} segundos antes de intentar nuevamente.",
+                'email' => "Demasiados intentos de inicio de sesión. Por favor espera {$seconds} segundos antes de intentar nuevamente.",
             ]);
         }
 
-        $customer = $this->findCustomer($identifier);
+        $customer = $this->findCustomer($email);
 
         if ($customer !== null && $this->isGoogleOnlyAccount($customer)) {
-            $this->hitRateLimiter($identifier, $ipAddress);
+            $this->hitRateLimiter($email, $ipAddress);
 
             throw ValidationException::withMessages([
-                'identifier' => __(self::MESSAGE_GOOGLE_ACCOUNT),
+                'email' => __(self::MESSAGE_GOOGLE_ACCOUNT),
             ]);
         }
 
-        $type = $this->determineIdentifierType($identifier);
-        $normalized = $this->normalizeIdentifier($identifier);
+        $normalized = $this->normalizeEmail($email);
 
         $attempted = Auth::guard('customer')->attempt([
-            $type => $normalized,
+            'email' => $normalized,
             'password' => $password,
         ], $remember);
 
         if (! $attempted) {
-            $this->hitRateLimiter($identifier, $ipAddress);
+            $this->hitRateLimiter($email, $ipAddress);
 
             throw ValidationException::withMessages([
-                'identifier' => __(self::MESSAGE_INVALID_CREDENTIALS),
+                'email' => __(self::MESSAGE_INVALID_CREDENTIALS),
             ]);
         }
 
-        $this->clearRateLimiter($identifier, $ipAddress);
+        $this->clearRateLimiter($email, $ipAddress);
 
         if (request()->hasSession()) {
             request()->session()->regenerate();

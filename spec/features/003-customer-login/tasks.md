@@ -8,7 +8,7 @@
 ## Authentication & Business Logic
 
 - [x] Create `app/Services/CustomerAuthService.php` to encapsulate customer login lifecycle.
-- [x] Implement dual-identifier resolution (determine if input is email or phone) and clean data using `DataNormalizer`.
+- [x] Implement email normalization using `DataNormalizer::email()`.
 - [x] Implement credential verification against `customer` guard (`Auth::guard('customer')`).
 - [x] Implement check for Google-only accounts (`password` is null) to trigger specific Google Sign-In guidance.
 - [x] Implement rate limiting and lockout logic (5 attempts per minute with 1-minute lockout cooldown) using Laravel's `RateLimiter`.
@@ -17,8 +17,8 @@
 ## User Interface & Presentation Layer
 
 - [x] Create Livewire 4 Single-File Component (SFC) `resources/views/pages/auth/customer/⚡login.blade.php` using Flux UI.
-- [x] Implement form inputs: unified identifier (email/phone), password with visibility toggle, "Remember me" checkbox, and "¿Olvidaste tu contraseña?" link.
-- [x] Bind validation rules and handle submission feedback without clearing the entered identifier on failure.
+- [x] Implement form inputs: email address, password with visibility toggle, "Remember me" checkbox, and "¿Olvidaste tu contraseña?" link.
+- [x] Bind validation rules and handle submission feedback without clearing the entered email on failure.
 - [x] Handle post-authentication session establishment and intelligent redirection to intended destination or discovery catalog by default (`redirectIntended`).
 - [x] Register `/login` route with `guest:customer` middleware in `routes/web.php`.
 
@@ -26,11 +26,11 @@
 
 - [x] Write comprehensive Pest feature tests in `tests/Feature/CustomerLoginTest.php` covering all acceptance criteria:
     - [x] Redirect authenticated users away from `/login`.
-    - [x] Successful login with email and phone number.
+    - [x] Successful login with email address.
     - [x] Validation feedback on empty inputs.
     - [x] Generic error message on invalid credentials.
     - [x] Guidance message for Google-only accounts without password.
-    - [x] Preserving identifier input and clearing password on failed attempt.
+    - [x] Preserving email input and clearing password on failed attempt.
     - [x] Rate limiting (lockout for 1 minute after 5 failed attempts) and attempt counter reset on success.
     - [x] Session lifetime (2 hours) and "Remember me" persistence.
     - [x] Redirection to intended URL vs default catalog.

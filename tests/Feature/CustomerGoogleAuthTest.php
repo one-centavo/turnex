@@ -226,10 +226,10 @@ test('customer registered exclusively via google cannot log in with standard pas
     ]);
 
     Livewire::test('pages::auth.customer.login')
-        ->set('identifier', 'google.only@turnex.test')
+        ->set('email', 'google.only@turnex.test')
         ->set('password', 'AnyPassword123!')
         ->call('login')
-        ->assertHasErrors(['identifier'])
+        ->assertHasErrors(['email'])
         ->assertSee('Esta cuenta está vinculada a Google Sign-In. Por favor, inicia sesión con Google.');
 
     expect(Auth::guard('customer')->check())->toBeFalse();

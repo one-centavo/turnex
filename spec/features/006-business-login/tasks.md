@@ -2,15 +2,15 @@
 
 ## Database & Schema
 
-- [ ] Verify `remember_token` column exists on `businesses` table (already provisioned).
+- [x] Verify `remember_token` column exists on `businesses` table (already provisioned).
 
 ## Authentication & Business Logic
 
-- [ ] Create `app/Services/BusinessAuthService.php` to encapsulate business login lifecycle.
-- [ ] Implement email normalization using `DataNormalizer::email()`.
-- [ ] Implement credential verification against `business` guard (`Auth::guard('business')`).
-- [ ] Implement rate limiting and lockout logic (5 attempts per minute with 1-minute lockout cooldown) using Laravel's `RateLimiter`.
-- [ ] Implement session regeneration and "Remember Me" persistent token support.
+- [x] Create `app/Services/BusinessAuthService.php` to encapsulate business login lifecycle.
+- [x] Implement email normalization using `DataNormalizer::email()`.
+- [x] Implement credential verification against `business` guard (`Auth::guard('business')`).
+- [x] Implement rate limiting and lockout logic (5 attempts per minute with 1-minute lockout cooldown) using Laravel's `RateLimiter`.
+- [x] Implement session regeneration and "Remember Me" persistent token support.
 
 ## User Interface & Presentation Layer
 
@@ -36,3 +36,4 @@
 - [ ] Run Pint to fix and enforce code style (`vendor/bin/pint`).
 - [ ] Run Larastan to verify static analysis (`vendor/bin/phpstan analyse`).
 - [ ] Verify all acceptance criteria from `spec.md`.
+

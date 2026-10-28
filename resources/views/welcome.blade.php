@@ -83,12 +83,12 @@
                         <button
                             type="button"
                             @click="toggle()"
-                            class="inline-flex items-center gap-1.5 h-9 px-3 text-sm font-medium text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-blue-600 rounded-md cursor-pointer"
+                            class="inline-flex items-center gap-1.5 h-9 px-2.5 sm:px-3 text-xs sm:text-sm font-medium whitespace-nowrap text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-blue-600 rounded-md cursor-pointer"
                             :aria-expanded="open"
                             aria-haspopup="true"
                         >
-                            <span>{{ __('Iniciar sesión') }}</span>
-                            <svg class="size-4 text-slate-400 transition-transform duration-150" :class="{ 'rotate-180': open }" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <span class="whitespace-nowrap">{{ __('Iniciar sesión') }}</span>
+                            <svg class="size-3.5 sm:size-4 text-slate-400 transition-transform duration-150 shrink-0" :class="{ 'rotate-180': open }" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
                             </svg>
                         </button>
@@ -102,14 +102,18 @@
                             x-transition:leave-start="opacity-100 scale-100"
                             x-transition:leave-end="opacity-0 scale-95"
                             x-cloak
-                            class="absolute right-0 top-full mt-1.5 w-56 rounded-lg border border-[#E2E8F0] dark:border-[#1F2937] bg-white dark:bg-[#111827] p-1.5 shadow-lg shadow-black/5 dark:shadow-black/20 z-50 flex flex-col gap-0.5"
+                            class="absolute right-0 top-full mt-1.5 w-60 rounded-lg border border-[#E2E8F0] dark:border-[#1F2937] bg-white dark:bg-[#111827] p-1.5 shadow-lg shadow-black/5 dark:shadow-black/20 z-50 flex flex-col gap-0.5"
                         >
+                            <div class="px-2.5 py-1 text-[10px] font-mono uppercase tracking-wider text-slate-400 dark:text-slate-500">
+                                {{ __('Iniciar sesión') }}
+                            </div>
+
                             <a
                                 href="{{ route('login') }}"
-                                class="flex items-center gap-2.5 px-3 py-2 text-sm rounded-md font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-[#1F2937] hover:text-blue-600 dark:hover:text-blue-400 transition-colors group"
+                                class="flex items-center gap-2.5 px-2.5 py-2 text-sm rounded-md font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-[#1F2937] hover:text-blue-600 dark:hover:text-blue-400 transition-colors group"
                                 wire:navigate
                             >
-                                <div class="flex items-center justify-center size-7 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-500 group-hover:bg-blue-50 dark:group-hover:bg-blue-950/40 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                                <div class="flex items-center justify-center size-7 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-500 group-hover:bg-blue-50 dark:group-hover:bg-blue-950/40 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors shrink-0">
                                     <svg class="size-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                                         <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
                                     </svg>
@@ -122,10 +126,10 @@
 
                             <a
                                 href="{{ route('business.login') }}"
-                                class="flex items-center gap-2.5 px-3 py-2 text-sm rounded-md font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-[#1F2937] hover:text-blue-600 dark:hover:text-blue-400 transition-colors group"
+                                class="flex items-center gap-2.5 px-2.5 py-2 text-sm rounded-md font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-[#1F2937] hover:text-blue-600 dark:hover:text-blue-400 transition-colors group"
                                 wire:navigate
                             >
-                                <div class="flex items-center justify-center size-7 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-500 group-hover:bg-blue-50 dark:group-hover:bg-blue-950/40 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                                <div class="flex items-center justify-center size-7 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-500 group-hover:bg-blue-50 dark:group-hover:bg-blue-950/40 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors shrink-0">
                                     <svg class="size-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                                         <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 21v-7.5a.75.75 0 01.75-.75h3a.75.75 0 01.75.75V21m-4.5 0H2.36m11.14 0H18m0 0h3.64m-1.39 0V9.349m-16.5 11.651V9.35m0 0a3.001 3.001 0 003.75-.614A2.993 2.993 0 009 9.35c.983-.913 2.502-.913 3.486 0a2.993 2.993 0 003.264-.614 3.001 3.001 0 003.75.614m-16.5 0a2.997 2.997 0 01-.614-1.25L3.6 4.75A2.25 2.25 0 015.82 3h12.36a2.25 2.25 0 012.22 1.75l1.214 3.35c.084.232.126.476.126.72 0 .47-.11.916-.307 1.314" />
                                     </svg>
@@ -133,6 +137,42 @@
                                 <div class="flex flex-col text-left">
                                     <span class="leading-tight">{{ __('Como Negocio') }}</span>
                                     <span class="text-[11px] font-normal text-slate-500 dark:text-slate-400">{{ __('Panel de operaciones') }}</span>
+                                </div>
+                            </a>
+
+                            {{-- Mobile-only registration shortcuts (when desktop header buttons are hidden) --}}
+                            <div class="sm:hidden border-t border-[#E2E8F0] dark:border-[#1F2937] my-1"></div>
+                            <div class="sm:hidden px-2.5 py-1 text-[10px] font-mono uppercase tracking-wider text-slate-400 dark:text-slate-500">
+                                {{ __('Crear cuenta') }}
+                            </div>
+
+                            <a
+                                href="{{ route('register') }}"
+                                class="sm:hidden flex items-center gap-2.5 px-2.5 py-2 text-sm rounded-md font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-[#1F2937] hover:text-blue-600 dark:hover:text-blue-400 transition-colors group"
+                                wire:navigate
+                            >
+                                <div class="flex items-center justify-center size-7 rounded-md bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 transition-colors shrink-0">
+                                    <svg class="size-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M19 7.5v3m0 0v3m0-3h3m-3 0h-3m-2.25-4.125a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
+                                    </svg>
+                                </div>
+                                <div class="flex flex-col text-left">
+                                    <span class="leading-tight">{{ __('Registrarse como Cliente') }}</span>
+                                    <span class="text-[11px] font-normal text-slate-500 dark:text-slate-400">{{ __('Obtén turnos virtuales') }}</span>
+                                </div>
+                            </a>
+
+                            <a
+                                href="{{ route('business.register') }}"
+                                class="sm:hidden flex items-center gap-2.5 px-2.5 py-2 text-sm rounded-md font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-[#1F2937] hover:text-blue-600 dark:hover:text-blue-400 transition-colors group"
+                                wire:navigate
+                            >
+                                <div class="flex items-center justify-center size-7 rounded-md bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 transition-colors shrink-0">
+                                    <flux:icon name="building-storefront" class="size-4 text-blue-600 dark:text-blue-400" />
+                                </div>
+                                <div class="flex flex-col text-left">
+                                    <span class="leading-tight">{{ __('Registrar mi Negocio') }}</span>
+                                    <span class="text-[11px] font-normal text-slate-500 dark:text-slate-400">{{ __('Comienza en 2 minutos') }}</span>
                                 </div>
                             </a>
                         </div>
@@ -145,7 +185,7 @@
                     </a>
                     <a
                         href="{{ route('register') }}"
-                        class="inline-flex items-center justify-center h-9 px-3.5 text-sm font-semibold rounded-md bg-blue-600 hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-500 text-white transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-blue-600 shadow-xs"
+                        class="hidden sm:inline-flex items-center justify-center h-9 px-3.5 text-sm font-semibold rounded-md bg-blue-600 hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-500 text-white transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-blue-600 shadow-xs"
                     >
                         {{ __('Registrarse') }}
                     </a>

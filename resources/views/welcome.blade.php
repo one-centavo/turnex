@@ -83,12 +83,23 @@
                         <button
                             type="button"
                             @click="toggle()"
-                            class="inline-flex items-center gap-1.5 h-9 px-2.5 sm:px-3 text-xs sm:text-sm font-medium whitespace-nowrap text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-blue-600 rounded-md cursor-pointer"
+                            class="inline-flex items-center justify-center size-9 sm:size-auto sm:h-9 sm:px-3 rounded-md border border-[#E2E8F0] dark:border-[#1F2937] sm:border-transparent sm:dark:border-transparent bg-white dark:bg-[#111827] sm:bg-transparent sm:dark:bg-transparent text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:border-slate-300 dark:hover:border-slate-700 sm:hover:border-transparent sm:dark:hover:border-transparent transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-blue-600 cursor-pointer"
                             :aria-expanded="open"
-                            aria-haspopup="true"
+                            aria-label="{{ __('Menú de navegación') }}"
                         >
-                            <span class="whitespace-nowrap">{{ __('Iniciar sesión') }}</span>
-                            <svg class="size-3.5 sm:size-4 text-slate-400 transition-transform duration-150 shrink-0" :class="{ 'rotate-180': open }" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            {{-- Mobile Hamburger / Close Icon --}}
+                            <span class="sm:hidden flex items-center justify-center">
+                                <svg x-show="!open" class="size-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
+                                </svg>
+                                <svg x-show="open" x-cloak class="size-4.5 text-rose-500 dark:text-rose-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                            </span>
+
+                            {{-- Desktop Text & Chevron --}}
+                            <span class="hidden sm:inline font-medium text-sm whitespace-nowrap">{{ __('Iniciar sesión') }}</span>
+                            <svg class="hidden sm:inline size-4 text-slate-400 transition-transform duration-150 shrink-0" :class="{ 'rotate-180': open }" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
                             </svg>
                         </button>

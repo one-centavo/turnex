@@ -37,8 +37,6 @@ new #[Title('Registrar mi negocio')] #[Layout('layouts.auth.card')] class extend
 
     public string $location = '';
 
-    public string $phone_number = '';
-
     public string $email = '';
 
     public string $password = '';
@@ -50,17 +48,15 @@ new #[Title('Registrar mi negocio')] #[Layout('layouts.auth.card')] class extend
     // Step 2 Verification fields
     public string $code = '';
 
-    public string $channel = 'whatsapp';
+    public int $emailEditCount = 0;
 
-    public int $phoneEditCount = 0;
+    public bool $isEditingEmail = false;
 
-    public bool $isEditingPhone = false;
-
-    public string $new_phone_number = '';
+    public string $new_email = '';
 
     public int $cooldownSeconds = 0;
 
-    public string $maskedPhone = '';
+    public string $maskedEmail = '';
 
     public function mount(): void
     {
@@ -80,8 +76,7 @@ new #[Title('Registrar mi negocio')] #[Layout('layouts.auth.card')] class extend
          *     owner_second_last_name?: string|null,
          *     location?: string,
          *     email?: string,
-         *     phone_number?: string,
-         *     phone_edit_count?: int,
+         *     email_edit_count?: int,
          *     cooldown_until?: string,
          *     expires_at?: string
          * }|null $sessionData */
@@ -95,7 +90,7 @@ new #[Title('Registrar mi negocio')] #[Layout('layouts.auth.card')] class extend
                 return;
             }
 
-            if (($sessionData['step'] ?? 1) === 2 && ! empty($sessionData['phone_number'])) {
+            if (($sessionData['step'] ?? 1) === 2 && ! empty($sessionData['email'])) {
                 $this->step = 2;
                 $this->business_name = $sessionData['business_name'] ?? '';
                 $this->business_category = $sessionData['business_category'] ?? '';
@@ -104,10 +99,9 @@ new #[Title('Registrar mi negocio')] #[Layout('layouts.auth.card')] class extend
                 $this->owner_last_name = $sessionData['owner_last_name'] ?? '';
                 $this->owner_second_last_name = $sessionData['owner_second_last_name'] ?? '';
                 $this->location = $sessionData['location'] ?? '';
-                $this->email = $sessionData['email'] ?? '';
-                $this->phone_number = $sessionData['phone_number'];
-                $this->phoneEditCount = $sessionData['phone_edit_count'] ?? 0;
-                $this->maskedPhone = $this->maskPhoneNumber($this->phone_number);
+                $this->email = $sessionData['email'];
+                $this->emailEditCount = $sessionData['email_edit_count'] ?? 0;
+                $this->maskedEmail = DataNormalizer::maskEmail($this->email);
                 $this->syncCooldown();
             }
         }
@@ -142,14 +136,12 @@ new #[Title('Registrar mi negocio')] #[Layout('layouts.auth.card')] class extend
             'owner_last_name' => BusinessRules::ownerLastName(),
             'owner_second_last_name' => BusinessRules::ownerSecondLastName(),
             'email' => BusinessRules::email(),
-            'phone_number' => BusinessRules::phone(),
             'password' => BusinessRules::password(confirmed: true),
             'terms' => BusinessRules::terms(),
         ], BusinessRules::messages());
 
         RateLimiter::hit($rateKey, 60);
 
-        $normalizedPhone = DataNormalizer::phone($this->phone_number);
         $normalizedEmail = $this->email;
         $normalizedBusinessName = $this->business_name;
         $normalizedCategory = $this->business_category;
@@ -160,11 +152,11 @@ new #[Title('Registrar mi negocio')] #[Layout('layouts.auth.card')] class extend
         $normalizedOwnerSecondLastName = filled($this->owner_second_last_name) ? $this->owner_second_last_name : null;
 
         try {
-            $otpService->generate($normalizedPhone, ContactType::WhatsApp);
+            $otpService->generate($normalizedEmail, ContactType::Email);
         } catch (OtpCooldownException $e) {
             $this->cooldownSeconds = $e->remainingSeconds;
         } catch (\Throwable $e) {
-            $this->addError('general', 'No fue posible despachar el código por WhatsApp en este momento. Intenta nuevamente.');
+            $this->addError('general', 'No fue posible despachar el código de verificación por correo en este momento. Intenta nuevamente.');
 
             return;
         }
@@ -181,21 +173,18 @@ new #[Title('Registrar mi negocio')] #[Layout('layouts.auth.card')] class extend
             'owner_second_last_name' => $normalizedOwnerSecondLastName,
             'location' => $normalizedLocation,
             'email' => $normalizedEmail,
-            'phone_number' => $normalizedPhone,
             'password' => $this->password,
-            'phone_edit_count' => 0,
+            'email_edit_count' => 0,
             'cooldown_until' => $cooldownUntil->toIso8601String(),
             'expires_at' => now()->addMinutes(15)->toIso8601String(),
         ]);
 
         $this->step = 2;
-        $this->phone_number = $normalizedPhone;
-        $this->maskedPhone = $this->maskPhoneNumber($normalizedPhone);
+        $this->maskedEmail = DataNormalizer::maskEmail($normalizedEmail);
         $this->cooldownSeconds = max(0, (int) now()->diffInSeconds($cooldownUntil, false));
-        $this->channel = 'whatsapp';
         $this->code = '';
 
-        Flux::toast(variant: 'success', text: __('Código de verificación enviado por WhatsApp.'));
+        Flux::toast(variant: 'success', text: __('Código de verificación enviado a tu correo corporativo o personal.'));
     }
 
     public function verifyCode(BusinessService $businessService, OtpService $otpService): void
@@ -224,13 +213,11 @@ new #[Title('Registrar mi negocio')] #[Layout('layouts.auth.card')] class extend
          *     owner_second_last_name: string|null,
          *     location: string,
          *     email: string,
-         *     phone_number: string,
          *     password: string
          * } $sessionData */
         $sessionData = Session::get('business_registration');
-        $channelEnum = $this->channel === 'sms' ? ContactType::Sms : ContactType::WhatsApp;
 
-        $isValid = $otpService->verify($sessionData['phone_number'], $this->code, $channelEnum);
+        $isValid = $otpService->verify($sessionData['email'], $this->code, ContactType::Email);
 
         if (! $isValid) {
             $this->addError('code', 'El código ingresado es incorrecto o ha expirado.');
@@ -246,7 +233,6 @@ new #[Title('Registrar mi negocio')] #[Layout('layouts.auth.card')] class extend
             'owner_last_name' => $sessionData['owner_last_name'],
             'owner_second_last_name' => $sessionData['owner_second_last_name'] ?? null,
             'email' => $sessionData['email'],
-            'phone_number' => $sessionData['phone_number'],
             'location' => $sessionData['location'],
             'password' => $sessionData['password'],
         ]);
@@ -258,8 +244,7 @@ new #[Title('Registrar mi negocio')] #[Layout('layouts.auth.card')] class extend
 
         $this->business_name = $business->business_name;
         $this->email = $business->email;
-        $this->phone_number = $business->phone_number;
-        $this->maskedPhone = $this->maskPhoneNumber($business->phone_number);
+        $this->maskedEmail = DataNormalizer::maskEmail($business->email);
         $this->step = 3;
     }
 
@@ -268,7 +253,7 @@ new #[Title('Registrar mi negocio')] #[Layout('layouts.auth.card')] class extend
         $this->redirectIntended(default: route('dashboard', ['setup' => 1]), navigate: true);
     }
 
-    public function resendOtp(string $channel, OtpService $otpService): void
+    public function resendOtp(OtpService $otpService): void
     {
         $this->resetErrorBag('code');
 
@@ -288,9 +273,8 @@ new #[Title('Registrar mi negocio')] #[Layout('layouts.auth.card')] class extend
          *     owner_second_last_name: string|null,
          *     location: string,
          *     email: string,
-         *     phone_number: string,
          *     password: string,
-         *     phone_edit_count: int,
+         *     email_edit_count: int,
          *     cooldown_until: string,
          *     expires_at: string
          * } $sessionData */
@@ -304,18 +288,14 @@ new #[Title('Registrar mi negocio')] #[Layout('layouts.auth.card')] class extend
             return;
         }
 
-        $targetChannel = $channel === 'sms' ? ContactType::Sms : ContactType::WhatsApp;
-        $this->channel = $channel;
-
         try {
-            $otpService->generate($sessionData['phone_number'], $targetChannel);
+            $otpService->generate($sessionData['email'], ContactType::Email);
             $newCooldownUntil = now()->addSeconds(OtpService::COOLDOWN_SECONDS);
             $sessionData['cooldown_until'] = $newCooldownUntil->toIso8601String();
             Session::put('business_registration', $sessionData);
             $this->cooldownSeconds = OtpService::COOLDOWN_SECONDS;
 
-            $channelLabel = $channel === 'sms' ? 'SMS' : 'WhatsApp';
-            Flux::toast(variant: 'success', text: __("Nuevo código enviado por {$channelLabel}."));
+            Flux::toast(variant: 'success', text: __('Nuevo código de verificación enviado a tu correo.'));
         } catch (OtpCooldownException $e) {
             $this->cooldownSeconds = $e->remainingSeconds;
             $this->addError('code', "Espera {$this->cooldownSeconds} segundos antes de volver a solicitar un código.");
@@ -324,26 +304,26 @@ new #[Title('Registrar mi negocio')] #[Layout('layouts.auth.card')] class extend
         }
     }
 
-    public function editPhone(): void
+    public function editEmail(): void
     {
-        if ($this->phoneEditCount >= 3) {
-            $this->addError('phone_edit', 'Has alcanzado el límite máximo de 3 ediciones de número de celular.');
+        if ($this->emailEditCount >= 3) {
+            $this->addError('email_edit', 'Has alcanzado el límite máximo de 3 cambios de correo electrónico.');
 
             return;
         }
 
-        $this->new_phone_number = (string) preg_replace('/^\+?57/', '', $this->phone_number);
-        $this->isEditingPhone = true;
+        $this->new_email = $this->email;
+        $this->isEditingEmail = true;
     }
 
-    public function cancelEditPhone(): void
+    public function cancelEditEmail(): void
     {
-        $this->isEditingPhone = false;
-        $this->new_phone_number = '';
-        $this->resetErrorBag(['new_phone_number', 'phone_edit']);
+        $this->isEditingEmail = false;
+        $this->new_email = '';
+        $this->resetErrorBag(['new_email', 'email_edit']);
     }
 
-    public function saveNewPhone(OtpService $otpService): void
+    public function saveNewEmail(OtpService $otpService): void
     {
         if ($this->hasSessionExpired()) {
             $this->handleExpiredSession();
@@ -361,46 +341,42 @@ new #[Title('Registrar mi negocio')] #[Layout('layouts.auth.card')] class extend
          *     owner_second_last_name: string|null,
          *     location: string,
          *     email: string,
-         *     phone_number: string,
          *     password: string,
-         *     phone_edit_count: int,
+         *     email_edit_count: int,
          *     cooldown_until: string,
          *     expires_at: string
          * } $sessionData */
         $sessionData = Session::get('business_registration');
 
-        if ($sessionData['phone_edit_count'] >= 3) {
-            $this->addError('new_phone_number', 'Has alcanzado el límite de 3 cambios de número. Debes reiniciar el registro.');
+        if ($sessionData['email_edit_count'] >= 3) {
+            $this->addError('new_email', 'Has alcanzado el límite de 3 cambios de correo. Debes reiniciar el registro.');
 
             return;
         }
 
         $this->validate([
-            'new_phone_number' => BusinessRules::phone(),
+            'new_email' => BusinessRules::email(),
         ], BusinessRules::messages());
 
-        $normalized = DataNormalizer::phone($this->new_phone_number);
+        $normalized = DataNormalizer::email($this->new_email);
 
-        // Submitting an unchanged phone number does not decrement the remaining edit attempts
-        if ($normalized === $sessionData['phone_number']) {
-            $this->isEditingPhone = false;
-            $this->new_phone_number = '';
+        // Submitting an unchanged email does not decrement the remaining edit attempts
+        if ($normalized === $sessionData['email']) {
+            $this->isEditingEmail = false;
+            $this->new_email = '';
 
             return;
         }
 
-        $newEditCount = $sessionData['phone_edit_count'] + 1;
-        $sessionData['phone_edit_count'] = $newEditCount;
-        $sessionData['phone_number'] = $normalized;
-
-        $targetChannel = $this->channel === 'sms' ? ContactType::Sms : ContactType::WhatsApp;
+        $newEditCount = $sessionData['email_edit_count'] + 1;
+        $sessionData['email_edit_count'] = $newEditCount;
+        $sessionData['email'] = $normalized;
 
         try {
-            $otpService->generate($normalized, $targetChannel);
+            $otpService->generate($normalized, ContactType::Email);
             $sessionData['cooldown_until'] = now()->addSeconds(OtpService::COOLDOWN_SECONDS)->toIso8601String();
             $this->cooldownSeconds = OtpService::COOLDOWN_SECONDS;
         } catch (OtpCooldownException $e) {
-            // Unified cooldown preserved!
             $this->cooldownSeconds = $e->remainingSeconds;
         } catch (\Throwable $e) {
             // Keep going, user can request resend
@@ -408,13 +384,13 @@ new #[Title('Registrar mi negocio')] #[Layout('layouts.auth.card')] class extend
 
         Session::put('business_registration', $sessionData);
 
-        $this->phone_number = $normalized;
-        $this->phoneEditCount = $newEditCount;
-        $this->maskedPhone = $this->maskPhoneNumber($normalized);
-        $this->isEditingPhone = false;
+        $this->email = $normalized;
+        $this->emailEditCount = $newEditCount;
+        $this->maskedEmail = DataNormalizer::maskEmail($normalized);
+        $this->isEditingEmail = false;
         $this->code = '';
 
-        Flux::toast(variant: 'success', text: __('Número actualizado exitosamente.'));
+        Flux::toast(variant: 'success', text: __('Correo electrónico actualizado y nuevo código enviado.'));
     }
 
     public function decrementCooldown(): void
@@ -426,7 +402,6 @@ new #[Title('Registrar mi negocio')] #[Layout('layouts.auth.card')] class extend
 
     public function goToStepOne(): void
     {
-        $this->phone_number = (string) preg_replace('/^\+?57/', '', $this->phone_number);
         $this->step = 1;
     }
 
@@ -458,22 +433,9 @@ new #[Title('Registrar mi negocio')] #[Layout('layouts.auth.card')] class extend
     {
         Session::forget('business_registration');
         $this->step = 1;
-        $this->reset(['code', 'phoneEditCount', 'isEditingPhone']);
+        $this->reset(['code', 'emailEditCount', 'isEditingEmail']);
         $this->addError('general', 'Tu sesión ha expirado tras 15 minutos de inactividad. Por favor, completa tus datos nuevamente.');
         Flux::toast(variant: 'warning', text: __('Sesión expirada. Por favor reinicia tu registro.'));
-    }
-
-    private function maskPhoneNumber(string $phone): string
-    {
-        $digits = preg_replace('/[^\d]/', '', $phone) ?? '';
-        if (strlen($digits) >= 10) {
-            $lastTwo = substr($digits, -2);
-            $prefix = substr($digits, -10, 3);
-
-            return "+57 {$prefix} ••• ••{$lastTwo}";
-        }
-
-        return $phone;
     }
 };
 ?>
@@ -676,39 +638,6 @@ new #[Title('Registrar mi negocio')] #[Layout('layouts.auth.card')] class extend
                 @enderror
             </div>
 
-            {{-- Phone Number with Industrial Prefix Pill --}}
-            <div class="flex flex-col">
-                <label for="phone_number" class="block text-xs sm:text-sm font-medium text-[#64748B] dark:text-[#9CA3AF] mb-2">
-                    {{ __('Número de celular') }} <span class="text-red-500">*</span>
-                </label>
-                <div class="h-11 flex rounded-md border overflow-hidden transition-colors focus-within:ring-2 focus-within:ring-blue-600 focus-within:border-transparent {{ $errors->has('phone_number') ? 'border-red-500' : 'border-[#CBD5E1] dark:border-[#374151]' }}">
-                    <span class="inline-flex items-center px-3.5 bg-[#F1F5F9] dark:bg-[#1F2937] text-slate-600 dark:text-slate-300 font-mono text-sm border-r border-[#CBD5E1] dark:border-[#374151] select-none">
-                        +57
-                    </span>
-                    <input
-                        id="phone_number"
-                        wire:model="phone_number"
-                        type="tel"
-                        inputmode="numeric"
-                        pattern="[0-9]*"
-                        maxlength="10"
-                        oninput="this.value = this.value.replace(/\D/g, '').slice(0, 10)"
-                        required
-                        autocomplete="tel-national"
-                        placeholder="3001234567"
-                        class="h-full w-full px-3.5 text-sm sm:text-base bg-white text-[#0F172A] placeholder:text-slate-400 outline-hidden dark:bg-[#0B0F17] dark:text-[#F9FAFB] dark:placeholder:text-slate-500 font-mono"
-                    />
-                </div>
-                <div class="flex items-center justify-between mt-1.5">
-                    <p class="text-xs text-[#64748B] dark:text-[#9CA3AF]">
-                        {{ __('Te enviaremos un código de seguridad por WhatsApp.') }}
-                    </p>
-                </div>
-                @error('phone_number')
-                    <p class="mt-1.5 text-xs text-red-500 font-medium">{{ $message }}</p>
-                @enderror
-            </div>
-
             {{-- Email Address --}}
             <div class="flex flex-col">
                 <label for="email" class="block text-xs sm:text-sm font-medium text-[#64748B] dark:text-[#9CA3AF] mb-2">
@@ -723,6 +652,11 @@ new #[Title('Registrar mi negocio')] #[Layout('layouts.auth.card')] class extend
                     placeholder="contacto@minegocio.com"
                     class="h-11 w-full rounded-md border px-3.5 text-sm sm:text-base transition-colors bg-white text-[#0F172A] placeholder:text-slate-400 focus:outline-hidden focus:ring-2 focus:ring-blue-600 focus:border-transparent dark:bg-[#0B0F17] dark:text-[#F9FAFB] dark:placeholder:text-slate-500 {{ $errors->has('email') ? 'border-red-500' : 'border-[#CBD5E1] dark:border-[#374151]' }}"
                 />
+                <div class="flex items-center justify-between mt-1.5">
+                    <p class="text-xs text-[#64748B] dark:text-[#9CA3AF]">
+                        {{ __('Te enviaremos un código de seguridad de 6 dígitos a este correo.') }}
+                    </p>
+                </div>
                 @error('email')
                     <p class="mt-1.5 text-xs text-red-500 font-medium">{{ $message }}</p>
                 @enderror
@@ -770,7 +704,7 @@ new #[Title('Registrar mi negocio')] #[Layout('layouts.auth.card')] class extend
                     >
                         {{-- Eye Icon (When Hidden) --}}
                         <svg x-show="!showPassword" class="size-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638-0-8.573-3.007-9.963-7.178z" />
                             <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                         </svg>
 
@@ -852,7 +786,7 @@ new #[Title('Registrar mi negocio')] #[Layout('layouts.auth.card')] class extend
                         tabindex="-1"
                     >
                         <svg x-show="!showConfirmation" class="size-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638-0-8.573-3.007-9.963-7.178z" />
                             <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                         </svg>
                         <svg x-show="showConfirmation" x-cloak class="size-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75">
@@ -925,58 +859,49 @@ new #[Title('Registrar mi negocio')] #[Layout('layouts.auth.card')] class extend
             </p>
         </div>
     @elseif ($step === 2)
-        {{-- STEP 2: PHONE VERIFICATION CHALLENGE --}}
+        {{-- STEP 2: EMAIL VERIFICATION CHALLENGE --}}
         <header class="flex flex-col gap-1.5 mb-1">
             <h1 class="text-2xl sm:text-3xl font-semibold tracking-tight text-[#0F172A] dark:text-[#F9FAFB]">
-                {{ __('Verifica tu número') }}
+                {{ __('Verifica tu correo electrónico') }}
             </h1>
             <p class="text-xs sm:text-sm text-[#64748B] dark:text-[#9CA3AF] leading-relaxed">
-                {{ __('Ingresa el código de 6 dígitos enviado por :channel al', ['channel' => $channel === 'sms' ? 'SMS' : 'WhatsApp']) }}
-                <span class="font-mono font-semibold text-[#0F172A] dark:text-[#F9FAFB]">{{ $maskedPhone }}</span>.
-                @if (! $isEditingPhone && $phoneEditCount < 3)
+                {{ __('Ingresa el código de 6 dígitos enviado a') }}
+                <span class="font-mono font-semibold text-[#0F172A] dark:text-[#F9FAFB]">{{ $maskedEmail }}</span>.
+                @if (! $isEditingEmail && $emailEditCount < 3)
                     <button
                         type="button"
-                        wire:click="editPhone"
+                        wire:click="editEmail"
                         class="text-blue-600 dark:text-blue-400 hover:underline font-medium inline-flex items-center cursor-pointer ml-1"
                     >
-                        <span>{{ __('Cambiar número') }}</span>
+                        <span>{{ __('Cambiar correo') }}</span>
                     </button>
                 @endif
             </p>
         </header>
 
         <div class="flex flex-col gap-6">
-            @if ($isEditingPhone)
-                <form wire:submit="saveNewPhone" class="flex flex-col gap-3 p-4 rounded-md border border-[#E2E8F0] dark:border-[#1F2937] bg-[#F8FAFC] dark:bg-[#0B0F17]">
+            @if ($isEditingEmail)
+                <form wire:submit="saveNewEmail" class="flex flex-col gap-3 p-4 rounded-md border border-[#E2E8F0] dark:border-[#1F2937] bg-[#F8FAFC] dark:bg-[#0B0F17]">
                     <div class="flex items-center justify-between">
-                        <label for="new_phone_number" class="block text-xs sm:text-sm font-medium text-[#64748B] dark:text-[#9CA3AF]">
-                            {{ __('Nuevo número de celular') }}
+                        <label for="new_email" class="block text-xs sm:text-sm font-medium text-[#64748B] dark:text-[#9CA3AF]">
+                            {{ __('Nuevo correo electrónico') }}
                         </label>
-                        @if ($phoneEditCount > 0)
+                        @if ($emailEditCount > 0)
                             <span class="text-xs font-mono text-slate-500 dark:text-slate-400">
-                                {{ __(':count/3 intentos', ['count' => $phoneEditCount]) }}
+                                {{ __(':count/3 intentos', ['count' => $emailEditCount]) }}
                             </span>
                         @endif
                     </div>
-                    <div class="h-11 flex rounded-md border border-[#CBD5E1] dark:border-[#374151] overflow-hidden focus-within:ring-2 focus-within:ring-blue-600 focus-within:border-transparent">
-                        <span class="inline-flex items-center px-3.5 bg-[#F1F5F9] dark:bg-[#1F2937] text-slate-600 dark:text-slate-300 font-mono text-sm border-r border-[#CBD5E1] dark:border-[#374151] select-none">
-                            +57
-                        </span>
-                        <input
-                            id="new_phone_number"
-                            wire:model="new_phone_number"
-                            type="tel"
-                            inputmode="numeric"
-                            pattern="[0-9]*"
-                            maxlength="10"
-                            oninput="this.value = this.value.replace(/\D/g, '').slice(0, 10)"
-                            required
-                            autofocus
-                            placeholder="3109876543"
-                            class="h-full w-full px-3.5 text-sm sm:text-base bg-white text-[#0F172A] placeholder:text-slate-400 outline-hidden dark:bg-[#0B0F17] dark:text-[#F9FAFB] font-mono"
-                        />
-                    </div>
-                    @error('new_phone_number')
+                    <input
+                        id="new_email"
+                        wire:model="new_email"
+                        type="email"
+                        required
+                        autofocus
+                        placeholder="nuevo-correo@minegocio.com"
+                        class="h-11 w-full rounded-md border px-3.5 text-sm sm:text-base transition-colors bg-white text-[#0F172A] placeholder:text-slate-400 focus:outline-hidden focus:ring-2 focus:ring-blue-600 focus:border-transparent dark:bg-[#0B0F17] dark:text-[#F9FAFB] dark:placeholder:text-slate-500 {{ $errors->has('new_email') ? 'border-red-500' : 'border-[#CBD5E1] dark:border-[#374151]' }}"
+                    />
+                    @error('new_email')
                         <p class="text-xs text-red-500 font-medium">{{ $message }}</p>
                     @enderror
 
@@ -989,7 +914,7 @@ new #[Title('Registrar mi negocio')] #[Layout('layouts.auth.card')] class extend
                         </button>
                         <button
                             type="button"
-                            wire:click="cancelEditPhone"
+                            wire:click="cancelEditEmail"
                             class="h-9 px-3.5 rounded-md text-xs sm:text-sm font-medium border border-[#CBD5E1] dark:border-[#374151] hover:bg-slate-100 dark:hover:bg-[#1F2937] text-slate-700 dark:text-slate-300 transition-colors cursor-pointer"
                         >
                             {{ __('Cancelar') }}
@@ -1045,7 +970,7 @@ new #[Title('Registrar mi negocio')] #[Layout('layouts.auth.card')] class extend
                 </div>
             </form>
 
-            {{-- Resend & Channel Switch Controls --}}
+            {{-- Resend Controls --}}
             <div class="flex flex-col items-center gap-3 pt-2 text-center text-sm border-t border-[#E2E8F0] dark:border-[#1F2937]">
                 @if ($cooldownSeconds > 0)
                     <div class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-sm text-xs font-mono font-medium border border-[#E2E8F0] dark:border-[#1F2937] bg-[#F1F5F9] dark:bg-[#1F2937] text-slate-600 dark:text-slate-400">
@@ -1055,22 +980,13 @@ new #[Title('Registrar mi negocio')] #[Layout('layouts.auth.card')] class extend
                         <span>{{ __('Puedes solicitar un nuevo código en :sec s', ['sec' => $cooldownSeconds]) }}</span>
                     </div>
                 @else
-                    <div class="flex flex-wrap items-center justify-center gap-2.5">
-                        <button
-                            type="button"
-                            wire:click="resendOtp('whatsapp')"
-                            class="h-9 px-3.5 rounded-md text-xs sm:text-sm font-medium border border-[#CBD5E1] dark:border-[#374151] hover:bg-slate-100 dark:hover:bg-[#1F2937] text-slate-700 dark:text-slate-300 transition-colors inline-flex items-center gap-1.5 cursor-pointer"
-                        >
-                            <span>{{ __('Reenviar por WhatsApp') }}</span>
-                        </button>
-                        <button
-                            type="button"
-                            wire:click="resendOtp('sms')"
-                            class="h-9 px-3.5 rounded-md text-xs sm:text-sm font-medium border border-[#CBD5E1] dark:border-[#374151] hover:bg-slate-100 dark:hover:bg-[#1F2937] text-slate-700 dark:text-slate-300 transition-colors inline-flex items-center gap-1.5 cursor-pointer"
-                        >
-                            <span>{{ __('Reenviar por SMS') }}</span>
-                        </button>
-                    </div>
+                    <button
+                        type="button"
+                        wire:click="resendOtp"
+                        class="h-9 px-3.5 rounded-md text-xs sm:text-sm font-medium border border-[#CBD5E1] dark:border-[#374151] hover:bg-slate-100 dark:hover:bg-[#1F2937] text-slate-700 dark:text-slate-300 transition-colors inline-flex items-center gap-1.5 cursor-pointer"
+                    >
+                        <span>{{ __('Reenviar código al correo') }}</span>
+                    </button>
                 @endif
 
                 <button
@@ -1112,4 +1028,3 @@ new #[Title('Registrar mi negocio')] #[Layout('layouts.auth.card')] class extend
         </div>
     @endif
 </div>
-

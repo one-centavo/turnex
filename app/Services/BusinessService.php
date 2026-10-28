@@ -36,9 +36,9 @@ class BusinessService
      *     owner_last_name: string,
      *     owner_second_last_name?: string|null,
      *     email: string,
-     *     phone_number: string,
      *     location: string,
      *     password: string,
+     *     phone_number?: string|null,
      * }  $data
      */
     public function register(array $data): Business
@@ -61,7 +61,9 @@ class BusinessService
             ? DataNormalizer::name((string) $data['owner_second_last_name'])
             : null;
         $normalizedEmail = DataNormalizer::email($data['email']);
-        $normalizedPhone = DataNormalizer::phone($data['phone_number']);
+        $normalizedPhone = filled($data['phone_number'] ?? null)
+            ? DataNormalizer::phone((string) $data['phone_number'])
+            : null;
         $normalizedLocation = DataNormalizer::name($data['location']);
 
         return DB::transaction(function () use (
@@ -94,8 +96,8 @@ class BusinessService
                 'location' => $normalizedLocation,
                 'password' => $data['password'],
                 'verification_status' => VerificationStatus::PendingVerification,
-                'phone_verified_at' => now(),
-                'email_verified_at' => null,
+                'email_verified_at' => now(),
+                'phone_verified_at' => null,
                 'reviewed_by' => null,
                 'reviewed_at' => null,
             ]);

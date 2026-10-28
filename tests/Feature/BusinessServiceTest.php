@@ -12,7 +12,7 @@ use App\Services\BusinessService;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Notification;
 
-test('it registers a business with normalized fields, pending verification status, and verified phone timestamp', function (): void {
+test('it registers a business with normalized fields, pending verification status, and verified email timestamp', function (): void {
     Notification::fake();
 
     /** @var BusinessService $service */
@@ -48,11 +48,39 @@ test('it registers a business with normalized fields, pending verification statu
         ->and($business->formattedTaxId())->toBeNull()
         ->and($business->isNaturalPerson())->toBeTrue()
         ->and($business->isLegalEntity())->toBeFalse()
-        ->and($business->phone_verified_at)->not->toBeNull()
-        ->and($business->email_verified_at)->toBeNull()
+        ->and($business->phone_verified_at)->toBeNull()
+        ->and($business->email_verified_at)->not->toBeNull()
         ->and($business->reviewed_by)->toBeNull()
         ->and($business->reviewed_at)->toBeNull()
         ->and(Hash::check('Turnex@2026!', $business->password))->toBeTrue();
+
+    Notification::assertSentTo($business, WelcomeBusinessNotification::class);
+});
+
+test('it registers a business without phone number', function (): void {
+    Notification::fake();
+
+    /** @var BusinessService $service */
+    $service = app(BusinessService::class);
+
+    $business = $service->register([
+        'business_name' => 'Floristería Las Rosas',
+        'business_category' => BusinessCategory::Retail,
+        'owner_first_name' => 'Elena',
+        'owner_middle_name' => null,
+        'owner_last_name' => 'Mora',
+        'owner_second_last_name' => null,
+        'email' => 'elena@rosas.test',
+        'location' => 'Calle 45 # 13-20',
+        'password' => 'Turnex@2026!',
+    ]);
+
+    expect($business)->toBeInstanceOf(Business::class)
+        ->and($business->business_name)->toBe('Floristería Las Rosas')
+        ->and($business->email)->toBe('elena@rosas.test')
+        ->and($business->phone_number)->toBeNull()
+        ->and($business->phone_verified_at)->toBeNull()
+        ->and($business->email_verified_at)->not->toBeNull();
 
     Notification::assertSentTo($business, WelcomeBusinessNotification::class);
 });

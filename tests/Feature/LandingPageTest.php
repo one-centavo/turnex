@@ -10,6 +10,7 @@ test('guest can view landing page with business and customer registration links'
         ->assertOk()
         ->assertSee('Registrar mi Negocio')
         ->assertSee(route('business.register'))
+        ->assertSee(route('business.login'))
         ->assertSee(route('login'))
         ->assertSee(route('register'));
 });

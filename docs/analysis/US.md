@@ -100,11 +100,11 @@
 
 ---
 
-## US02 - BUSINESS REGISTRATION (STAGE 1: QUICK ONBOARDING)
+## US02 - BUSINESS REGISTRATION (STAGE 1: QUICK ONBOARDING & EMAIL VERIFICATION)
 
 **As a** business owner or manager,  
-**I want to** register my business with basic contact information and select its industry category,  
-**So that** I can access the platform and explore the management dashboard quickly.
+**I want to** register my business with essential store and owner details via email verification (Email OTP),  
+**So that** I can securely access the platform and explore the management dashboard quickly without upfront phone verification or SMS gateway hurdles.
 
 ### Acceptance Criteria
 
@@ -120,30 +120,28 @@
     - [ ] Business category is required and must match a supported industry type (e.g., Restaurant, Health & Beauty, Professional Services, Retail, Banking); invalid or manipulated options are rejected.
     - [ ] Physical location/address is required and limited to 255 characters.
     - [ ] Owner name fields provide separate inputs: owner first name and last name are required (between 2 and 60 characters each); middle name and second last name are optional (up to 60 characters each).
-    - [ ] The entered mobile phone number is validated and formatted into standard international format, defaulting to Colombia (+57).
     - [ ] The entered email address is trimmed, normalized to lowercase, and validated against standard email formatting rules.
     - [ ] Passwords must be between 8 and 64 characters long, cannot contain spaces, and must include an uppercase letter, a lowercase letter, a number, and a special character.
     - [ ] Password confirmation is required and must match the chosen password.
     - [ ] Business owners must accept the Terms of Service and Privacy Policy before proceeding.
     - [ ] All entered business and owner details are automatically cleaned and formatted (**US-CORE-02**).
-    - [ ] If the phone number is already registered to an existing business, registration is halted and the user is prompted to sign in instead.
     - [ ] If the email address is already registered to an existing business, registration is halted and the user is prompted to sign in instead.
     - [ ] Submitting invalid inputs displays clear feedback without resetting valid fields.
     - [ ] Submission buttons are disabled and display a loading state while processing to prevent double submissions.
     - [ ] Code dispatch requests are limited to a maximum of 5 attempts per minute per IP address, temporarily rejecting excessive traffic.
-    - [ ] For valid, unregistered details, the system dispatches a 6-digit verification code to the mobile number prioritizing WhatsApp.
+    - [ ] For valid, unregistered details, the system dispatches a 6-digit verification code to the owner's email address.
     - [ ] If code dispatch fails due to delivery provider errors, the user is notified immediately without locking them into an unwarranted cooldown.
 
-- [ ] **Step 2: Phone Verification Challenge & Account Provisioning**:
+- [ ] **Step 2: Email Verification Challenge & Account Provisioning**:
     - [ ] Submitted verification codes are validated against the OTP service (**US-CORE**), rejecting invalid or expired entries.
     - [ ] Exceeding maximum verification attempts (5 attempts) invalidates the active code and requires requesting a new one.
-    - [ ] Users can edit their entered phone number up to 3 times per registration before being required to restart.
-    - [ ] Submitting a new phone number during editing checks for uniqueness against existing businesses; if duplicate, the system rejects it without consuming an edit attempt.
-    - [ ] Submitting an unchanged phone number during editing does not decrement the remaining edit attempts.
-    - [ ] Requesting a new code requires waiting for the cooldown period (60 seconds) to elapse, even if the phone number is changed.
-    - [ ] Once the cooldown period expires, users can request a new code via WhatsApp or choose SMS delivery.
+    - [ ] Users can edit their entered email address up to 3 times per registration before being required to restart.
+    - [ ] Submitting a new email address during editing checks for uniqueness against existing businesses; if duplicate, the system rejects it without consuming an edit attempt.
+    - [ ] Submitting an unchanged email address during editing does not decrement the remaining edit attempts.
+    - [ ] Requesting a new code requires waiting for the cooldown period (60 seconds) to elapse, even if the email address is changed.
+    - [ ] Once the cooldown period expires, users can request a new code to their email.
     - [ ] Verification submission buttons are disabled with a loading indicator while the OTP is being evaluated.
-    - [ ] Upon successful verification, the system transitions to a success confirmation state, provisions the business account with **"Pending Verification"** status and default person type as **"Persona Natural"** (updatable to Persona Jurídica in Stage 3), records the phone verification timestamp, and dispatches a welcome email (deferring email verification).
+    - [ ] Upon successful verification, the system transitions to a success confirmation state, provisions the business account with **"Pending Verification"** status and default person type as **"Persona Natural"** (updatable to Persona Jurídica in Stage 3), records the email verification timestamp (`email_verified_at = now()`), leaving phone verification deferred, and dispatches a welcome email.
     - [ ] The business owner is automatically authenticated and redirected to the business dashboard in setup mode.
     - [ ] Temporary registration progress is cleared upon successful account creation.
 

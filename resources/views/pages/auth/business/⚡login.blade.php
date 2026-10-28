@@ -167,3 +167,4 @@ new #[Title('Iniciar sesión — Negocios')] #[Layout('layouts.auth.card')] clas
         </div>
     </div>
 </div>
+

@@ -22,18 +22,18 @@
 
 ## Verification & QA
 
-- [ ] Write comprehensive Pest feature tests in `tests/Feature/BusinessLoginTest.php` covering all acceptance criteria:
-    - [ ] Redirect authenticated business users away from `/business/login`.
-    - [ ] Successful login with registered business email address and password.
-    - [ ] Validation feedback on empty inputs.
-    - [ ] Generic error message on invalid credentials.
-    - [ ] Preserving email input and clearing password on failed attempt.
-    - [ ] Rate limiting (lockout for 1 minute after 5 failed attempts) and attempt counter reset on success.
-    - [ ] Session lifetime (2 hours) and "Remember me" persistence.
-    - [ ] Redirection to intended URL vs default `/business/dashboard`.
-    - [ ] Display of "¿Olvidaste tu contraseña?" recovery link.
-    - [ ] Guard isolation (customer session remains unaffected when logging in as business).
-- [ ] Run Pint to fix and enforce code style (`vendor/bin/pint`).
-- [ ] Run Larastan to verify static analysis (`vendor/bin/phpstan analyse`).
-- [ ] Verify all acceptance criteria from `spec.md`.
+- [x] Write comprehensive Pest feature tests in `tests/Feature/BusinessLoginTest.php` covering all acceptance criteria:
+    - [x] Redirect authenticated business users away from `/business/login`.
+    - [x] Successful login with registered business email address and password.
+    - [x] Validation feedback on empty inputs.
+    - [x] Generic error message on invalid credentials.
+    - [x] Preserving email input and clearing password on failed attempt.
+    - [x] Rate limiting (lockout for 1 minute after 5 failed attempts) and attempt counter reset on success.
+    - [x] Session lifetime (2 hours) and "Remember me" persistence.
+    - [x] Redirection to intended URL vs default `/business/dashboard`.
+    - [x] Display of "¿Olvidaste tu contraseña?" recovery link.
+    - [x] Guard isolation (customer session remains unaffected when logging in as business).
+- [x] Run Pint to fix and enforce code style (`vendor/bin/pint`).
+- [x] Run Larastan to verify static analysis (`vendor/bin/phpstan analyse`).
+- [x] Verify all acceptance criteria from `spec.md`.
 

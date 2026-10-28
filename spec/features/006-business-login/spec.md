@@ -1,6 +1,6 @@
 # 006 · Business Login
 
-**Status:** Ready for Dev
+**Status:** Done
 
 ## What it does
 
@@ -18,21 +18,21 @@ Isolating merchant authentication behind a dedicated `business` guard prevents p
 
 ## Acceptance Criteria
 
-- [ ] Authenticated business owners who access the login page are redirected to the business dashboard (`/business/dashboard`).
-- [ ] Authenticated customers who visit the business login page are allowed to log into their business account without terminating or interfering with their customer session.
-- [ ] The login form requests the merchant's email address and password.
-- [ ] The password field allows toggling between hidden and visible text.
-- [ ] The login form includes an optional "Remember me" checkbox.
-- [ ] The login form includes a "¿Olvidaste tu contraseña?" link leading to the password recovery view.
-- [ ] Both email and password fields are required; submitting empty values prompts the user with validation feedback.
-- [ ] The entered email address is automatically trimmed and normalized to lowercase before credential verification.
-- [ ] If the email address or password does not match an existing business account, the system displays: _"Credenciales incorrectas. Por favor, intenta de nuevo."_
-- [ ] An unsuccessful login clears the password field but preserves the entered email address.
-- [ ] Login attempts are rate-limited to a maximum of 5 failed attempts per minute per email and IP address; exceeding this threshold locks further attempts for 1 minute.
-- [ ] A successful login clears the failed attempts rate limiter.
-- [ ] Submitting valid credentials authenticates the merchant into the `business` guard with a standard 2-hour inactivity session.
-- [ ] Selecting "Remember me" establishes a persistent session across browser restarts via `remember_token`.
-- [ ] Upon successful login, the merchant is redirected to their intended destination, or to `/business/dashboard` by default.
+- [x] Authenticated business owners who access the login page are redirected to the business dashboard (`/business/dashboard`).
+- [x] Authenticated customers who visit the business login page are allowed to log into their business account without terminating or interfering with their customer session.
+- [x] The login form requests the merchant's email address and password.
+- [x] The password field allows toggling between hidden and visible text.
+- [x] The login form includes an optional "Remember me" checkbox.
+- [x] The login form includes a "¿Olvidaste tu contraseña?" link leading to the password recovery view.
+- [x] Both email and password fields are required; submitting empty values prompts the user with validation feedback.
+- [x] The entered email address is automatically trimmed and normalized to lowercase before credential verification.
+- [x] If the email address or password does not match an existing business account, the system displays: _"Credenciales incorrectas. Por favor, intenta de nuevo."_
+- [x] An unsuccessful login clears the password field but preserves the entered email address.
+- [x] Login attempts are rate-limited to a maximum of 5 failed attempts per minute per email and IP address; exceeding this threshold locks further attempts for 1 minute.
+- [x] A successful login clears the failed attempts rate limiter.
+- [x] Submitting valid credentials authenticates the merchant into the `business` guard with a standard 2-hour inactivity session.
+- [x] Selecting "Remember me" establishes a persistent session across browser restarts via `remember_token`.
+- [x] Upon successful login, the merchant is redirected to their intended destination, or to `/business/dashboard` by default.
 
 ## Out of Scope
 

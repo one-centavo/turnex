@@ -14,42 +14,27 @@ use Illuminate\Validation\ValidationException;
 
 beforeEach(function (): void {
     RateLimiter::clear('customer_login:carlos.perez@turnex.test|127.0.0.1');
-    RateLimiter::clear('customer_login:+573001234567|127.0.0.1');
 });
 
-test('it correctly determines identifier type', function (): void {
+test('it normalizes email address', function (): void {
     /** @var CustomerAuthService $service */
     $service = app(CustomerAuthService::class);
 
-    expect($service->determineIdentifierType('user@example.com'))->toBe('email')
-        ->and($service->determineIdentifierType('  user@example.com  '))->toBe('email')
-        ->and($service->determineIdentifierType('3001234567'))->toBe('phone_number')
-        ->and($service->determineIdentifierType('+573001234567'))->toBe('phone_number')
-        ->and($service->determineIdentifierType('(300) 123-4567'))->toBe('phone_number');
+    expect($service->normalizeEmail('  Carlos.Perez@Turnex.Test  '))->toBe('carlos.perez@turnex.test')
+        ->and($service->normalizeEmail('USER@EXAMPLE.COM'))->toBe('user@example.com');
 });
 
-test('it normalizes email and phone identifiers', function (): void {
-    /** @var CustomerAuthService $service */
-    $service = app(CustomerAuthService::class);
-
-    expect($service->normalizeIdentifier('  Carlos.Perez@Turnex.Test  '))->toBe('carlos.perez@turnex.test')
-        ->and($service->normalizeIdentifier(' (300) 123-4567 '))->toBe('+573001234567')
-        ->and($service->normalizeIdentifier('3001234567'))->toBe('+573001234567')
-        ->and($service->normalizeIdentifier('+57 300 123 4567'))->toBe('+573001234567');
-});
-
-test('it finds customer by normalized email or phone number', function (): void {
+test('it finds customer by normalized email', function (): void {
     /** @var Customer $customer */
     $customer = Customer::factory()->create([
         'email' => 'carlos.perez@turnex.test',
-        'phone_number' => '+573001234567',
     ]);
 
     /** @var CustomerAuthService $service */
     $service = app(CustomerAuthService::class);
 
     expect($service->findCustomer('Carlos.Perez@Turnex.Test')?->id)->toBe($customer->id)
-        ->and($service->findCustomer('(300) 123-4567')?->id)->toBe($customer->id)
+        ->and($service->findCustomer('  carlos.perez@turnex.test  ')?->id)->toBe($customer->id)
         ->and($service->findCustomer('nonexistent@turnex.test'))->toBeNull();
 });
 
@@ -80,23 +65,6 @@ test('it successfully authenticates a customer with email', function (): void {
     $service = app(CustomerAuthService::class);
 
     $authenticated = $service->authenticate('  Carlos.Perez@Turnex.Test  ', 'Turnex@2026!');
-
-    expect($authenticated->id)->toBe($customer->id)
-        ->and(Auth::guard('customer')->check())->toBeTrue()
-        ->and(Auth::guard('customer')->id())->toBe($customer->id);
-});
-
-test('it successfully authenticates a customer with phone number in various formats', function (): void {
-    /** @var Customer $customer */
-    $customer = Customer::factory()->create([
-        'phone_number' => '+573001234567',
-        'password' => Hash::make('Turnex@2026!'),
-    ]);
-
-    /** @var CustomerAuthService $service */
-    $service = app(CustomerAuthService::class);
-
-    $authenticated = $service->authenticate('(300) 123-4567', 'Turnex@2026!');
 
     expect($authenticated->id)->toBe($customer->id)
         ->and(Auth::guard('customer')->check())->toBeTrue()
@@ -150,8 +118,8 @@ test('it throws validation exception with google guidance for google-only accoun
         $service->authenticate('carlos.perez@turnex.test', 'RandomPassword123!');
         test()->fail('Expected ValidationException was not thrown.');
     } catch (ValidationException $e) {
-        expect($e->errors())->toHaveKey('identifier')
-            ->and($e->errors()['identifier'][0])->toBe(CustomerAuthService::MESSAGE_GOOGLE_ACCOUNT);
+        expect($e->errors())->toHaveKey('email')
+            ->and($e->errors()['email'][0])->toBe(CustomerAuthService::MESSAGE_GOOGLE_ACCOUNT);
     }
 
     expect(Auth::guard('customer')->check())->toBeFalse();
@@ -170,14 +138,14 @@ test('it throws validation exception with generic error on invalid password', fu
         $service->authenticate('carlos.perez@turnex.test', 'WrongPassword123!');
         test()->fail('Expected ValidationException was not thrown.');
     } catch (ValidationException $e) {
-        expect($e->errors())->toHaveKey('identifier')
-            ->and($e->errors()['identifier'][0])->toBe(CustomerAuthService::MESSAGE_INVALID_CREDENTIALS);
+        expect($e->errors())->toHaveKey('email')
+            ->and($e->errors()['email'][0])->toBe(CustomerAuthService::MESSAGE_INVALID_CREDENTIALS);
     }
 
     expect(Auth::guard('customer')->check())->toBeFalse();
 });
 
-test('it throws validation exception with generic error on non-existent identifier', function (): void {
+test('it throws validation exception with generic error on non-existent email', function (): void {
     /** @var CustomerAuthService $service */
     $service = app(CustomerAuthService::class);
 
@@ -185,8 +153,8 @@ test('it throws validation exception with generic error on non-existent identifi
         $service->authenticate('nonexistent@turnex.test', 'SomePassword123!');
         test()->fail('Expected ValidationException was not thrown.');
     } catch (ValidationException $e) {
-        expect($e->errors())->toHaveKey('identifier')
-            ->and($e->errors()['identifier'][0])->toBe(CustomerAuthService::MESSAGE_INVALID_CREDENTIALS);
+        expect($e->errors())->toHaveKey('email')
+            ->and($e->errors()['email'][0])->toBe(CustomerAuthService::MESSAGE_INVALID_CREDENTIALS);
     }
 
     expect(Auth::guard('customer')->check())->toBeFalse();
@@ -206,7 +174,7 @@ test('it enforces rate limiting lockout after 5 failed attempts and resets on su
         try {
             $service->authenticate('carlos.perez@turnex.test', 'WrongPassword!');
         } catch (ValidationException $e) {
-            expect($e->errors()['identifier'][0])->toBe(CustomerAuthService::MESSAGE_INVALID_CREDENTIALS);
+            expect($e->errors()['email'][0])->toBe(CustomerAuthService::MESSAGE_INVALID_CREDENTIALS);
         }
     }
 
@@ -215,7 +183,7 @@ test('it enforces rate limiting lockout after 5 failed attempts and resets on su
         $service->authenticate('carlos.perez@turnex.test', 'CorrectPassword123!');
         test()->fail('Expected lockout ValidationException was not thrown.');
     } catch (ValidationException $e) {
-        expect($e->errors()['identifier'][0])->toContain('Demasiados intentos de inicio de sesión');
+        expect($e->errors()['email'][0])->toContain('Demasiados intentos de inicio de sesión');
     }
 
     // Reset rate limiter and verify success clears attempts

@@ -14,11 +14,11 @@
 
 ## User Interface & Presentation Layer
 
-- [ ] Create Livewire 4 Single-File Component (SFC) `resources/views/pages/auth/business/⚡login.blade.php` using Flux UI.
-- [ ] Implement form inputs: email address, password with visibility toggle, "Remember me" checkbox, and "¿Olvidaste tu contraseña?" link.
-- [ ] Bind validation rules and handle submission feedback without clearing the entered email on failure.
-- [ ] Handle post-authentication session establishment and intelligent redirection to intended destination or `/business/dashboard` by default (`redirectIntended`).
-- [ ] Register `/business/login` route with `guest:business` middleware in `routes/web.php`.
+- [x] Create Livewire 4 Single-File Component (SFC) `resources/views/pages/auth/business/⚡login.blade.php` using Flux UI.
+- [x] Implement form inputs: email address, password with visibility toggle, "Remember me" checkbox, and "¿Olvidaste tu contraseña?" link.
+- [x] Bind validation rules and handle submission feedback without clearing the entered email on failure.
+- [x] Handle post-authentication session establishment and intelligent redirection to intended destination or `/business/dashboard` by default (`redirectIntended`).
+- [x] Register `/business/login` route with `guest:business,web` middleware in `routes/web.php`.
 
 ## Verification & QA
 

@@ -25,6 +25,10 @@ Route::livewire('register', 'pages::auth.customer.register')
     ->middleware('guest')
     ->name('register');
 
+Route::livewire('business/login', 'pages::auth.business.login')
+    ->middleware('guest:business,web')
+    ->name('business.login');
+
 Route::livewire('business/register', 'pages::auth.business.register')
     ->middleware('guest:business,web')
     ->name('business.register');

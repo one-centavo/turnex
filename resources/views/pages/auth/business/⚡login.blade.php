@@ -56,10 +56,10 @@ new #[Title('Iniciar sesión — Negocios')] #[Layout('layouts.auth.card')] clas
 <div class="flex flex-col gap-5">
     {{-- Header conforming to Design System --}}
     <header class="flex flex-col gap-1.5 mb-1">
-        <h1 class="text-2xl sm:text-3xl font-semibold tracking-tight text-[#0F172A] dark:text-[#F9FAFB]">
+        <h1 class="text-2xl sm:text-3xl font-semibold tracking-tight text-text-primary">
             {{ __('Inicia sesión en tu negocio') }}
         </h1>
-        <p class="text-xs sm:text-sm text-[#64748B] dark:text-[#9CA3AF]">
+        <p class="text-xs sm:text-sm text-text-secondary">
             {{ __('Ingresa las credenciales operativas de tu establecimiento.') }}
         </p>
     </header>
@@ -103,7 +103,7 @@ new #[Title('Iniciar sesión — Negocios')] #[Layout('layouts.auth.card')] clas
         {{-- Password with Eye Icon Toggle --}}
         <div class="flex flex-col gap-1.5">
             <div class="flex items-center justify-between">
-                <label for="password" class="text-xs sm:text-sm font-medium text-[#64748B] dark:text-[#9CA3AF]">
+                <label for="password" class="text-xs sm:text-sm font-medium text-text-secondary">
                     {{ __('Contraseña') }}
                 </label>
                 <a href="{{ route('password.request') }}"
@@ -116,7 +116,7 @@ new #[Title('Iniciar sesión — Negocios')] #[Layout('layouts.auth.card')] clas
             <div class="relative flex items-center" x-data="{ showPassword: false }">
                 <input id="password" wire:model="password" :type="showPassword ? 'text' : 'password'" required
                     autocomplete="current-password" placeholder="••••••••"
-                    class="h-10 w-full rounded-md border px-3 pr-10 text-sm transition-colors bg-white text-[#0F172A] placeholder:text-slate-400 focus:outline-hidden focus:ring-2 focus:ring-blue-600 focus:border-transparent dark:bg-[#0B0F17] dark:text-[#F9FAFB] dark:placeholder:text-slate-500 {{ $errors->has('password') ? 'border-red-500' : 'border-[#CBD5E1] dark:border-[#374151]' }}" />
+                    class="h-10 w-full rounded-md border px-3 pr-10 text-sm transition-colors bg-surface-card dark:bg-surface-canvas text-text-primary placeholder:text-slate-400 focus:outline-hidden focus:ring-2 focus:ring-blue-600 focus:border-transparent dark:placeholder:text-slate-500 {{ $errors->has('password') ? 'border-red-500' : 'border-border-strong' }}" />
                 <button type="button" @click="showPassword = !showPassword"
                     class="absolute right-0 top-0 bottom-0 flex items-center justify-center w-10 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors cursor-pointer"
                     :aria-label="showPassword ? '{{ __('Ocultar contraseña') }}' : '{{ __('Mostrar contraseña') }}'">
@@ -150,7 +150,7 @@ new #[Title('Iniciar sesión — Negocios')] #[Layout('layouts.auth.card')] clas
     </form>
 
     {{-- Business Registration Link --}}
-    <div class="pt-3 text-center text-xs sm:text-sm text-[#64748B] dark:text-[#9CA3AF] border-t border-[#E2E8F0] dark:border-[#1F2937] flex flex-col gap-2">
+    <div class="pt-3 text-center text-xs sm:text-sm text-text-secondary border-t border-border-subtle flex flex-col gap-2">
         <div>
             {{ __('¿Aún no has registrado tu empresa?') }}
             <a href="{{ route('business.register') }}" class="font-semibold text-blue-600 dark:text-blue-400 hover:underline"

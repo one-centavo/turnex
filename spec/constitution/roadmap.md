@@ -10,6 +10,7 @@ Status and delivery sequence of TURNEX features. Provides visibility into "what 
 4. **004 · Google Customer Authentication & Onboarding** — Single-click social registration/login via Google OAuth 2.0 with automatic email verification and account linking (US01B).
 5. **005 · Business Registration** — Rapid onboarding for merchants with initial contact data, industry category, and phone verification via OTP in preliminary status (US02).
 6. **006 · Business Login** — Dedicated login for business owners and operators, verifying credentials and routing to the business operations dashboard (US03).
+7. **007 · Service Categories** — Global grouping taxonomy, persistence, soft deletes, and baseline seeders for classifying business offerings (US10, US11, US13).
 
 ## In Progress 🚧
 
@@ -17,7 +18,7 @@ None.
 
 ## Up Next 🔜
 
-7. **007 · SuperAdmin Login** — Secure administrative access for SuperAdmin users (seeded via Seeder/Tinker) to the global governance and platform management portal (US09).
+8. **008 · SuperAdmin Login** — Secure administrative access for SuperAdmin users (seeded via Seeder/Tinker) to the global governance and platform management portal (US09).
 
 ## Backlog / Ideas 💡
 

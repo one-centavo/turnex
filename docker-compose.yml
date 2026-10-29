@@ -24,6 +24,7 @@ services:
 
   turnex-app:
     container_name: turnex-app
+    image: ${APP_IMAGE:-ghcr.io/one-centavo/turnex:latest}
     build:
       context: .
       dockerfile: ./docker/config/Dockerfile

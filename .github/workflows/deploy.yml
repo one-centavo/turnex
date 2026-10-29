@@ -10,18 +10,71 @@ concurrency:
   group: deploy-production
   cancel-in-progress: true
 
+permissions:
+  contents: read
+  packages: write
+
 jobs:
+  build-and-push:
+    name: Build & Push Docker Image
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Resolve lowercased image repository
+        id: repo_slug
+        run: echo "image_name=ghcr.io/${GITHUB_REPOSITORY,,}" >> "$GITHUB_OUTPUT"
+
+      - name: Extract Docker metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ steps.repo_slug.outputs.image_name }}
+          tags: |
+            type=raw,value=latest,enable={{is_default_branch}}
+            type=sha,format=short
+            type=ref,event=branch
+            type=ref,event=tag
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./docker/config/Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
   deploy:
+    name: Deploy to VPS
+    needs: build-and-push
     runs-on: ubuntu-latest
     steps:
       - name: Deploying via SSH to VPS
         uses: appleboy/ssh-action@master
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_ACTOR: ${{ github.actor }}
         with:
           host: ${{ secrets.VPS_HOST || secrets.SSH_HOST }}
           username: ${{ secrets.VPS_USER || secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY || secrets.SSH_KEY }}
           port: ${{ secrets.VPS_SSH_PORT || secrets.SSH_PORT || 22 }}
           command_timeout: 30m
+          envs: GITHUB_TOKEN,GITHUB_ACTOR
           script: |
             # 1. Paths and Repository Configurations
             TARGET_DIR="/home/${{ secrets.VPS_USER || secrets.SSH_USER }}/turnex"
@@ -55,9 +108,9 @@ jobs:
               git pull origin main
             fi
 
-            # 3. Security Check: Checking that the .env is not empty before building
+            # 3. Security Check: Checking that the .env is not empty before pulling images
             if [ ! -s ".env" ]; then
-              echo "❌ ERROR: The production .env file is empty or not configured. Aborting build."
+              echo "❌ ERROR: The production .env file is empty or not configured. Aborting deploy."
               exit 1
             fi
 
@@ -76,12 +129,18 @@ jobs:
               echo "✅ Application version set to: $LATEST_TAG"
             fi
 
-            # 5. Principal Action: Building and Starting the Infrastructure
+            # 5. Principal Action: Authenticate, Pull Image and Start Infrastructure
             echo "🌐 Ensuring external Docker network exists..."
             docker network create proxy-network 2>/dev/null || true
 
-            echo "🏗️ Building and starting containers in production..."
-            docker compose up -d --build
+            echo "🔐 Authenticating with GitHub Container Registry on VPS..."
+            echo "$GITHUB_TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
+
+            echo "📥 Pulling latest application image from GHCR..."
+            docker compose pull turnex-app
+
+            echo "🚀 Starting containers in production..."
+            docker compose up -d --remove-orphans
 
             # 6. Database Automation: Automatic Migrations of Laravel
             echo "🗄️ Running database migrations..."
@@ -90,5 +149,9 @@ jobs:
             docker compose exec -T turnex-app php artisan config:cache
             docker compose exec -T turnex-app php artisan route:cache
             docker compose exec -T turnex-app php artisan view:cache
+
+            # 7. Cleanup old dangling images to preserve disk space on VPS
+            echo "🧹 Pruning dangling docker images..."
+            docker image prune -f
 
             echo "✅ Deployment completed successfully!"

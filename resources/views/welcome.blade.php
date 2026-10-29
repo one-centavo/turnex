@@ -3,7 +3,7 @@
     <head>
         @include('partials.head')
     </head>
-    <body class="min-h-screen flex flex-col justify-between bg-[#F8FAFC] text-[#0F172A] antialiased dark:bg-[#0B0F17] dark:text-[#F9FAFB] selection:bg-blue-600 selection:text-white font-sans">
+    <body class="min-h-screen flex flex-col justify-between bg-surface-canvas text-text-primary antialiased selection:bg-blue-600 selection:text-white font-sans">
         {{-- Top Navigation Header (Full Width) --}}
         <header class="w-full px-6 sm:px-8 lg:px-12 py-5 flex items-center justify-between">
             {{-- Turnex Brand Logo --}}
@@ -11,7 +11,7 @@
                 <span class="font-black tracking-tight text-xl sm:text-2xl text-slate-900 dark:text-slate-100 leading-none">
                     TURN<span class="text-blue-600 dark:text-blue-500">EX</span>
                 </span>
-                <span class="font-mono text-[9px] sm:text-[10px] tracking-[0.25em] text-slate-500 dark:text-slate-400 uppercase mt-1">
+                <span class="font-mono text-xs tracking-widest text-slate-500 dark:text-slate-400 uppercase mt-1">
                     Queue Platform
                 </span>
             </a>
@@ -23,7 +23,7 @@
                     type="button"
                     x-data
                     @click="$flux.dark = !$flux.dark"
-                    class="inline-flex items-center justify-center size-9 rounded-md border border-[#E2E8F0] dark:border-[#1F2937] bg-white dark:bg-[#111827] text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:border-slate-300 dark:hover:border-slate-700 transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-blue-600 cursor-pointer"
+                    class="inline-flex items-center justify-center size-9 rounded-md border border-border-subtle bg-surface-card text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:border-slate-300 dark:hover:border-slate-700 transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-blue-600 cursor-pointer"
                     aria-label="{{ __('Alternar tema') }}"
                     title="{{ __('Alternar modo claro / oscuro') }}"
                 >
@@ -83,7 +83,7 @@
                         <button
                             type="button"
                             @click="toggle()"
-                            class="inline-flex items-center justify-center size-9 sm:size-auto sm:h-9 sm:px-3 rounded-md border border-[#E2E8F0] dark:border-[#1F2937] sm:border-transparent sm:dark:border-transparent bg-white dark:bg-[#111827] sm:bg-transparent sm:dark:bg-transparent text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:border-slate-300 dark:hover:border-slate-700 sm:hover:border-transparent sm:dark:hover:border-transparent transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-blue-600 cursor-pointer"
+                            class="inline-flex items-center justify-center size-9 sm:size-auto sm:h-9 sm:px-3 rounded-md border border-border-subtle sm:border-transparent bg-surface-card sm:bg-transparent text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:border-slate-300 dark:hover:border-slate-700 sm:hover:border-transparent transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-blue-600 cursor-pointer"
                             :aria-expanded="open"
                             aria-label="{{ __('Menú de navegación') }}"
                         >
@@ -113,15 +113,15 @@
                             x-transition:leave-start="opacity-100 scale-100"
                             x-transition:leave-end="opacity-0 scale-95"
                             x-cloak
-                            class="absolute right-0 top-full mt-1.5 w-60 rounded-lg border border-[#E2E8F0] dark:border-[#1F2937] bg-white dark:bg-[#111827] p-1.5 shadow-lg shadow-black/5 dark:shadow-black/20 z-50 flex flex-col gap-0.5"
+                            class="absolute right-0 top-full mt-1.5 w-60 rounded-lg border border-border-subtle bg-surface-card p-1.5 shadow-lg shadow-black/5 dark:shadow-black/20 z-50 flex flex-col gap-0.5"
                         >
-                            <div class="px-2.5 py-1 text-[10px] font-mono uppercase tracking-wider text-slate-400 dark:text-slate-500">
+                            <div class="px-2.5 py-1 text-xs font-mono uppercase tracking-wider text-slate-400 dark:text-slate-500">
                                 {{ __('Iniciar sesión') }}
                             </div>
 
                             <a
                                 href="{{ route('login') }}"
-                                class="flex items-center gap-2.5 px-2.5 py-2 text-sm rounded-md font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-[#1F2937] hover:text-blue-600 dark:hover:text-blue-400 transition-colors group"
+                                class="flex items-center gap-2.5 px-2.5 py-2 text-sm rounded-md font-medium text-slate-700 dark:text-slate-200 hover:bg-surface-subtle hover:text-blue-600 dark:hover:text-blue-400 transition-colors group"
                                 wire:navigate
                             >
                                 <div class="flex items-center justify-center size-7 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-500 group-hover:bg-blue-50 dark:group-hover:bg-blue-950/40 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors shrink-0">
@@ -131,13 +131,13 @@
                                 </div>
                                 <div class="flex flex-col text-left">
                                     <span class="leading-tight">{{ __('Como Cliente') }}</span>
-                                    <span class="text-[11px] font-normal text-slate-500 dark:text-slate-400">{{ __('Turnos y pedidos') }}</span>
+                                    <span class="text-xs font-normal text-slate-500 dark:text-slate-400">{{ __('Turnos y pedidos') }}</span>
                                 </div>
                             </a>
 
                             <a
                                 href="{{ route('business.login') }}"
-                                class="flex items-center gap-2.5 px-2.5 py-2 text-sm rounded-md font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-[#1F2937] hover:text-blue-600 dark:hover:text-blue-400 transition-colors group"
+                                class="flex items-center gap-2.5 px-2.5 py-2 text-sm rounded-md font-medium text-slate-700 dark:text-slate-200 hover:bg-surface-subtle hover:text-blue-600 dark:hover:text-blue-400 transition-colors group"
                                 wire:navigate
                             >
                                 <div class="flex items-center justify-center size-7 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-500 group-hover:bg-blue-50 dark:group-hover:bg-blue-950/40 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors shrink-0">
@@ -147,19 +147,19 @@
                                 </div>
                                 <div class="flex flex-col text-left">
                                     <span class="leading-tight">{{ __('Como Negocio') }}</span>
-                                    <span class="text-[11px] font-normal text-slate-500 dark:text-slate-400">{{ __('Panel de operaciones') }}</span>
+                                    <span class="text-xs font-normal text-slate-500 dark:text-slate-400">{{ __('Panel de operaciones') }}</span>
                                 </div>
                             </a>
 
                             {{-- Mobile-only registration shortcuts (when desktop header buttons are hidden) --}}
-                            <div class="sm:hidden border-t border-[#E2E8F0] dark:border-[#1F2937] my-1"></div>
-                            <div class="sm:hidden px-2.5 py-1 text-[10px] font-mono uppercase tracking-wider text-slate-400 dark:text-slate-500">
+                            <div class="sm:hidden border-t border-border-subtle my-1"></div>
+                            <div class="sm:hidden px-2.5 py-1 text-xs font-mono uppercase tracking-wider text-slate-400 dark:text-slate-500">
                                 {{ __('Crear cuenta') }}
                             </div>
 
                             <a
                                 href="{{ route('register') }}"
-                                class="sm:hidden flex items-center gap-2.5 px-2.5 py-2 text-sm rounded-md font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-[#1F2937] hover:text-blue-600 dark:hover:text-blue-400 transition-colors group"
+                                class="sm:hidden flex items-center gap-2.5 px-2.5 py-2 text-sm rounded-md font-medium text-slate-700 dark:text-slate-200 hover:bg-surface-subtle hover:text-blue-600 dark:hover:text-blue-400 transition-colors group"
                                 wire:navigate
                             >
                                 <div class="flex items-center justify-center size-7 rounded-md bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 transition-colors shrink-0">
@@ -169,13 +169,13 @@
                                 </div>
                                 <div class="flex flex-col text-left">
                                     <span class="leading-tight">{{ __('Registrarse como Cliente') }}</span>
-                                    <span class="text-[11px] font-normal text-slate-500 dark:text-slate-400">{{ __('Obtén turnos virtuales') }}</span>
+                                    <span class="text-xs font-normal text-slate-500 dark:text-slate-400">{{ __('Obtén turnos virtuales') }}</span>
                                 </div>
                             </a>
 
                             <a
                                 href="{{ route('business.register') }}"
-                                class="sm:hidden flex items-center gap-2.5 px-2.5 py-2 text-sm rounded-md font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-[#1F2937] hover:text-blue-600 dark:hover:text-blue-400 transition-colors group"
+                                class="sm:hidden flex items-center gap-2.5 px-2.5 py-2 text-sm rounded-md font-medium text-slate-700 dark:text-slate-200 hover:bg-surface-subtle hover:text-blue-600 dark:hover:text-blue-400 transition-colors group"
                                 wire:navigate
                             >
                                 <div class="flex items-center justify-center size-7 rounded-md bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 transition-colors shrink-0">
@@ -183,14 +183,14 @@
                                 </div>
                                 <div class="flex flex-col text-left">
                                     <span class="leading-tight">{{ __('Registrar mi Negocio') }}</span>
-                                    <span class="text-[11px] font-normal text-slate-500 dark:text-slate-400">{{ __('Comienza en 2 minutos') }}</span>
+                                    <span class="text-xs font-normal text-slate-500 dark:text-slate-400">{{ __('Comienza en 2 minutos') }}</span>
                                 </div>
                             </a>
                         </div>
                     </div>
                     <a
                         href="{{ route('business.register') }}"
-                        class="hidden sm:inline-flex items-center justify-center h-9 px-3.5 text-sm font-medium rounded-md border border-[#CBD5E1] dark:border-[#374151] bg-white dark:bg-[#111827] text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:border-slate-400 dark:hover:border-slate-600 transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-blue-600"
+                        class="hidden sm:inline-flex items-center justify-center h-9 px-3.5 text-sm font-medium rounded-md border border-border-strong bg-surface-card text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:border-slate-400 dark:hover:border-slate-600 transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-blue-600"
                     >
                         {{ __('Registrar Negocio') }}
                     </a>
@@ -210,7 +210,7 @@
                 {{-- Left Column: Value Proposition & CTAs --}}
                 <div class="lg:col-span-7 xl:col-span-6 flex flex-col items-start gap-5 sm:gap-6">
                     {{-- Main Headline --}}
-                    <h1 class="text-3xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-slate-900 dark:text-slate-100 leading-[1.12]">
+                    <h1 class="text-3xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-slate-900 dark:text-slate-100 leading-tight">
                         {{ __('Dile adiós a las filas físicas.') }}
                         <span class="block text-blue-600 dark:text-blue-500 mt-1 sm:mt-2">
                             {{ __('Gestiona turnos y pedidos en tiempo real.') }}
@@ -236,7 +236,7 @@
 
                         <a
                             href="{{ route('business.register') }}"
-                            class="inline-flex items-center justify-center gap-2.5 h-11 px-5 text-sm sm:text-base font-semibold rounded-md border border-[#CBD5E1] dark:border-[#374151] bg-white dark:bg-[#111827] text-slate-800 dark:text-slate-200 hover:text-blue-600 dark:hover:text-blue-400 hover:border-blue-500 dark:hover:border-blue-500 transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-blue-600 w-full sm:w-auto shadow-xs"
+                            class="inline-flex items-center justify-center gap-2.5 h-11 px-5 text-sm sm:text-base font-semibold rounded-md border border-border-strong bg-surface-card text-slate-800 dark:text-slate-200 hover:text-blue-600 dark:hover:text-blue-400 hover:border-blue-500 dark:hover:border-blue-500 transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-blue-600 w-full sm:w-auto shadow-xs"
                         >
                             <flux:icon name="building-storefront" class="size-5 text-blue-600 dark:text-blue-400 shrink-0" />
                             <span>{{ __('Registrar mi Negocio') }}</span>
@@ -311,7 +311,7 @@
                             {{-- Cashier Desk / Counter & Computer Monitor --}}
                             <g class="text-slate-500 dark:text-slate-500">
                                 {{-- Desk Body --}}
-                                <rect x="36" y="152" width="24" height="78" rx="2" stroke="currentColor" stroke-width="2" class="fill-[#F1F5F9] dark:fill-[#1F2937]" />
+                                <rect x="36" y="152" width="24" height="78" rx="2" stroke="currentColor" stroke-width="2" class="fill-surface-subtle" />
                                 {{-- POS Terminal / Computer Monitor on desk --}}
                                 <rect x="42" y="134" width="12" height="15" rx="1.5" stroke="currentColor" stroke-width="1.5" class="fill-slate-200 dark:fill-slate-800" />
                                 <line x1="48" y1="149" x2="48" y2="152" stroke="currentColor" stroke-width="1.5" />
@@ -361,7 +361,7 @@
 
                             {{-- Warning Tag above physical line (Pointing directly to the worried person) --}}
                             <g class="font-mono">
-                                <text x="130" y="52" text-anchor="middle" class="fill-rose-600 dark:fill-rose-400 text-[12px] font-semibold tracking-tight">
+                                <text x="130" y="52" text-anchor="middle" class="fill-rose-600 dark:fill-rose-400 text-xs font-semibold tracking-tight">
                                     {{ __('Fila física: ~40 min') }}
                                 </text>
                                 {{-- Curved warning pointer leading directly to the worried person at the end of the line --}}
@@ -374,8 +374,8 @@
                             {{-- CENTER DIVIDER: VS INDICATOR                                 --}}
                             {{-- ============================================================ --}}
                             <line x1="260" y1="30" x2="260" y2="240" stroke="currentColor" stroke-width="1" stroke-dasharray="4 6" class="text-slate-300 dark:text-slate-700" />
-                            <circle cx="260" cy="135" r="14" class="fill-white dark:fill-[#0B0F17] stroke-[#CBD5E1] dark:stroke-[#374151]" stroke-width="1" />
-                            <text x="260" y="139" text-anchor="middle" class="fill-slate-500 dark:fill-slate-400 font-mono text-[10px] font-bold">
+                            <circle cx="260" cy="135" r="14" class="fill-surface-canvas stroke-border-strong" stroke-width="1" />
+                            <text x="260" y="139" text-anchor="middle" class="fill-slate-500 dark:fill-slate-400 font-mono text-xs font-bold">
                                 VS
                             </text>
 
@@ -418,7 +418,7 @@
                             </g>
 
                             {{-- Armchair Armrest in foreground --}}
-                            <rect x="350" y="156" width="72" height="12" rx="6" stroke="currentColor" stroke-width="1.8" class="fill-white dark:fill-[#0B0F17] text-blue-500/60 dark:text-blue-400/50" />
+                            <rect x="350" y="156" width="72" height="12" rx="6" stroke="currentColor" stroke-width="1.8" class="fill-surface-canvas text-blue-500/60 dark:text-blue-400/50" />
 
                             {{-- Glowing Smartphone in hands --}}
                             <rect x="350" y="128" width="15" height="25" rx="3" class="fill-blue-600 dark:fill-blue-500 stroke-white dark:stroke-slate-900" stroke-width="1.5" />
@@ -430,10 +430,10 @@
                                 <path d="M 395 72 C 395 95, 358 100, 358 124" stroke="currentColor" stroke-width="1.5" stroke-dasharray="3 3" class="text-blue-500/50" />
 
                                 {{-- Ticket Notification Text in Geist Mono --}}
-                                <text x="395" y="48" text-anchor="middle" class="fill-blue-600 dark:fill-blue-400 text-[12px] font-bold tracking-tight">
+                                <text x="395" y="48" text-anchor="middle" class="fill-blue-600 dark:fill-blue-400 text-xs font-bold tracking-tight">
                                     {{ __('TURNO #A-042') }}
                                 </text>
-                                <text x="395" y="62" text-anchor="middle" class="fill-slate-600 dark:fill-slate-300 text-[10px] tracking-normal">
+                                <text x="395" y="62" text-anchor="middle" class="fill-slate-600 dark:fill-slate-300 text-xs tracking-normal">
                                     {{ __('Faltan ~15 min · Ve acercándote') }}
                                 </text>
                             </g>
@@ -443,7 +443,7 @@
                         <div class="grid grid-cols-2 gap-4 sm:gap-6 pt-1">
                             {{-- Left List: Desventajas de la fila tradicional --}}
                             <div class="flex flex-col gap-2">
-                                <span class="text-[11px] font-mono uppercase tracking-wider font-semibold text-rose-600 dark:text-rose-400">
+                                <span class="text-xs font-mono uppercase tracking-wider font-semibold text-rose-600 dark:text-rose-400">
                                     {{ __('Fila Tradicional') }}
                                 </span>
                                 <ul class="flex flex-col gap-1.5 text-xs text-slate-600 dark:text-slate-400">
@@ -464,7 +464,7 @@
 
                             {{-- Right List: Ventajas con Turnex --}}
                             <div class="flex flex-col gap-2">
-                                <span class="text-[11px] font-mono uppercase tracking-wider font-semibold text-blue-600 dark:text-blue-400">
+                                <span class="text-xs font-mono uppercase tracking-wider font-semibold text-blue-600 dark:text-blue-400">
                                     {{ __('Con Turnex') }}
                                 </span>
                                 <ul class="flex flex-col gap-1.5 text-xs text-slate-600 dark:text-slate-400">
@@ -489,7 +489,7 @@
         </main>
 
         {{-- Footer (Full Width) --}}
-        <footer class="w-full px-6 sm:px-8 lg:px-12 py-5 border-t border-[#E2E8F0] dark:border-[#1F2937] flex flex-col sm:flex-row items-center justify-between gap-3 text-xs font-mono text-slate-500 dark:text-slate-500">
+        <footer class="w-full px-6 sm:px-8 lg:px-12 py-5 border-t border-border-subtle flex flex-col sm:flex-row items-center justify-between gap-3 text-xs font-mono text-slate-500 dark:text-slate-500">
             <div>
                 © {{ date('Y') }} Turnex — {{ __('Gestión virtual de turnos y autoservicio.') }}
             </div>

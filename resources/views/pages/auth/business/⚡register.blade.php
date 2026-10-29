@@ -443,30 +443,30 @@ new #[Title('Registrar mi negocio')] #[Layout('layouts.auth.card')] class extend
 <div class="flex flex-col gap-5" @if($step === 2 && $cooldownSeconds > 0) wire:poll.1s="decrementCooldown" @endif>
     @if ($step < 3)
         {{-- Operational Stepper Indicator --}}
-        <nav aria-label="Progreso de registro de negocio" class="flex items-center justify-between pb-4 border-b border-[#E2E8F0] dark:border-[#1F2937]">
+        <nav aria-label="Progreso de registro de negocio" class="flex items-center justify-between pb-4 border-b border-border-subtle">
             {{-- Step 1 Indicator --}}
             <div class="flex items-center gap-2">
-                <span class="flex size-5 items-center justify-center rounded-sm font-mono text-[11px] font-bold transition-colors {{ $step === 1 ? 'bg-blue-600 text-white' : 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30' }}">
+                <span class="flex size-5 items-center justify-center rounded-sm font-mono text-xs font-bold transition-colors {{ $step === 1 ? 'bg-blue-600 text-white' : 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30' }}">
                     @if ($step > 1)
                         ✓
                     @else
                         1
                     @endif
                 </span>
-                <span class="text-xs font-semibold tracking-wider uppercase {{ $step === 1 ? 'text-[#0F172A] dark:text-[#F9FAFB]' : 'text-emerald-600 dark:text-emerald-400' }}">
+                <span class="text-xs font-semibold tracking-wider uppercase {{ $step === 1 ? 'text-text-primary' : 'text-emerald-600 dark:text-emerald-400' }}">
                     01 · Negocio
                 </span>
             </div>
 
             {{-- Divider Track --}}
-            <div class="h-px flex-1 mx-3 bg-[#E2E8F0] dark:bg-[#1F2937]"></div>
+            <div class="h-px flex-1 mx-3 bg-border-subtle"></div>
 
             {{-- Step 2 Indicator --}}
             <div class="flex items-center gap-2">
-                <span class="flex size-5 items-center justify-center rounded-sm font-mono text-[11px] font-bold transition-colors {{ $step === 2 ? 'bg-blue-600 text-white' : 'bg-slate-100 dark:bg-[#1F2937] text-slate-600 dark:text-slate-400 border border-[#E2E8F0] dark:border-[#1F2937]' }}">
+                <span class="flex size-5 items-center justify-center rounded-sm font-mono text-xs font-bold transition-colors {{ $step === 2 ? 'bg-blue-600 text-white' : 'bg-surface-subtle text-slate-600 dark:text-slate-400 border border-border-subtle' }}">
                     2
                 </span>
-                <span class="text-xs font-semibold tracking-wider uppercase {{ $step === 2 ? 'text-[#0F172A] dark:text-[#F9FAFB]' : 'text-slate-600 dark:text-slate-400' }}">
+                <span class="text-xs font-semibold tracking-wider uppercase {{ $step === 2 ? 'text-text-primary' : 'text-slate-600 dark:text-slate-400' }}">
                     02 · Verificación
                 </span>
             </div>
@@ -486,10 +486,10 @@ new #[Title('Registrar mi negocio')] #[Layout('layouts.auth.card')] class extend
     @if ($step === 1)
         {{-- STEP 1: BUSINESS & OWNER INFORMATION --}}
         <header class="flex flex-col gap-1.5 mb-1">
-            <h1 class="text-2xl sm:text-3xl font-semibold tracking-tight text-[#0F172A] dark:text-[#F9FAFB]">
+            <h1 class="text-2xl sm:text-3xl font-semibold tracking-tight text-text-primary">
                 {{ __('Registra tu negocio') }}
             </h1>
-            <p class="text-xs sm:text-sm text-[#64748B] dark:text-[#9CA3AF]">
+            <p class="text-xs sm:text-sm text-text-secondary">
                 {{ __('Gestiona tus filas virtuales, pedidos y catálogos en tiempo real.') }}
             </p>
         </header>
@@ -497,7 +497,7 @@ new #[Title('Registrar mi negocio')] #[Layout('layouts.auth.card')] class extend
         <form wire:submit="submitStepOne" class="flex flex-col gap-5">
             {{-- Business Name --}}
             <div class="flex flex-col">
-                <label for="business_name" class="block text-xs sm:text-sm font-medium text-[#64748B] dark:text-[#9CA3AF] mb-2">
+                <label for="business_name" class="block text-xs sm:text-sm font-medium text-text-secondary mb-2">
                     {{ __('Nombre comercial del negocio') }} <span class="text-red-500">*</span>
                 </label>
                 <input
@@ -508,7 +508,7 @@ new #[Title('Registrar mi negocio')] #[Layout('layouts.auth.card')] class extend
                     autofocus
                     autocomplete="organization"
                     placeholder="Ej. Café Don Pedro"
-                    class="h-11 w-full rounded-md border px-3.5 text-sm sm:text-base transition-colors bg-white text-[#0F172A] placeholder:text-slate-400 focus:outline-hidden focus:ring-2 focus:ring-blue-600 focus:border-transparent dark:bg-[#0B0F17] dark:text-[#F9FAFB] dark:placeholder:text-slate-500 {{ $errors->has('business_name') ? 'border-red-500' : 'border-[#CBD5E1] dark:border-[#374151]' }}"
+                    class="h-11 w-full rounded-md border px-3.5 text-sm sm:text-base transition-colors bg-surface-card dark:bg-surface-canvas text-text-primary placeholder:text-slate-400 focus:outline-hidden focus:ring-2 focus:ring-blue-600 focus:border-transparent dark:placeholder:text-slate-500 {{ $errors->has('business_name') ? 'border-red-500' : 'border-border-strong' }}"
                 />
                 @error('business_name')
                     <p class="mt-1.5 text-xs text-red-500 font-medium">{{ $message }}</p>
@@ -517,14 +517,14 @@ new #[Title('Registrar mi negocio')] #[Layout('layouts.auth.card')] class extend
 
             {{-- Business Category --}}
             <div class="flex flex-col">
-                <label for="business_category" class="block text-xs sm:text-sm font-medium text-[#64748B] dark:text-[#9CA3AF] mb-2">
+                <label for="business_category" class="block text-xs sm:text-sm font-medium text-text-secondary mb-2">
                     {{ __('Categoría del negocio') }} <span class="text-red-500">*</span>
                 </label>
                 <select
                     id="business_category"
                     wire:model="business_category"
                     required
-                    class="h-11 w-full rounded-md border px-3.5 text-sm sm:text-base transition-colors bg-white text-[#0F172A] focus:outline-hidden focus:ring-2 focus:ring-blue-600 focus:border-transparent dark:bg-[#0B0F17] dark:text-[#F9FAFB] {{ $errors->has('business_category') ? 'border-red-500' : 'border-[#CBD5E1] dark:border-[#374151]' }}"
+                    class="h-11 w-full rounded-md border px-3.5 text-sm sm:text-base transition-colors bg-surface-card dark:bg-surface-canvas text-text-primary focus:outline-hidden focus:ring-2 focus:ring-blue-600 focus:border-transparent {{ $errors->has('business_category') ? 'border-red-500' : 'border-border-strong' }}"
                 >
                     <option value="">{{ __('Selecciona una categoría...') }}</option>
                     @foreach (BusinessCategory::cases() as $category)
@@ -539,7 +539,7 @@ new #[Title('Registrar mi negocio')] #[Layout('layouts.auth.card')] class extend
             {{-- Owner Names: First Name & Middle Name --}}
             <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div class="flex flex-col">
-                    <label for="owner_first_name" class="block text-xs sm:text-sm font-medium text-[#64748B] dark:text-[#9CA3AF] mb-2">
+                    <label for="owner_first_name" class="block text-xs sm:text-sm font-medium text-text-secondary mb-2">
                         {{ __('Primer nombre') }} <span class="text-red-500">*</span>
                     </label>
                     <input
@@ -551,7 +551,7 @@ new #[Title('Registrar mi negocio')] #[Layout('layouts.auth.card')] class extend
                         placeholder="Ej. Carlos"
                         pattern="[a-zA-ZÀ-ÿ\s]+"
                         oninput="this.value = this.value.replace(/[^a-zA-ZÀ-ÿ\s]/g, '')"
-                        class="h-11 w-full rounded-md border px-3.5 text-sm sm:text-base transition-colors bg-white text-[#0F172A] placeholder:text-slate-400 focus:outline-hidden focus:ring-2 focus:ring-blue-600 focus:border-transparent dark:bg-[#0B0F17] dark:text-[#F9FAFB] dark:placeholder:text-slate-500 {{ $errors->has('owner_first_name') ? 'border-red-500' : 'border-[#CBD5E1] dark:border-[#374151]' }}"
+                        class="h-11 w-full rounded-md border px-3.5 text-sm sm:text-base transition-colors bg-surface-card dark:bg-surface-canvas text-text-primary placeholder:text-slate-400 focus:outline-hidden focus:ring-2 focus:ring-blue-600 focus:border-transparent dark:placeholder:text-slate-500 {{ $errors->has('owner_first_name') ? 'border-red-500' : 'border-border-strong' }}"
                     />
                     @error('owner_first_name')
                         <p class="mt-1.5 text-xs text-red-500 font-medium">{{ $message }}</p>
@@ -559,7 +559,7 @@ new #[Title('Registrar mi negocio')] #[Layout('layouts.auth.card')] class extend
                 </div>
 
                 <div class="flex flex-col">
-                    <label for="owner_middle_name" class="block text-xs sm:text-sm font-medium text-[#64748B] dark:text-[#9CA3AF] mb-2">
+                    <label for="owner_middle_name" class="block text-xs sm:text-sm font-medium text-text-secondary mb-2">
                         {{ __('Segundo nombre') }} <span class="text-slate-400 font-normal">({{ __('opcional') }})</span>
                     </label>
                     <input
@@ -570,7 +570,7 @@ new #[Title('Registrar mi negocio')] #[Layout('layouts.auth.card')] class extend
                         placeholder="Ej. Andrés"
                         pattern="[a-zA-ZÀ-ÿ\s]+"
                         oninput="this.value = this.value.replace(/[^a-zA-ZÀ-ÿ\s]/g, '')"
-                        class="h-11 w-full rounded-md border px-3.5 text-sm sm:text-base transition-colors bg-white text-[#0F172A] placeholder:text-slate-400 focus:outline-hidden focus:ring-2 focus:ring-blue-600 focus:border-transparent dark:bg-[#0B0F17] dark:text-[#F9FAFB] dark:placeholder:text-slate-500 {{ $errors->has('owner_middle_name') ? 'border-red-500' : 'border-[#CBD5E1] dark:border-[#374151]' }}"
+                        class="h-11 w-full rounded-md border px-3.5 text-sm sm:text-base transition-colors bg-surface-card dark:bg-surface-canvas text-text-primary placeholder:text-slate-400 focus:outline-hidden focus:ring-2 focus:ring-blue-600 focus:border-transparent dark:placeholder:text-slate-500 {{ $errors->has('owner_middle_name') ? 'border-red-500' : 'border-border-strong' }}"
                     />
                     @error('owner_middle_name')
                         <p class="mt-1.5 text-xs text-red-500 font-medium">{{ $message }}</p>
@@ -581,7 +581,7 @@ new #[Title('Registrar mi negocio')] #[Layout('layouts.auth.card')] class extend
             {{-- Owner Last Names: First Last Name & Second Last Name --}}
             <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div class="flex flex-col">
-                    <label for="owner_last_name" class="block text-xs sm:text-sm font-medium text-[#64748B] dark:text-[#9CA3AF] mb-2">
+                    <label for="owner_last_name" class="block text-xs sm:text-sm font-medium text-text-secondary mb-2">
                         {{ __('Primer apellido') }} <span class="text-red-500">*</span>
                     </label>
                     <input
@@ -593,7 +593,7 @@ new #[Title('Registrar mi negocio')] #[Layout('layouts.auth.card')] class extend
                         placeholder="Ej. Gómez"
                         pattern="[a-zA-ZÀ-ÿ\s]+"
                         oninput="this.value = this.value.replace(/[^a-zA-ZÀ-ÿ\s]/g, '')"
-                        class="h-11 w-full rounded-md border px-3.5 text-sm sm:text-base transition-colors bg-white text-[#0F172A] placeholder:text-slate-400 focus:outline-hidden focus:ring-2 focus:ring-blue-600 focus:border-transparent dark:bg-[#0B0F17] dark:text-[#F9FAFB] dark:placeholder:text-slate-500 {{ $errors->has('owner_last_name') ? 'border-red-500' : 'border-[#CBD5E1] dark:border-[#374151]' }}"
+                        class="h-11 w-full rounded-md border px-3.5 text-sm sm:text-base transition-colors bg-surface-card dark:bg-surface-canvas text-text-primary placeholder:text-slate-400 focus:outline-hidden focus:ring-2 focus:ring-blue-600 focus:border-transparent dark:placeholder:text-slate-500 {{ $errors->has('owner_last_name') ? 'border-red-500' : 'border-border-strong' }}"
                     />
                     @error('owner_last_name')
                         <p class="mt-1.5 text-xs text-red-500 font-medium">{{ $message }}</p>
@@ -601,7 +601,7 @@ new #[Title('Registrar mi negocio')] #[Layout('layouts.auth.card')] class extend
                 </div>
 
                 <div class="flex flex-col">
-                    <label for="owner_second_last_name" class="block text-xs sm:text-sm font-medium text-[#64748B] dark:text-[#9CA3AF] mb-2">
+                    <label for="owner_second_last_name" class="block text-xs sm:text-sm font-medium text-text-secondary mb-2">
                         {{ __('Segundo apellido') }} <span class="text-slate-400 font-normal">({{ __('opcional') }})</span>
                     </label>
                     <input
@@ -611,7 +611,7 @@ new #[Title('Registrar mi negocio')] #[Layout('layouts.auth.card')] class extend
                         placeholder="Ej. Rodríguez"
                         pattern="[a-zA-ZÀ-ÿ\s]+"
                         oninput="this.value = this.value.replace(/[^a-zA-ZÀ-ÿ\s]/g, '')"
-                        class="h-11 w-full rounded-md border px-3.5 text-sm sm:text-base transition-colors bg-white text-[#0F172A] placeholder:text-slate-400 focus:outline-hidden focus:ring-2 focus:ring-blue-600 focus:border-transparent dark:bg-[#0B0F17] dark:text-[#F9FAFB] dark:placeholder:text-slate-500 {{ $errors->has('owner_second_last_name') ? 'border-red-500' : 'border-[#CBD5E1] dark:border-[#374151]' }}"
+                        class="h-11 w-full rounded-md border px-3.5 text-sm sm:text-base transition-colors bg-surface-card dark:bg-surface-canvas text-text-primary placeholder:text-slate-400 focus:outline-hidden focus:ring-2 focus:ring-blue-600 focus:border-transparent dark:placeholder:text-slate-500 {{ $errors->has('owner_second_last_name') ? 'border-red-500' : 'border-border-strong' }}"
                     />
                     @error('owner_second_last_name')
                         <p class="mt-1.5 text-xs text-red-500 font-medium">{{ $message }}</p>
@@ -621,7 +621,7 @@ new #[Title('Registrar mi negocio')] #[Layout('layouts.auth.card')] class extend
 
             {{-- Physical Location / Address --}}
             <div class="flex flex-col">
-                <label for="location" class="block text-xs sm:text-sm font-medium text-[#64748B] dark:text-[#9CA3AF] mb-2">
+                <label for="location" class="block text-xs sm:text-sm font-medium text-text-secondary mb-2">
                     {{ __('Dirección o ubicación del negocio') }} <span class="text-red-500">*</span>
                 </label>
                 <input
@@ -631,7 +631,7 @@ new #[Title('Registrar mi negocio')] #[Layout('layouts.auth.card')] class extend
                     required
                     autocomplete="street-address"
                     placeholder="Ej. Carrera 15 # 85-30, Bogotá"
-                    class="h-11 w-full rounded-md border px-3.5 text-sm sm:text-base transition-colors bg-white text-[#0F172A] placeholder:text-slate-400 focus:outline-hidden focus:ring-2 focus:ring-blue-600 focus:border-transparent dark:bg-[#0B0F17] dark:text-[#F9FAFB] dark:placeholder:text-slate-500 {{ $errors->has('location') ? 'border-red-500' : 'border-[#CBD5E1] dark:border-[#374151]' }}"
+                    class="h-11 w-full rounded-md border px-3.5 text-sm sm:text-base transition-colors bg-surface-card dark:bg-surface-canvas text-text-primary placeholder:text-slate-400 focus:outline-hidden focus:ring-2 focus:ring-blue-600 focus:border-transparent dark:placeholder:text-slate-500 {{ $errors->has('location') ? 'border-red-500' : 'border-border-strong' }}"
                 />
                 @error('location')
                     <p class="mt-1.5 text-xs text-red-500 font-medium">{{ $message }}</p>
@@ -640,7 +640,7 @@ new #[Title('Registrar mi negocio')] #[Layout('layouts.auth.card')] class extend
 
             {{-- Email Address --}}
             <div class="flex flex-col">
-                <label for="email" class="block text-xs sm:text-sm font-medium text-[#64748B] dark:text-[#9CA3AF] mb-2">
+                <label for="email" class="block text-xs sm:text-sm font-medium text-text-secondary mb-2">
                     {{ __('Correo electrónico corporativo o personal') }} <span class="text-red-500">*</span>
                 </label>
                 <input
@@ -650,10 +650,10 @@ new #[Title('Registrar mi negocio')] #[Layout('layouts.auth.card')] class extend
                     required
                     autocomplete="email"
                     placeholder="contacto@minegocio.com"
-                    class="h-11 w-full rounded-md border px-3.5 text-sm sm:text-base transition-colors bg-white text-[#0F172A] placeholder:text-slate-400 focus:outline-hidden focus:ring-2 focus:ring-blue-600 focus:border-transparent dark:bg-[#0B0F17] dark:text-[#F9FAFB] dark:placeholder:text-slate-500 {{ $errors->has('email') ? 'border-red-500' : 'border-[#CBD5E1] dark:border-[#374151]' }}"
+                    class="h-11 w-full rounded-md border px-3.5 text-sm sm:text-base transition-colors bg-surface-card dark:bg-surface-canvas text-text-primary placeholder:text-slate-400 focus:outline-hidden focus:ring-2 focus:ring-blue-600 focus:border-transparent dark:placeholder:text-slate-500 {{ $errors->has('email') ? 'border-red-500' : 'border-border-strong' }}"
                 />
                 <div class="flex items-center justify-between mt-1.5">
-                    <p class="text-xs text-[#64748B] dark:text-[#9CA3AF]">
+                    <p class="text-xs text-text-secondary">
                         {{ __('Te enviaremos un código de seguridad de 6 dígitos a este correo.') }}
                     </p>
                 </div>
@@ -676,7 +676,7 @@ new #[Title('Registrar mi negocio')] #[Layout('layouts.auth.card')] class extend
                     get hasNoSpaces() { return !/\s/.test(this.password) && this.password.length > 0; }
                 }"
             >
-                <label for="password" class="block text-xs sm:text-sm font-medium text-[#64748B] dark:text-[#9CA3AF] mb-2">
+                <label for="password" class="block text-xs sm:text-sm font-medium text-text-secondary mb-2">
                     {{ __('Contraseña') }} <span class="text-red-500">*</span>
                 </label>
                 <div class="relative flex items-center">
@@ -692,7 +692,7 @@ new #[Title('Registrar mi negocio')] #[Layout('layouts.auth.card')] class extend
                         @input="password = $event.target.value = $event.target.value.replace(/\s/g, '')"
                         @focus="isFocused = true"
                         @blur="isFocused = false"
-                        class="h-11 w-full rounded-md border pl-3.5 pr-11 text-sm sm:text-base transition-colors bg-white text-[#0F172A] placeholder:text-slate-400 focus:outline-hidden focus:ring-2 focus:ring-blue-600 focus:border-transparent dark:bg-[#0B0F17] dark:text-[#F9FAFB] dark:placeholder:text-slate-500 {{ $errors->has('password') ? 'border-red-500' : 'border-[#CBD5E1] dark:border-[#374151]' }}"
+                        class="h-11 w-full rounded-md border pl-3.5 pr-11 text-sm sm:text-base transition-colors bg-surface-card dark:bg-surface-canvas text-text-primary placeholder:text-slate-400 focus:outline-hidden focus:ring-2 focus:ring-blue-600 focus:border-transparent dark:placeholder:text-slate-500 {{ $errors->has('password') ? 'border-red-500' : 'border-border-strong' }}"
                     />
                     <button
                         type="button"
@@ -725,12 +725,12 @@ new #[Title('Registrar mi negocio')] #[Layout('layouts.auth.card')] class extend
                     x-transition:leave-start="opacity-100 translate-y-0"
                     x-transition:leave-end="opacity-0 -translate-y-1"
                     x-cloak
-                    class="mt-2 p-3 rounded-md border border-[#E2E8F0] dark:border-[#1F2937] bg-[#F8FAFC] dark:bg-[#0B0F17] flex flex-col gap-1.5 text-[11px]"
+                    class="mt-2 p-3 rounded-md border border-border-subtle bg-surface-canvas flex flex-col gap-1.5 text-xs"
                 >
                     <span class="font-medium text-slate-700 dark:text-slate-300">
                         {{ __('Requisitos de la contraseña:') }}
                     </span>
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-1.5 font-mono text-[11px]">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-1.5 font-mono text-xs">
                         <span class="flex items-center gap-1.5 transition-colors" :class="hasLength ? 'text-emerald-600 dark:text-emerald-400 font-semibold' : 'text-slate-500 dark:text-slate-400'">
                             <span class="size-1.5 rounded-full transition-colors" :class="hasLength ? 'bg-emerald-500' : 'bg-slate-400 dark:bg-slate-600'"></span>
                             <span>{{ __('8 a 64 caracteres') }}</span>
@@ -764,7 +764,7 @@ new #[Title('Registrar mi negocio')] #[Layout('layouts.auth.card')] class extend
                 class="flex flex-col"
                 x-data="{ showConfirmation: false }"
             >
-                <label for="password_confirmation" class="block text-xs sm:text-sm font-medium text-[#64748B] dark:text-[#9CA3AF] mb-2">
+                <label for="password_confirmation" class="block text-xs sm:text-sm font-medium text-text-secondary mb-2">
                     {{ __('Confirmar contraseña') }} <span class="text-red-500">*</span>
                 </label>
                 <div class="relative flex items-center">
@@ -775,7 +775,7 @@ new #[Title('Registrar mi negocio')] #[Layout('layouts.auth.card')] class extend
                         required
                         autocomplete="new-password"
                         placeholder="Repite la contraseña"
-                        class="h-11 w-full rounded-md border pl-3.5 pr-11 text-sm sm:text-base transition-colors bg-white text-[#0F172A] placeholder:text-slate-400 focus:outline-hidden focus:ring-2 focus:ring-blue-600 focus:border-transparent dark:bg-[#0B0F17] dark:text-[#F9FAFB] dark:placeholder:text-slate-500 {{ $errors->has('password_confirmation') ? 'border-red-500' : 'border-[#CBD5E1] dark:border-[#374151]' }}"
+                        class="h-11 w-full rounded-md border pl-3.5 pr-11 text-sm sm:text-base transition-colors bg-surface-card dark:bg-surface-canvas text-text-primary placeholder:text-slate-400 focus:outline-hidden focus:ring-2 focus:ring-blue-600 focus:border-transparent dark:placeholder:text-slate-500 {{ $errors->has('password_confirmation') ? 'border-red-500' : 'border-border-strong' }}"
                     />
                     <button
                         type="button"
@@ -805,9 +805,9 @@ new #[Title('Registrar mi negocio')] #[Layout('layouts.auth.card')] class extend
                     <input
                         type="checkbox"
                         wire:model="terms"
-                        class="size-4.5 mt-0.5 rounded-md border-[#CBD5E1] dark:border-[#374151] text-blue-600 focus:ring-2 focus:ring-blue-600 dark:bg-[#0B0F17] transition-colors"
+                        class="size-4.5 mt-0.5 rounded-md border-border-strong text-blue-600 focus:ring-2 focus:ring-blue-600 dark:bg-surface-canvas transition-colors"
                     />
-                    <span class="text-xs sm:text-sm text-[#64748B] dark:text-[#9CA3AF] leading-snug">
+                    <span class="text-xs sm:text-sm text-text-secondary leading-snug">
                         {{ __('Acepto los') }}
                         <a href="#" class="text-blue-600 dark:text-blue-400 hover:underline font-medium">{{ __('Términos y Condiciones') }}</a>
                         {{ __('y la') }}
@@ -821,12 +821,12 @@ new #[Title('Registrar mi negocio')] #[Layout('layouts.auth.card')] class extend
             </div>
 
             {{-- Action CTA & Mobile-First Sticky Action Bar --}}
-            <div class="fixed bottom-0 left-0 right-0 p-4 bg-white/95 dark:bg-[#111827]/95 backdrop-blur-md border-t border-[#E2E8F0] dark:border-[#1F2937] sm:static sm:p-0 sm:bg-transparent sm:border-0 sm:backdrop-blur-none z-30 pt-3">
+            <div class="fixed bottom-0 left-0 right-0 p-4 bg-surface-card/95 backdrop-blur-md border-t border-border-subtle sm:static sm:p-0 sm:bg-transparent sm:border-0 sm:backdrop-blur-none z-30 pt-3">
                 <button
                     type="submit"
                     wire:loading.attr="disabled"
                     wire:target="submitStepOne"
-                    class="w-full h-12 px-6 rounded-md bg-blue-600 hover:bg-blue-500 text-white font-semibold text-base transition-all active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center cursor-pointer shadow-none focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-blue-600"
+                    class="w-full h-12 px-6 rounded-md bg-blue-600 hover:bg-blue-500 text-white font-semibold text-base transition-all active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center cursor-pointer shadow-none focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-blue-600"
                 >
                     <span wire:loading.remove wire:target="submitStepOne" class="inline-flex items-center justify-center gap-2">
                         <span>{{ __('Continuar con verificación') }}</span>
@@ -844,7 +844,7 @@ new #[Title('Registrar mi negocio')] #[Layout('layouts.auth.card')] class extend
         </form>
 
         {{-- Subdued Navigation Footnotes --}}
-        <div class="flex flex-col gap-2 pt-3 text-center text-xs sm:text-sm text-[#64748B] dark:text-[#9CA3AF] border-t border-[#E2E8F0] dark:border-[#1F2937] mt-3">
+        <div class="flex flex-col gap-2 pt-3 text-center text-xs sm:text-sm text-text-secondary border-t border-border-subtle mt-3">
             <p>
                 {{ __('¿Ya tienes una cuenta?') }}
                 <a href="{{ route('login') }}" class="font-semibold text-blue-600 dark:text-blue-400 hover:underline" wire:navigate>
@@ -861,12 +861,12 @@ new #[Title('Registrar mi negocio')] #[Layout('layouts.auth.card')] class extend
     @elseif ($step === 2)
         {{-- STEP 2: EMAIL VERIFICATION CHALLENGE --}}
         <header class="flex flex-col gap-1.5 mb-1">
-            <h1 class="text-2xl sm:text-3xl font-semibold tracking-tight text-[#0F172A] dark:text-[#F9FAFB]">
+            <h1 class="text-2xl sm:text-3xl font-semibold tracking-tight text-text-primary">
                 {{ __('Verifica tu correo electrónico') }}
             </h1>
-            <p class="text-xs sm:text-sm text-[#64748B] dark:text-[#9CA3AF] leading-relaxed">
+            <p class="text-xs sm:text-sm text-text-secondary leading-relaxed">
                 {{ __('Ingresa el código de 6 dígitos enviado a') }}
-                <span class="font-mono font-semibold text-[#0F172A] dark:text-[#F9FAFB]">{{ $maskedEmail }}</span>.
+                <span class="font-mono font-semibold text-text-primary">{{ $maskedEmail }}</span>.
                 @if (! $isEditingEmail && $emailEditCount < 3)
                     <button
                         type="button"
@@ -881,9 +881,9 @@ new #[Title('Registrar mi negocio')] #[Layout('layouts.auth.card')] class extend
 
         <div class="flex flex-col gap-6">
             @if ($isEditingEmail)
-                <form wire:submit="saveNewEmail" class="flex flex-col gap-3 p-4 rounded-md border border-[#E2E8F0] dark:border-[#1F2937] bg-[#F8FAFC] dark:bg-[#0B0F17]">
+                <form wire:submit="saveNewEmail" class="flex flex-col gap-3 p-4 rounded-md border border-border-subtle bg-surface-canvas">
                     <div class="flex items-center justify-between">
-                        <label for="new_email" class="block text-xs sm:text-sm font-medium text-[#64748B] dark:text-[#9CA3AF]">
+                        <label for="new_email" class="block text-xs sm:text-sm font-medium text-text-secondary">
                             {{ __('Nuevo correo electrónico') }}
                         </label>
                         @if ($emailEditCount > 0)
@@ -899,7 +899,7 @@ new #[Title('Registrar mi negocio')] #[Layout('layouts.auth.card')] class extend
                         required
                         autofocus
                         placeholder="nuevo-correo@minegocio.com"
-                        class="h-11 w-full rounded-md border px-3.5 text-sm sm:text-base transition-colors bg-white text-[#0F172A] placeholder:text-slate-400 focus:outline-hidden focus:ring-2 focus:ring-blue-600 focus:border-transparent dark:bg-[#0B0F17] dark:text-[#F9FAFB] dark:placeholder:text-slate-500 {{ $errors->has('new_email') ? 'border-red-500' : 'border-[#CBD5E1] dark:border-[#374151]' }}"
+                        class="h-11 w-full rounded-md border px-3.5 text-sm sm:text-base transition-colors bg-surface-card dark:bg-surface-canvas text-text-primary placeholder:text-slate-400 focus:outline-hidden focus:ring-2 focus:ring-blue-600 focus:border-transparent dark:placeholder:text-slate-500 {{ $errors->has('new_email') ? 'border-red-500' : 'border-border-strong' }}"
                     />
                     @error('new_email')
                         <p class="text-xs text-red-500 font-medium">{{ $message }}</p>
@@ -915,7 +915,7 @@ new #[Title('Registrar mi negocio')] #[Layout('layouts.auth.card')] class extend
                         <button
                             type="button"
                             wire:click="cancelEditEmail"
-                            class="h-9 px-3.5 rounded-md text-xs sm:text-sm font-medium border border-[#CBD5E1] dark:border-[#374151] hover:bg-slate-100 dark:hover:bg-[#1F2937] text-slate-700 dark:text-slate-300 transition-colors cursor-pointer"
+                            class="h-9 px-3.5 rounded-md text-xs sm:text-sm font-medium border border-border-strong hover:bg-surface-subtle text-slate-700 dark:text-slate-300 transition-colors cursor-pointer"
                         >
                             {{ __('Cancelar') }}
                         </button>
@@ -926,7 +926,7 @@ new #[Title('Registrar mi negocio')] #[Layout('layouts.auth.card')] class extend
             {{-- 6-Digit OTP Code Form --}}
             <form wire:submit="verifyCode" class="flex flex-col gap-5">
                 <div class="flex flex-col items-center">
-                    <label for="code" class="block text-xs sm:text-sm font-medium text-[#64748B] dark:text-[#9CA3AF] mb-2 uppercase tracking-wider font-mono">
+                    <label for="code" class="block text-xs sm:text-sm font-medium text-text-secondary mb-2 uppercase tracking-wider font-mono">
                         {{ __('Código de 6 dígitos') }}
                     </label>
                     <input
@@ -941,7 +941,7 @@ new #[Title('Registrar mi negocio')] #[Layout('layouts.auth.card')] class extend
                         required
                         autofocus
                         placeholder="000000"
-                        class="h-16 w-full rounded-md border text-center font-mono text-3xl sm:text-4xl font-bold tracking-[0.4em] transition-all bg-white text-[#0F172A] placeholder:text-slate-300 focus:outline-hidden focus:ring-2 focus:ring-blue-600 focus:border-transparent dark:bg-[#0B0F17] dark:text-[#F9FAFB] dark:placeholder:text-slate-700 {{ $errors->has('code') ? 'border-red-500' : 'border-[#CBD5E1] dark:border-[#374151]' }}"
+                        class="h-16 w-full rounded-md border text-center font-mono text-3xl sm:text-4xl font-bold tracking-widest transition-all bg-surface-card dark:bg-surface-canvas text-text-primary placeholder:text-slate-300 focus:outline-hidden focus:ring-2 focus:ring-blue-600 focus:border-transparent dark:placeholder:text-slate-700 {{ $errors->has('code') ? 'border-red-500' : 'border-border-strong' }}"
                     />
                     @error('code')
                         <p class="mt-2 text-xs text-red-500 font-medium text-center">{{ $message }}</p>
@@ -949,12 +949,12 @@ new #[Title('Registrar mi negocio')] #[Layout('layouts.auth.card')] class extend
                 </div>
 
                 {{-- Action CTA & Mobile-First Sticky Action Bar --}}
-                <div class="fixed bottom-0 left-0 right-0 p-4 bg-white/95 dark:bg-[#111827]/95 backdrop-blur-md border-t border-[#E2E8F0] dark:border-[#1F2937] sm:static sm:p-0 sm:bg-transparent sm:border-0 sm:backdrop-blur-none z-30">
+                <div class="fixed bottom-0 left-0 right-0 p-4 bg-surface-card/95 backdrop-blur-md border-t border-border-subtle sm:static sm:p-0 sm:bg-transparent sm:border-0 sm:backdrop-blur-none z-30">
                     <button
                         type="submit"
                         wire:loading.attr="disabled"
                         wire:target="verifyCode"
-                        class="w-full h-12 px-6 rounded-md bg-blue-600 hover:bg-blue-500 text-white font-semibold text-base transition-all active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center cursor-pointer shadow-none focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-blue-600"
+                        class="w-full h-12 px-6 rounded-md bg-blue-600 hover:bg-blue-500 text-white font-semibold text-base transition-all active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center cursor-pointer shadow-none focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-blue-600"
                     >
                         <span wire:loading.remove wire:target="verifyCode" class="inline-flex items-center justify-center gap-2">
                             <span>{{ __('Confirmar y crear negocio') }}</span>
@@ -971,9 +971,9 @@ new #[Title('Registrar mi negocio')] #[Layout('layouts.auth.card')] class extend
             </form>
 
             {{-- Resend Controls --}}
-            <div class="flex flex-col items-center gap-3 pt-2 text-center text-sm border-t border-[#E2E8F0] dark:border-[#1F2937]">
+            <div class="flex flex-col items-center gap-3 pt-2 text-center text-sm border-t border-border-subtle">
                 @if ($cooldownSeconds > 0)
-                    <div class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-sm text-xs font-mono font-medium border border-[#E2E8F0] dark:border-[#1F2937] bg-[#F1F5F9] dark:bg-[#1F2937] text-slate-600 dark:text-slate-400">
+                    <div class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-sm text-xs font-mono font-medium border border-border-subtle bg-surface-subtle text-slate-600 dark:text-slate-400">
                         <svg class="size-3.5 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
@@ -983,7 +983,7 @@ new #[Title('Registrar mi negocio')] #[Layout('layouts.auth.card')] class extend
                     <button
                         type="button"
                         wire:click="resendOtp"
-                        class="h-9 px-3.5 rounded-md text-xs sm:text-sm font-medium border border-[#CBD5E1] dark:border-[#374151] hover:bg-slate-100 dark:hover:bg-[#1F2937] text-slate-700 dark:text-slate-300 transition-colors inline-flex items-center gap-1.5 cursor-pointer"
+                        class="h-9 px-3.5 rounded-md text-xs sm:text-sm font-medium border border-border-strong hover:bg-surface-subtle text-slate-700 dark:text-slate-300 transition-colors inline-flex items-center gap-1.5 cursor-pointer"
                     >
                         <span>{{ __('Reenviar código al correo') }}</span>
                     </button>
@@ -1014,10 +1014,10 @@ new #[Title('Registrar mi negocio')] #[Layout('layouts.auth.card')] class extend
 
             {{-- Title & Redirect Indicator --}}
             <header class="flex flex-col gap-2 max-w-sm">
-                <h1 class="text-2xl sm:text-3xl font-semibold tracking-tight text-[#0F172A] dark:text-[#F9FAFB]">
+                <h1 class="text-2xl sm:text-3xl font-semibold tracking-tight text-text-primary">
                     {{ __('¡Negocio registrado con éxito!') }}
                 </h1>
-                <p class="text-xs sm:text-sm text-[#64748B] dark:text-[#9CA3AF] flex items-center justify-center gap-2">
+                <p class="text-xs sm:text-sm text-text-secondary flex items-center justify-center gap-2">
                     <svg class="animate-spin size-3.5 text-blue-600 dark:text-blue-400" fill="none" viewBox="0 0 24 24">
                         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                         <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>

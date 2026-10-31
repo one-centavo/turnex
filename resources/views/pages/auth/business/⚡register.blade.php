@@ -60,7 +60,13 @@ new #[Title('Registrar mi negocio')] #[Layout('layouts.auth.card')] class extend
 
     public function mount(): void
     {
-        if (Auth::guard('business')->check() || Auth::guard('web')->check()) {
+        if (Auth::guard('business')->check()) {
+            $this->redirectIntended(default: route('business.dashboard'), navigate: true);
+
+            return;
+        }
+
+        if (Auth::guard('web')->check()) {
             $this->redirectIntended(default: route('dashboard'), navigate: true);
 
             return;
@@ -250,7 +256,7 @@ new #[Title('Registrar mi negocio')] #[Layout('layouts.auth.card')] class extend
 
     public function finishRegistration(): void
     {
-        $this->redirectIntended(default: route('dashboard', ['setup' => 1]), navigate: true);
+        $this->redirectIntended(default: route('business.dashboard', ['setup' => 1]), navigate: true);
     }
 
     public function resendOtp(OtpService $otpService): void

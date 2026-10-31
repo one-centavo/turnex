@@ -4,6 +4,7 @@ use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -13,6 +14,23 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->trustProxies(at: '*');
+
+        $middleware->redirectTo(
+            guests: function (Request $request): string {
+                if ($request->is('business*')) {
+                    return route('business.login');
+                }
+
+                return route('login');
+            },
+            users: function (Request $request): string {
+                if (Auth::guard('business')->check()) {
+                    return route('business.dashboard');
+                }
+
+                return route('dashboard');
+            },
+        );
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(

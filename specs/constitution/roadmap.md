@@ -11,6 +11,7 @@ Status and delivery sequence of TURNEX features. Provides visibility into "what 
 5. **005 · Business Registration** — Rapid onboarding for merchants with initial contact data, industry category, and phone verification via OTP in preliminary status (US02).
 6. **006 · Business Login** — Dedicated login for business owners and operators, verifying credentials and routing to the business operations dashboard (US03).
 7. **007 · Service Categories** — Global grouping taxonomy, persistence, soft deletes, and baseline seeders for classifying business offerings (US10, US11, US13).
+8. **008 · Business Offerings** — Creation of commercial products and services by merchants, with categorization, image upload, price, and duration controls (US04).
 
 ## In Progress 🚧
 
@@ -18,7 +19,7 @@ None.
 
 ## Up Next 🔜
 
-8. **008 · SuperAdmin Login** — Secure administrative access for SuperAdmin users (seeded via Seeder/Tinker) to the global governance and platform management portal (US09).
+9. **009 · SuperAdmin Login** — Secure administrative access for SuperAdmin users (seeded via Seeder/Tinker) to the global governance and platform management portal (US09).
 
 ## Backlog / Ideas 💡
 

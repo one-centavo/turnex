@@ -2,7 +2,50 @@
 
 declare(strict_types=1);
 
+use App\Services\DataNormalizer as ServiceDataNormalizer;
 use App\Support\DataNormalizer;
+
+describe('DataNormalizer::text', function (): void {
+    test('it trims leading and trailing whitespace', function (): void {
+        expect(DataNormalizer::text('   Special Offering   '))->toBe('Special Offering');
+    });
+
+    test('it collapses multiple consecutive spaces into a single space', function (): void {
+        expect(DataNormalizer::text('Premium   Barber   Service'))->toBe('Premium Barber Service');
+    });
+
+    test('it returns empty string when given only whitespace', function (): void {
+        expect(DataNormalizer::text('     '))->toBe('');
+    });
+
+    test('it behaves identically via App\Services\DataNormalizer', function (): void {
+        expect(ServiceDataNormalizer::text('   Service   Wrapper   '))->toBe('Service Wrapper');
+    });
+});
+
+describe('DataNormalizer::nullableText', function (): void {
+    test('it returns null for null input', function (): void {
+        expect(DataNormalizer::nullableText(null))->toBeNull();
+    });
+
+    test('it returns null when input contains only whitespace', function (): void {
+        expect(DataNormalizer::nullableText('     '))->toBeNull();
+    });
+
+    test('it returns null for empty string', function (): void {
+        expect(DataNormalizer::nullableText(''))->toBeNull();
+    });
+
+    test('it trims and collapses whitespace for valid text', function (): void {
+        expect(DataNormalizer::nullableText('   Includes haircut,   beard trim,   and wash   '))
+            ->toBe('Includes haircut, beard trim, and wash');
+    });
+
+    test('it behaves identically via App\Services\DataNormalizer', function (): void {
+        expect(ServiceDataNormalizer::nullableText('   '))->toBeNull()
+            ->and(ServiceDataNormalizer::nullableText('  Valid  text  '))->toBe('Valid text');
+    });
+});
 
 describe('DataNormalizer::name', function (): void {
     test('it trims leading and trailing whitespace', function (): void {

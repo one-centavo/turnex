@@ -88,7 +88,12 @@ class OtpService
                 'used_at' => null,
             ]);
 
-            Notification::route($channel->value, $normalizedTarget)
+            $notificationChannel = match ($channel) {
+                ContactType::Email => 'mail',
+                ContactType::Sms, ContactType::WhatsApp => $channel->value,
+            };
+
+            Notification::route($notificationChannel, $normalizedTarget)
                 ->notify(new SendOtpNotification($plainCode, $channel));
 
             return $securityCode;

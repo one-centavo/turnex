@@ -14,6 +14,28 @@ final class DataNormalizer
     public const string DEFAULT_COUNTRY_CODE = '+57';
 
     /**
+     * Normalize general text by trimming edges and collapsing internal whitespace.
+     */
+    public static function text(string $text): string
+    {
+        return Str::squish(trim($text));
+    }
+
+    /**
+     * Normalize nullable text, treating empty or whitespace-only inputs as null.
+     */
+    public static function nullableText(?string $text): ?string
+    {
+        if ($text === null) {
+            return null;
+        }
+
+        $normalized = Str::squish(trim($text));
+
+        return $normalized === '' ? null : $normalized;
+    }
+
+    /**
      * Normalize a name by trimming edges and collapsing internal whitespace.
      */
     public static function name(string $name): string

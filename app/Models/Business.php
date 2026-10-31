@@ -11,11 +11,14 @@ use Carbon\CarbonInterface;
 use Database\Factories\BusinessFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Str;
 
 /**
  * @property int $id
@@ -45,6 +48,7 @@ use Illuminate\Support\Carbon;
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  * @property-read User|null $reviewer
+ * @property-read Collection<int, Offering> $offerings
  */
 #[Fillable([
     'reviewed_by',
@@ -102,6 +106,16 @@ class Business extends Authenticatable
     public function reviewer(): BelongsTo
     {
         return $this->belongsTo(User::class, 'reviewed_by');
+    }
+
+    /**
+     * Get the offerings for the business.
+     *
+     * @return HasMany<Offering, $this>
+     */
+    public function offerings(): HasMany
+    {
+        return $this->hasMany(Offering::class);
     }
 
     /**
@@ -201,5 +215,17 @@ class Business extends Authenticatable
         }
 
         return $this->dv !== null ? "{$this->tax_id}-{$this->dv}" : $this->tax_id;
+    }
+
+    /**
+     * Get the business's initials.
+     */
+    public function initials(): string
+    {
+        $initials = Str::initials($this->business_name, true);
+
+        return Str::length($initials) > 1
+            ? Str::substr($initials, 0, 1).Str::substr($initials, -1)
+            : $initials;
     }
 }

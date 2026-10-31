@@ -31,7 +31,7 @@ test('authenticated business operator is redirected away from business login', f
 
     $this->actingAs($business, 'business')
         ->get(route('business.login'))
-        ->assertRedirect(route('dashboard'));
+        ->assertRedirect(route('business.dashboard'));
 });
 
 test('authenticated customer can access business login without session interference', function (): void {
@@ -74,7 +74,7 @@ test('business operator can authenticate with email and password', function (): 
         ->set('password', 'Turnex@2026!')
         ->call('login')
         ->assertHasNoErrors()
-        ->assertRedirect(route('dashboard'));
+        ->assertRedirect(route('business.dashboard'));
 
     expect(Auth::guard('business')->check())->toBeTrue()
         ->and(Auth::guard('business')->id())->toBe($business->id);
@@ -136,7 +136,7 @@ test('rate limiting locks out user after 5 failed attempts and resets on success
     $component->set('password', 'CorrectPassword123!')
         ->call('login')
         ->assertHasNoErrors()
-        ->assertRedirect(route('dashboard'));
+        ->assertRedirect(route('business.dashboard'));
 
     expect(Auth::guard('business')->check())->toBeTrue();
 });
@@ -157,7 +157,7 @@ test('standard session lifetime is 2 hours and remember me persists token', func
         ->set('remember', true)
         ->call('login')
         ->assertHasNoErrors()
-        ->assertRedirect(route('dashboard'));
+        ->assertRedirect(route('business.dashboard'));
 
     $business->refresh();
 
@@ -201,4 +201,26 @@ test('customer session remains unaffected when logging into business guard', fun
 
     expect(Auth::guard('business')->check())->toBeTrue()
         ->and(Auth::guard('customer')->check())->toBeTrue();
+});
+
+test('authenticated business operator can view business dashboard', function (): void {
+    /** @var Business $business */
+    $business = Business::factory()->create([
+        'business_name' => 'Café Del Sol',
+    ]);
+
+    $this->actingAs($business, 'business')
+        ->get(route('business.dashboard'))
+        ->assertOk()
+        ->assertSee('Café Del Sol')
+        ->assertSee('Panel de Control');
+});
+
+test('authenticated business visiting generic dashboard is redirected to business dashboard', function (): void {
+    /** @var Business $business */
+    $business = Business::factory()->create();
+
+    $this->actingAs($business, 'business')
+        ->get(route('dashboard'))
+        ->assertRedirect(route('business.dashboard'));
 });

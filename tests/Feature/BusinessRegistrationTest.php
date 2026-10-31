@@ -30,7 +30,7 @@ test('authenticated business owner is redirected away from registration', functi
 
     $this->actingAs($business, 'business')
         ->get(route('business.register'))
-        ->assertRedirect(route('dashboard'));
+        ->assertRedirect(route('business.dashboard'));
 });
 
 test('authenticated web user is redirected away from business registration', function (): void {
@@ -233,7 +233,7 @@ test('step 2 happy path verifies OTP, provisions business, authenticates, and re
         ->assertSee('Redirigiendo al panel de tu negocio...');
 
     $component->call('finishRegistration')
-        ->assertRedirect(route('dashboard', ['setup' => 1]));
+        ->assertRedirect(route('business.dashboard', ['setup' => 1]));
 
     $business = Business::where('email', 'carlos@cafedonpedro.com')->first();
 

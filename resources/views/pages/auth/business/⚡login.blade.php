@@ -19,7 +19,13 @@ new #[Title('Iniciar sesión — Negocios')] #[Layout('layouts.auth.card')] clas
 
     public function mount(): void
     {
-        if (Auth::guard('business')->check() || Auth::guard('web')->check()) {
+        if (Auth::guard('business')->check()) {
+            $this->redirectIntended(default: route('business.dashboard'), navigate: true);
+
+            return;
+        }
+
+        if (Auth::guard('web')->check()) {
             $this->redirectIntended(default: route('dashboard'), navigate: true);
 
             return;
@@ -48,7 +54,7 @@ new #[Title('Iniciar sesión — Negocios')] #[Layout('layouts.auth.card')] clas
             throw $e;
         }
 
-        $this->redirectIntended(default: route('dashboard'), navigate: true);
+        $this->redirectIntended(default: route('business.dashboard'), navigate: true);
     }
 };
 ?>

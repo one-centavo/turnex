@@ -7,6 +7,7 @@ namespace App\Services;
 use App\Models\Business;
 use App\Models\Offering;
 use App\Support\DataNormalizer;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -15,6 +16,20 @@ use Throwable;
 
 class OfferingService
 {
+    /**
+     * Allowed column names for dynamic catalog sorting.
+     *
+     * @var array<int, string>
+     */
+    public const array ALLOWED_SORT_FIELDS = ['name', 'created_at'];
+
+    /**
+     * Allowed sort directions.
+     *
+     * @var array<int, string>
+     */
+    public const array ALLOWED_SORT_DIRECTIONS = ['asc', 'desc'];
+
     /**
      * Create a new commercial offering strictly scoped to the given business tenant.
      *
@@ -110,5 +125,73 @@ class OfferingService
         }
 
         return false;
+    }
+
+    /**
+     * Retrieve a paginated list of offerings for the specified business tenant,
+     * applying input sanitization, case-insensitive search, category filtering,
+     * status filtering, and whitelisted dynamic sorting.
+     *
+     * @param  array{
+     *     search?: string|null,
+     *     category?: int|string|null,
+     *     category_id?: int|string|null,
+     *     status?: string|null,
+     * }  $filters
+     * @return LengthAwarePaginator<int, Offering>
+     */
+    public function listForBusiness(
+        Business $business,
+        array $filters = [],
+        string $sortField = 'created_at',
+        string $sortDirection = 'desc',
+        int $perPage = 10,
+    ): LengthAwarePaginator {
+        $query = $business->offerings()
+            ->with(['category' => fn ($categoryQuery) => $categoryQuery->withTrashed()]);
+
+        // 1. Case-insensitive search on name with sanitized input and escaped wildcards
+        $search = isset($filters['search'])
+            ? DataNormalizer::nullableText($filters['search'])
+            : null;
+
+        if ($search !== null) {
+            $escapedSearch = str_replace(['\\', '%', '_'], ['\\\\', '\%', '\_'], $search);
+            $query->where('name', 'like', "%{$escapedSearch}%");
+        }
+
+        // 2. Category filtering (accepting either 'category' or 'category_id' key)
+        $categoryId = $filters['category_id'] ?? ($filters['category'] ?? null);
+        if ($categoryId !== null && $categoryId !== '' && $categoryId !== 'all') {
+            $query->where('category_id', (int) $categoryId);
+        }
+
+        // 3. Status filtering ('all', 'active', 'inactive')
+        $status = isset($filters['status'])
+            ? strtolower(trim($filters['status']))
+            : null;
+
+        if ($status === 'active') {
+            $query->where('is_active', true);
+        } elseif ($status === 'inactive') {
+            $query->where('is_active', false);
+        }
+
+        // 4. Dynamic sorting strictly restricted to whitelisted columns and directions
+        $sanitizedSortField = in_array(strtolower(trim($sortField)), self::ALLOWED_SORT_FIELDS, true)
+            ? strtolower(trim($sortField))
+            : 'created_at';
+
+        $sanitizedSortDirection = in_array(strtolower(trim($sortDirection)), self::ALLOWED_SORT_DIRECTIONS, true)
+            ? strtolower(trim($sortDirection))
+            : 'desc';
+
+        $query->orderBy($sanitizedSortField, $sanitizedSortDirection);
+        $query->orderBy('id', $sanitizedSortDirection);
+
+        // 5. Pagination
+        $sanitizedPerPage = $perPage > 0 ? $perPage : 10;
+
+        return $query->paginate($sanitizedPerPage);
     }
 }

@@ -200,6 +200,34 @@
 
 ---
 
+## US04B - VIEW & FILTER SERVICES OR PRODUCTS
+
+**As a** business manager,  
+**I want to** view, search, and filter the catalog of services and products registered by my business,  
+**So that** I can easily inspect, organize, and manage my commercial offerings.
+
+### Acceptance Criteria
+
+- [ ] The system must display a paginated list of offerings strictly associated with the authenticated business, showing:
+    - [ ] Reference image (compact thumbnail preview or placeholder if none was uploaded)
+    - [ ] Offering name
+    - [ ] Category name
+    - [ ] Price (formatted as currency, displaying "Free" with subtle styling when price is 0.00)
+    - [ ] Estimated duration in minutes (or indicated as "-" if not specified)
+    - [ ] Status indicator: active offerings display cleanly without badges, while inactive offerings display an "Inactive" status badge to clearly highlight exceptions
+- [ ] The user must be able to search offerings by name in real time using a search bar with input debouncing and sanitization (US-CORE-02).
+- [ ] The user must be able to filter offerings by category using a dropdown selector that only lists active, non-archived categories.
+- [ ] If an offering's assigned category is archived (soft-deleted), the table must display the category name gracefully without throwing errors.
+- [ ] The user must be able to filter offerings by status (All, Active, Inactive).
+- [ ] Modifying any filter (search query, category, or status) must automatically reset pagination to page 1.
+- [ ] Active search terms, filters, sorting preferences, and pagination pages must persist in the URL query string across page refreshes and browser history navigation.
+- [ ] The list must allow sorting by offering name (A-Z, Z-A) and by creation date (newest first, oldest first), displaying a directional sort icon on the active column.
+- [ ] If no offerings have been created yet by the business, the system must display an empty state prompting the user to create their first offering with a direct link/button to the creation form.
+- [ ] If an active search or filter produces no matching results, the system must display: _"No offerings found matching your criteria."_ along with an option to clear or reset the filters.
+- [ ] The list must never display offerings belonging to other businesses (tenant isolation).
+
+---
+
 ## US05 - EDIT SERVICE OR PRODUCT
 
 **As a** business manager,  

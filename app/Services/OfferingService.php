@@ -62,8 +62,9 @@ class OfferingService
                 }
 
                 $estimatedDuration = null;
-                if (isset($data['estimated_duration_minutes']) && $data['estimated_duration_minutes'] !== '') {
-                    $estimatedDuration = (int) $data['estimated_duration_minutes'];
+                if (isset($data['estimated_duration_minutes'])) {
+                    $rawDuration = trim((string) $data['estimated_duration_minutes']);
+                    $estimatedDuration = $rawDuration !== '' ? (int) $rawDuration : null;
                 }
 
                 $isActive = true;
@@ -96,6 +97,92 @@ class OfferingService
 
             throw $e;
         }
+    }
+
+    /**
+     * Update an existing commercial offering scoped to its business tenant.
+     *
+     * @param  array<string, mixed>  $data
+     *
+     * @throws Throwable
+     */
+    public function update(
+        Offering $offering,
+        array $data,
+        ?UploadedFile $image = null,
+        bool $removeImage = false,
+    ): Offering {
+        $uploadedFile = $image ?? ($data['reference_image'] ?? ($data['image'] ?? null));
+        $newStoredImagePath = null;
+        $oldImagePath = $offering->reference_image;
+        $shouldDeleteOldImage = false;
+
+        if ($uploadedFile instanceof UploadedFile) {
+            $newStoredImagePath = $this->storeImage($uploadedFile);
+            $referenceImage = $newStoredImagePath;
+            $shouldDeleteOldImage = ($oldImagePath !== null && $oldImagePath !== $newStoredImagePath);
+        } elseif ($removeImage) {
+            $referenceImage = null;
+            $shouldDeleteOldImage = ($oldImagePath !== null);
+        } else {
+            if (array_key_exists('reference_image', $data) && is_string($data['reference_image'])) {
+                $trimmed = trim($data['reference_image']);
+                $referenceImage = $trimmed !== '' ? $trimmed : null;
+                $shouldDeleteOldImage = ($oldImagePath !== null && $oldImagePath !== $referenceImage);
+            } else {
+                $referenceImage = $offering->reference_image;
+            }
+        }
+
+        try {
+            DB::transaction(function () use ($offering, $data, $referenceImage): void {
+                $attributes = [];
+
+                if (array_key_exists('name', $data)) {
+                    $attributes['name'] = DataNormalizer::text((string) $data['name']);
+                }
+
+                if (array_key_exists('category_id', $data)) {
+                    $attributes['category_id'] = (int) $data['category_id'];
+                }
+
+                if (array_key_exists('description', $data)) {
+                    $rawDescription = is_string($data['description']) ? $data['description'] : null;
+                    $attributes['description'] = DataNormalizer::nullableText($rawDescription);
+                }
+
+                if (array_key_exists('price', $data)) {
+                    $attributes['price'] = ($data['price'] !== null && $data['price'] !== '')
+                        ? (float) $data['price']
+                        : 0.00;
+                }
+
+                if (array_key_exists('estimated_duration_minutes', $data)) {
+                    $rawDuration = $data['estimated_duration_minutes'] !== null ? trim((string) $data['estimated_duration_minutes']) : '';
+                    $attributes['estimated_duration_minutes'] = $rawDuration !== '' ? (int) $rawDuration : null;
+                }
+
+                if (array_key_exists('is_active', $data)) {
+                    $attributes['is_active'] = filter_var($data['is_active'], FILTER_VALIDATE_BOOLEAN);
+                }
+
+                $attributes['reference_image'] = $referenceImage;
+
+                $offering->update($attributes);
+            });
+        } catch (Throwable $e) {
+            if ($newStoredImagePath !== null) {
+                $this->deleteImage($newStoredImagePath);
+            }
+
+            throw $e;
+        }
+
+        if ($shouldDeleteOldImage) {
+            $this->deleteImage($oldImagePath);
+        }
+
+        return $offering->refresh();
     }
 
     /**

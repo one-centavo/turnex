@@ -177,4 +177,3 @@ class OfferingSeeder extends Seeder
         }
     }
 }
-

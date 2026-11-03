@@ -48,7 +48,7 @@ Route::post('business/logout', function (BusinessAuthService $businessAuthServic
 
 Route::middleware(['auth:business'])->group(function () {
     Route::view('business/dashboard', 'pages.business.dashboard')->name('business.dashboard');
-    Route::view('business/offerings', 'pages.business.offerings.index')->name('business.offerings.index');
+    Route::livewire('business/offerings', 'pages::business.offerings.index')->name('business.offerings.index');
     Route::livewire('business/offerings/create', 'pages::business.offerings.create')->name('business.offerings.create');
 });
 

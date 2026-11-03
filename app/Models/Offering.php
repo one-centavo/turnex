@@ -77,13 +77,13 @@ class Offering extends Model
     }
 
     /**
-     * Get the category that classifies the offering.
+     * Get the category that classifies the offering, including soft-deleted categories.
      *
      * @return BelongsTo<Category, $this>
      */
     public function category(): BelongsTo
     {
-        return $this->belongsTo(Category::class);
+        return $this->belongsTo(Category::class)->withTrashed();
     }
 
     /**

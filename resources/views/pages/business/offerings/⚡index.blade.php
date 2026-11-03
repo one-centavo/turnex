@@ -250,6 +250,7 @@ new #[Title('Productos y Servicios')] #[Layout('layouts.business')] class extend
                     >
                         {{ __('Fecha') }}
                     </flux:table.column>
+                    <flux:table.column align="end">{{ __('Acciones') }}</flux:table.column>
                 </flux:table.columns>
 
                 <flux:table.rows>
@@ -304,6 +305,20 @@ new #[Title('Productos y Servicios')] #[Layout('layouts.business')] class extend
 
                             <flux:table.cell class="text-text-secondary whitespace-nowrap">
                                 {{ $offering->created_at->format('d/m/Y') }}
+                            </flux:table.cell>
+
+                            <flux:table.cell align="end">
+                                <flux:button
+                                    size="sm"
+                                    variant="ghost"
+                                    icon="pencil-square"
+                                    :href="route('business.offerings.edit', $offering)"
+                                    wire:navigate
+                                    class="cursor-pointer"
+                                    data-test="edit-offering-button-{{ $offering->id }}"
+                                >
+                                    {{ __('Editar') }}
+                                </flux:button>
                             </flux:table.cell>
                         </flux:table.row>
                     @endforeach

@@ -157,7 +157,7 @@ class OfferingService
 
         if ($search !== null) {
             $escapedSearch = str_replace(['\\', '%', '_'], ['\\\\', '\%', '\_'], $search);
-            $query->whereRaw("name LIKE ? ESCAPE '\\\\'", ["%{$escapedSearch}%"]);
+            $query->whereRaw("name LIKE ? ESCAPE '\\'", ["%{$escapedSearch}%"]);
         }
 
         // 2. Category filtering (accepting either 'category' or 'category_id' key)

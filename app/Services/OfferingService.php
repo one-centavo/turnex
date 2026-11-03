@@ -8,6 +8,7 @@ use App\Models\Business;
 use App\Models\Offering;
 use App\Support\DataNormalizer;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Database\SQLiteConnection;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -157,7 +158,12 @@ class OfferingService
 
         if ($search !== null) {
             $escapedSearch = str_replace(['\\', '%', '_'], ['\\\\', '\%', '\_'], $search);
-            $query->where('name', 'like', "%{$escapedSearch}%");
+            $connection = $query->getConnection();
+            if ($connection instanceof SQLiteConnection) {
+                $query->whereRaw("name LIKE ? ESCAPE '\\'", ["%{$escapedSearch}%"]);
+            } else {
+                $query->where('name', 'like', "%{$escapedSearch}%");
+            }
         }
 
         // 2. Category filtering (accepting either 'category' or 'category_id' key)

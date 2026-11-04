@@ -6,8 +6,11 @@ use App\Models\Business;
 use App\Models\Category;
 use App\Models\Offering;
 use App\Services\OfferingService;
+use DomainException;
+use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 
 beforeEach(function (): void {
@@ -298,6 +301,7 @@ test('listForBusiness filters offerings by status', function (): void {
 
     $activeOffering = Offering::factory()->active()->create(['business_id' => $business->id, 'category_id' => $category->id, 'name' => 'Active Item']);
     $inactiveOffering = Offering::factory()->inactive()->create(['business_id' => $business->id, 'category_id' => $category->id, 'name' => 'Inactive Item']);
+    $archivedOffering = Offering::factory()->trashed()->create(['business_id' => $business->id, 'category_id' => $category->id, 'name' => 'Archived Item']);
 
     $service = new OfferingService;
 
@@ -309,12 +313,20 @@ test('listForBusiness filters offerings by status', function (): void {
     $inactiveResults = $service->listForBusiness($business, ['status' => 'inactive']);
     expect($inactiveResults->pluck('id')->all())->toBe([$inactiveOffering->id]);
 
-    // Filter all or unspecified returns both
+    // Filter archived returns exclusively soft-deleted offerings
+    $archivedResults = $service->listForBusiness($business, ['status' => 'archived']);
+    expect($archivedResults->pluck('id')->all())->toBe([$archivedOffering->id]);
+
+    // Filter all or unspecified returns both active and inactive, excluding archived
     $allResults = $service->listForBusiness($business, ['status' => 'all']);
-    expect($allResults->total())->toBe(2);
+    expect($allResults->total())->toBe(2)
+        ->and($allResults->pluck('id')->all())->toContain($activeOffering->id, $inactiveOffering->id)
+        ->and($allResults->pluck('id')->all())->not->toContain($archivedOffering->id);
 
     $defaultResults = $service->listForBusiness($business, []);
-    expect($defaultResults->total())->toBe(2);
+    expect($defaultResults->total())->toBe(2)
+        ->and($defaultResults->pluck('id')->all())->toContain($activeOffering->id, $inactiveOffering->id)
+        ->and($defaultResults->pluck('id')->all())->not->toContain($archivedOffering->id);
 });
 
 test('listForBusiness dynamically sorts by name and creation date with direction and safe fallbacks', function (): void {
@@ -414,4 +426,161 @@ test('listForBusiness eagerly loads categories including soft-deleted categories
     expect($freshOffering->category)->not->toBeNull()
         ->and($freshOffering->category->id)->toBe($category->id)
         ->and($freshOffering->category->trashed())->toBeTrue();
+});
+
+test('archive soft-deletes offering, sets is_active to false, and retains image on disk', function (): void {
+    $business = Business::factory()->create();
+    $service = new OfferingService;
+
+    $file = UploadedFile::fake()->create('service-img.jpg', 40, 'image/jpeg');
+    $imagePath = $service->storeImage($file);
+
+    $offering = Offering::factory()->active()->create([
+        'business_id' => $business->id,
+        'reference_image' => $imagePath,
+    ]);
+
+    $result = $service->archive($offering);
+
+    expect($result)->toBeTrue();
+
+    $freshOffering = $offering->fresh();
+    expect($freshOffering)->not->toBeNull()
+        ->and($freshOffering->trashed())->toBeTrue()
+        ->and($freshOffering->is_active)->toBeFalse();
+
+    Storage::disk('public')->assertExists($imagePath);
+});
+
+test('archive operates cleanly on already inactive offerings', function (): void {
+    $offering = Offering::factory()->inactive()->create();
+    $service = new OfferingService;
+
+    $result = $service->archive($offering);
+
+    expect($result)->toBeTrue();
+
+    $freshOffering = $offering->fresh();
+    expect($freshOffering)->not->toBeNull()
+        ->and($freshOffering->trashed())->toBeTrue()
+        ->and($freshOffering->is_active)->toBeFalse();
+});
+
+test('restore clears deleted_at and retains all original attributes intact', function (): void {
+    $offering = Offering::factory()->trashed()->create([
+        'price' => '89.99',
+        'description' => 'Original description for restore',
+        'is_active' => false,
+    ]);
+
+    $service = new OfferingService;
+
+    $result = $service->restore($offering);
+
+    expect($result)->toBeTrue();
+
+    $freshOffering = $offering->fresh();
+    expect($freshOffering)->not->toBeNull()
+        ->and($freshOffering->trashed())->toBeFalse()
+        ->and($freshOffering->deleted_at)->toBeNull()
+        ->and($freshOffering->price)->toBe('89.99')
+        ->and($freshOffering->description)->toBe('Original description for restore')
+        ->and($freshOffering->is_active)->toBeFalse();
+});
+
+test('restore returns false if offering is not soft-deleted', function (): void {
+    $offering = Offering::factory()->active()->create();
+    $service = new OfferingService;
+
+    $result = $service->restore($offering);
+
+    expect($result)->toBeFalse();
+});
+
+test('hasHistoricalActivity returns true when dynamic safeguard flag is present', function (): void {
+    $offering = Offering::factory()->create();
+    $service = new OfferingService;
+
+    expect($service->hasHistoricalActivity($offering))->toBeFalse();
+
+    $offering->has_historical_activity = true;
+    expect($service->hasHistoricalActivity($offering))->toBeTrue();
+});
+
+test('hasHistoricalActivity detects references in historical database tables', function (): void {
+    $offering = Offering::factory()->create();
+    $service = new OfferingService;
+
+    Schema::create('queue_tickets', function (Blueprint $table): void {
+        $table->id();
+        $table->unsignedBigInteger('offering_id');
+    });
+
+    try {
+        expect($service->hasHistoricalActivity($offering))->toBeFalse();
+
+        DB::table('queue_tickets')->insert(['offering_id' => $offering->id]);
+
+        expect($service->hasHistoricalActivity($offering))->toBeTrue();
+    } finally {
+        Schema::dropIfExists('queue_tickets');
+    }
+});
+
+test('deletePermanently throws DomainException and retains record and image when historical activity exists', function (): void {
+    $service = new OfferingService;
+    $file = UploadedFile::fake()->create('guarded.jpg', 30, 'image/jpeg');
+    $imagePath = $service->storeImage($file);
+
+    $offering = Offering::factory()->trashed()->create([
+        'reference_image' => $imagePath,
+    ]);
+
+    $offering->has_historical_activity = true;
+
+    expect(fn () => $service->deletePermanently($offering))
+        ->toThrow(DomainException::class, 'This service cannot be permanently deleted because it has historical queue or order activity. It must remain archived.');
+
+    $this->assertDatabaseHas('offerings', [
+        'id' => $offering->id,
+    ]);
+
+    Storage::disk('public')->assertExists($imagePath);
+});
+
+test('deletePermanently forceDeletes database record and purges image file from storage disk', function (): void {
+    $service = new OfferingService;
+    $file = UploadedFile::fake()->create('delete-me.jpg', 25, 'image/jpeg');
+    $imagePath = $service->storeImage($file);
+
+    $offering = Offering::factory()->trashed()->create([
+        'reference_image' => $imagePath,
+    ]);
+    $offeringId = $offering->id;
+
+    $result = $service->deletePermanently($offering);
+
+    expect($result)->toBeTrue();
+
+    $this->assertDatabaseMissing('offerings', [
+        'id' => $offeringId,
+    ]);
+
+    Storage::disk('public')->assertMissing($imagePath);
+});
+
+test('deletePermanently forceDeletes database record when reference image is null', function (): void {
+    $service = new OfferingService;
+    $offering = Offering::factory()->trashed()->create([
+        'reference_image' => null,
+    ]);
+    $offeringId = $offering->id;
+
+    $result = $service->deletePermanently($offering);
+
+    expect($result)->toBeTrue();
+
+    $this->assertDatabaseMissing('offerings', [
+        'id' => $offeringId,
+    ]);
 });

@@ -87,6 +87,29 @@ test('table renders columns with thumbnail image when present and placeholder ic
         ->assertSee($offeringWithoutImage->name);
 });
 
+test('table renders expected catalog columns without date column and with consistently aligned actions header', function (): void {
+    /** @var Business $business */
+    $business = Business::factory()->create();
+    $category = Category::factory()->active()->create();
+
+    $offering = Offering::factory()->for($business)->create([
+        'category_id' => $category->id,
+        'name' => 'Servicio Prueba Columnas',
+        'created_at' => now()->subDays(10),
+    ]);
+
+    Livewire::actingAs($business, 'business')
+        ->test('pages::business.offerings.index')
+        ->assertSee(__('Producto o Servicio'))
+        ->assertSee(__('Categoría'))
+        ->assertSee(__('Precio'))
+        ->assertSee(__('Duración'))
+        ->assertSee(__('Estado'))
+        ->assertSee(__('Acciones'))
+        ->assertDontSee(__('Fecha'))
+        ->assertDontSee($offering->created_at->format('d/m/Y'));
+});
+
 test('table renders formatted duration in minutes or dash when null', function (): void {
     /** @var Business $business */
     $business = Business::factory()->create();

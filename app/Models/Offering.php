@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Carbon;
 
 /**
@@ -22,6 +23,7 @@ use Illuminate\Support\Carbon;
  * @property string $price
  * @property int|null $estimated_duration_minutes
  * @property bool $is_active
+ * @property Carbon|null $deleted_at
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  * @property-read Business $business
@@ -40,7 +42,7 @@ use Illuminate\Support\Carbon;
 class Offering extends Model
 {
     /** @use HasFactory<OfferingFactory> */
-    use HasFactory;
+    use HasFactory, SoftDeletes;
 
     /**
      * The model's default values for attributes.

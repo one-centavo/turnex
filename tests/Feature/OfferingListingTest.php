@@ -330,6 +330,24 @@ test('status filter restricts offerings by all, active, and inactive', function 
         ->assertDontSee('Servicio Siempre Disponible');
 });
 
+test('pagination summary and controls are rendered in Spanish', function (): void {
+    /** @var Business $business */
+    $business = Business::factory()->create();
+    $category = Category::factory()->active()->create();
+
+    Offering::factory()->count(15)->for($business)->create([
+        'category_id' => $category->id,
+    ]);
+
+    Livewire::actingAs($business, 'business')
+        ->test('pages::business.offerings.index')
+        ->assertSee('Mostrando')
+        ->assertSee('resultados')
+        ->assertSee('Anterior')
+        ->assertSee('Siguiente')
+        ->assertDontSee('Showing');
+});
+
 test('pagination resets to page 1 when search or filters change', function (): void {
     /** @var Business $business */
     $business = Business::factory()->create();

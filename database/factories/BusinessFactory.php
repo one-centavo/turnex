@@ -10,6 +10,7 @@ use App\Enums\VerificationStatus;
 use App\Models\Business;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 
 /**
  * @extends Factory<Business>
@@ -28,12 +29,16 @@ class BusinessFactory extends Factory
      */
     public function definition(): array
     {
+        $businessName = fake()->company();
+        $baseSlug = Str::slug($businessName);
+
         return [
             'reviewed_by' => null,
             'person_type' => PersonType::Natural,
             'tax_id' => null,
             'dv' => null,
-            'business_name' => fake()->company(),
+            'business_name' => $businessName,
+            'slug' => ($baseSlug !== '' ? $baseSlug : 'business').'-'.fake()->unique()->numerify('####'),
             'business_category' => fake()->randomElement(BusinessCategory::cases()),
             'owner_first_name' => fake()->firstName(),
             'owner_middle_name' => fake()->optional()->firstName(),

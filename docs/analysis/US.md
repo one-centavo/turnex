@@ -218,7 +218,7 @@
 - [ ] The user must be able to search offerings by name in real time using a search bar with input debouncing and sanitization (US-CORE-02).
 - [ ] The user must be able to filter offerings by category using a dropdown selector that only lists active, non-archived categories.
 - [ ] If an offering's assigned category is archived (soft-deleted), the table must display the category name gracefully without throwing errors.
-- [ ] The user must be able to filter offerings by status (All, Active, Inactive).
+- [ ] The user must be able to filter offerings by status (All, Active, Inactive, Archived).
 - [ ] Modifying any filter (search query, category, or status) must automatically reset pagination to page 1.
 - [ ] Active search terms, filters, sorting preferences, and pagination pages must persist in the URL query string across page refreshes and browser history navigation.
 - [ ] The list must allow sorting by offering name (A-Z, Z-A) and by creation date (newest first, oldest first), displaying a directional sort icon on the active column.
@@ -250,6 +250,45 @@
 - [ ] The **"Price"** field must accept non-negative numbers with up to two decimal places.
 - [ ] The system must allow changing the service status between active and inactive at any time.
 - [ ] The system must update details upon saving and display a success notification: _"Service updated successfully."_
+
+---
+
+## US05C - ARCHIVE & DELETE SERVICE OR PRODUCT
+
+**As a** business manager,  
+**I want to** archive outdated services and permanently delete unneeded offerings,  
+**So that** I can keep my commercial catalog clean and organized without losing past activity records.
+
+### Acceptance Criteria
+
+- [ ] **Archive Offering**:
+    - [ ] The system must provide an **"Archive"** action next to each offering in the catalog list.
+    - [ ] Clicking **"Archive"** must display a confirmation dialog warning that the offering will be removed from the active catalog and public storefront while past records remain safe.
+    - [ ] Canceling the confirmation dialog leaves the offering unchanged.
+    - [ ] Confirming the archive action hides the offering from the active catalog and public discovery, marks it as archived, and displays a success notification: _"Service archived successfully."_
+
+- [ ] **Archived Offerings View & Status Filtering**:
+    - [ ] The status filter selector in the offerings list must include an **"Archived"** option alongside All, Active, and Inactive.
+    - [ ] Filtering by **"Archived"** must exclusively display archived offerings belonging to the authenticated business.
+    - [ ] Each archived offering row must display an **"Archived"** status badge and provide **"Restore"** and **"Delete Permanently"** actions.
+    - [ ] If no archived offerings exist, the system must display: _"No archived offerings found."_
+
+- [ ] **Restore Offering**:
+    - [ ] The system must provide a **"Restore"** action for each archived offering.
+    - [ ] Clicking **"Restore"** must prompt for confirmation.
+    - [ ] Canceling the prompt leaves the offering archived.
+    - [ ] Upon confirmation, the offering is restored to the active catalog with all its previous information intact and displays a success notification: _"Service restored successfully."_
+
+- [ ] **Permanent Deletion**:
+    - [ ] The system must provide a **"Delete Permanently"** action strictly accessible from the archived offerings view.
+    - [ ] Before executing permanent deletion, the system must verify whether the offering has any past queue tickets or customer orders.
+    - [ ] If historical queue tickets or orders exist, the system must prevent deletion and display an alert: _"This service cannot be permanently deleted because it has historical queue or order activity. It must remain archived."_
+    - [ ] If no historical activity is linked, the system must display a warning dialog stating that this action cannot be undone.
+    - [ ] Upon confirming permanent deletion, the offering and its uploaded image are completely removed from the platform, and the system displays a success notification: _"Service permanently deleted."_
+
+- [ ] **Access Control & Business Privacy**:
+    - [ ] Unauthenticated users attempting to archive, restore, or delete offerings are redirected to the login screen.
+    - [ ] Business managers can only view, archive, restore, or delete offerings belonging to their own business; attempting to access offerings of other businesses displays a not-found page.
 
 ---
 

@@ -7,10 +7,12 @@ namespace App\Services;
 use App\Models\Business;
 use App\Models\Offering;
 use App\Support\DataNormalizer;
+use DomainException;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\SQLiteConnection;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 use RuntimeException;
 use Throwable;
@@ -259,12 +261,14 @@ class OfferingService
             $query->where('category_id', (int) $categoryId);
         }
 
-        // 3. Status filtering ('all', 'active', 'inactive')
+        // 3. Status filtering ('all', 'active', 'inactive', 'archived')
         $status = isset($filters['status'])
-            ? strtolower(trim($filters['status']))
+            ? strtolower(trim((string) $filters['status']))
             : null;
 
-        if ($status === 'active') {
+        if ($status === 'archived') {
+            $query->onlyTrashed();
+        } elseif ($status === 'active') {
             $query->where('is_active', true);
         } elseif ($status === 'inactive') {
             $query->where('is_active', false);
@@ -286,5 +290,97 @@ class OfferingService
         $sanitizedPerPage = $perPage > 0 ? $perPage : 10;
 
         return $query->paginate($sanitizedPerPage);
+    }
+
+    /**
+     * Archive an offering by deactivating it and applying soft delete within a database transaction.
+     * The stored reference image is retained on disk.
+     */
+    public function archive(Offering $offering): bool
+    {
+        return DB::transaction(function () use ($offering): bool {
+            $offering->is_active = false;
+            $offering->save();
+
+            return (bool) $offering->delete();
+        });
+    }
+
+    /**
+     * Restore a soft-deleted offering, returning it to the active/inactive catalog
+     * with its existing attributes intact.
+     */
+    public function restore(Offering $offering): bool
+    {
+        if (! $offering->trashed()) {
+            return false;
+        }
+
+        return (bool) $offering->restore();
+    }
+
+    /**
+     * Determine if an offering has historical queue tickets, orders, or transactions.
+     */
+    public function hasHistoricalActivity(Offering $offering): bool
+    {
+        if (isset($offering->has_historical_activity) && (bool) $offering->has_historical_activity) {
+            return true;
+        }
+
+        $relationMethods = ['queueTickets', 'tickets', 'orderItems', 'orders'];
+        foreach ($relationMethods as $method) {
+            if (method_exists($offering, $method)) {
+                /** @var mixed $relation */
+                $relation = $offering->{$method}();
+                if (is_object($relation) && method_exists($relation, 'exists') && (bool) $relation->exists()) {
+                    return true;
+                }
+            }
+        }
+
+        $historicalTables = [
+            'queue_tickets',
+            'ticket_offerings',
+            'tickets',
+            'order_items',
+            'orders',
+            'transactions',
+        ];
+
+        foreach ($historicalTables as $table) {
+            if (Schema::hasTable($table) && Schema::hasColumn($table, 'offering_id')) {
+                if (DB::table($table)->where('offering_id', $offering->id)->exists()) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Permanently delete an offering, purging its stored image from disk and destroying
+     * the database record. Guarded against historical queue or order activity.
+     *
+     * @throws DomainException
+     */
+    public function deletePermanently(Offering $offering): bool
+    {
+        if ($this->hasHistoricalActivity($offering)) {
+            throw new DomainException('This service cannot be permanently deleted because it has historical queue or order activity. It must remain archived.');
+        }
+
+        $imagePath = $offering->reference_image;
+
+        return DB::transaction(function () use ($offering, $imagePath): bool {
+            $deleted = (bool) $offering->forceDelete();
+
+            if ($deleted && $imagePath !== null && trim($imagePath) !== '') {
+                $this->deleteImage($imagePath);
+            }
+
+            return $deleted;
+        });
     }
 }

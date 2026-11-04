@@ -69,4 +69,15 @@ class OfferingFactory extends Factory
             'price' => 0.00,
         ]);
     }
+
+    /**
+     * Indicate that the offering is soft-deleted / archived.
+     */
+    public function trashed(): static
+    {
+        return $this->state(fn (array $attributes): array => [
+            'deleted_at' => now(),
+            'is_active' => false,
+        ]);
+    }
 }

@@ -20,6 +20,7 @@ test('offerings table has expected schema columns', function (): void {
             'price',
             'estimated_duration_minutes',
             'is_active',
+            'deleted_at',
             'created_at',
             'updated_at',
         ]))->toBeTrue();
@@ -141,8 +142,40 @@ test('offering factory states work as expected', function (): void {
     $active = Offering::factory()->active()->create();
     $inactive = Offering::factory()->inactive()->create();
     $free = Offering::factory()->free()->create();
+    $trashed = Offering::factory()->trashed()->create();
 
     expect($active->is_active)->toBeTrue()
         ->and($inactive->is_active)->toBeFalse()
-        ->and($free->price)->toBe('0.00');
+        ->and($free->price)->toBe('0.00')
+        ->and($trashed->trashed())->toBeTrue()
+        ->and($trashed->is_active)->toBeFalse()
+        ->and($trashed->deleted_at)->not->toBeNull();
+});
+
+test('offering model supports soft deletion and restoration', function (): void {
+    $offering = Offering::factory()->create();
+
+    expect($offering->trashed())->toBeFalse()
+        ->and($offering->deleted_at)->toBeNull();
+
+    $offering->delete();
+
+    expect($offering->trashed())->toBeTrue()
+        ->and($offering->deleted_at)->not->toBeNull();
+
+    // Excluded from default queries
+    expect(Offering::query()->find($offering->id))->toBeNull();
+
+    // Included when using withTrashed()
+    expect(Offering::withTrashed()->find($offering->id))->not->toBeNull();
+
+    // Found using onlyTrashed()
+    expect(Offering::onlyTrashed()->find($offering->id)?->id)->toBe($offering->id);
+
+    // Restoration
+    $offering->restore();
+
+    expect($offering->trashed())->toBeFalse()
+        ->and($offering->deleted_at)->toBeNull()
+        ->and(Offering::query()->find($offering->id)?->id)->toBe($offering->id);
 });

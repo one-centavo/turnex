@@ -14,6 +14,8 @@ Status and delivery sequence of TURNEX features. Provides visibility into "what 
 8. **008 · Create Business Offerings** — Creation of commercial products and services by merchants, with categorization, image upload, price, and duration controls (US04).
 9. **009 · Listing and Filtering Business Offerings** — Real-time catalog listing, category/status filtering, search, sorting, and pagination for merchants (US04B).
 10. **010 · Edit Business Offerings** — Update commercial offerings, categories, prices, durations, and active status with reactive image replacement/removal controls.
+11. **011 · Archive and Delete Business Offerings** — Lifecycle management for offerings with safe soft-delete archiving, restoration, and guarded permanent deletion (US05C).
+12. **012 · Public Business Storefront** — Public mobile-responsive commercial catalog with human-friendly URL slugs (`/b/{slug}`), business identity, reactive category filtering, and real-time search.
 
 ## In Progress 🚧
 
@@ -21,7 +23,8 @@ None.
 
 ## Up Next 🔜
 
-11. **011 · Delete Business Offerings** — Deletion and lifecycle management for commercial products and services in the business catalog.
+13. **013 · Virtual Queue & Digital Ticket** — Customer virtual queue joining, live ticket issuance (`TK-001`), and real-time queue position tracking.
+14. **014 · Business Live Queue Operations** — Live ticket queue management for merchants, including calling next customers, in-service status, and completion from the operations dashboard.
 
 ## Backlog / Ideas 💡
 

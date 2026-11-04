@@ -50,6 +50,7 @@ Route::middleware(['auth:business'])->group(function () {
     Route::view('business/dashboard', 'pages.business.dashboard')->name('business.dashboard');
     Route::livewire('business/offerings', 'pages::business.offerings.index')->name('business.offerings.index');
     Route::livewire('business/offerings/create', 'pages::business.offerings.create')->name('business.offerings.create');
+    Route::livewire('business/offerings/{offering}/edit', 'pages::business.offerings.edit')->name('business.offerings.edit');
 });
 
 require __DIR__.'/settings.php';

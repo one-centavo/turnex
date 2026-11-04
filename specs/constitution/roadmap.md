@@ -13,6 +13,7 @@ Status and delivery sequence of TURNEX features. Provides visibility into "what 
 7. **007 · Service Categories** — Global grouping taxonomy, persistence, soft deletes, and baseline seeders for classifying business offerings (US10, US11, US13).
 8. **008 · Create Business Offerings** — Creation of commercial products and services by merchants, with categorization, image upload, price, and duration controls (US04).
 9. **009 · Listing and Filtering Business Offerings** — Real-time catalog listing, category/status filtering, search, sorting, and pagination for merchants (US04B).
+10. **010 · Edit Business Offerings** — Update commercial offerings, categories, prices, durations, and active status with reactive image replacement/removal controls.
 
 ## In Progress 🚧
 
@@ -20,7 +21,7 @@ None.
 
 ## Up Next 🔜
 
-10. **010 · SuperAdmin Login** — Secure administrative access for SuperAdmin users (seeded via Seeder/Tinker) to the global governance and platform management portal (US09).
+11. **011 · Delete Business Offerings** — Deletion and lifecycle management for commercial products and services in the business catalog.
 
 ## Backlog / Ideas 💡
 

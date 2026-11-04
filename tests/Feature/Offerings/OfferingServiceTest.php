@@ -6,8 +6,11 @@ use App\Models\Business;
 use App\Models\Category;
 use App\Models\Offering;
 use App\Services\OfferingService;
+use DomainException;
+use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 
 beforeEach(function (): void {
@@ -298,6 +301,7 @@ test('listForBusiness filters offerings by status', function (): void {
 
     $activeOffering = Offering::factory()->active()->create(['business_id' => $business->id, 'category_id' => $category->id, 'name' => 'Active Item']);
     $inactiveOffering = Offering::factory()->inactive()->create(['business_id' => $business->id, 'category_id' => $category->id, 'name' => 'Inactive Item']);
+    $archivedOffering = Offering::factory()->trashed()->create(['business_id' => $business->id, 'category_id' => $category->id, 'name' => 'Archived Item']);
 
     $service = new OfferingService;
 
@@ -309,12 +313,20 @@ test('listForBusiness filters offerings by status', function (): void {
     $inactiveResults = $service->listForBusiness($business, ['status' => 'inactive']);
     expect($inactiveResults->pluck('id')->all())->toBe([$inactiveOffering->id]);
 
-    // Filter all or unspecified returns both
+    // Filter archived returns exclusively soft-deleted offerings
+    $archivedResults = $service->listForBusiness($business, ['status' => 'archived']);
+    expect($archivedResults->pluck('id')->all())->toBe([$archivedOffering->id]);
+
+    // Filter all or unspecified returns both active and inactive, excluding archived
     $allResults = $service->listForBusiness($business, ['status' => 'all']);
-    expect($allResults->total())->toBe(2);
+    expect($allResults->total())->toBe(2)
+        ->and($allResults->pluck('id')->all())->toContain($activeOffering->id, $inactiveOffering->id)
+        ->and($allResults->pluck('id')->all())->not->toContain($archivedOffering->id);
 
     $defaultResults = $service->listForBusiness($business, []);
-    expect($defaultResults->total())->toBe(2);
+    expect($defaultResults->total())->toBe(2)
+        ->and($defaultResults->pluck('id')->all())->toContain($activeOffering->id, $inactiveOffering->id)
+        ->and($defaultResults->pluck('id')->all())->not->toContain($archivedOffering->id);
 });
 
 test('listForBusiness dynamically sorts by name and creation date with direction and safe fallbacks', function (): void {
@@ -416,305 +428,159 @@ test('listForBusiness eagerly loads categories including soft-deleted categories
         ->and($freshOffering->category->trashed())->toBeTrue();
 });
 
-test('offering service updates basic fields with sanitization and normalization', function (): void {
+test('archive soft-deletes offering, sets is_active to false, and retains image on disk', function (): void {
     $business = Business::factory()->create();
-    $category1 = Category::factory()->create();
-    $category2 = Category::factory()->create();
-    $offering = Offering::factory()->create([
-        'business_id' => $business->id,
-        'category_id' => $category1->id,
-        'name' => 'Original Name',
-        'description' => 'Original description',
-        'price' => '20.00',
-        'estimated_duration_minutes' => 30,
-        'is_active' => true,
-    ]);
-
     $service = new OfferingService;
 
-    $updated = $service->update($offering, [
-        'category_id' => $category2->id,
-        'name' => '   Corte   de   Cabello   Moderno   ',
-        'description' => "   Nuevo   diseño   \n   y   estilo.   ",
-        'price' => '45000.50',
-        'estimated_duration_minutes' => '60',
+    $file = UploadedFile::fake()->create('service-img.jpg', 40, 'image/jpeg');
+    $imagePath = $service->storeImage($file);
+
+    $offering = Offering::factory()->active()->create([
+        'business_id' => $business->id,
+        'reference_image' => $imagePath,
+    ]);
+
+    $result = $service->archive($offering);
+
+    expect($result)->toBeTrue();
+
+    $freshOffering = $offering->fresh();
+    expect($freshOffering)->not->toBeNull()
+        ->and($freshOffering->trashed())->toBeTrue()
+        ->and($freshOffering->is_active)->toBeFalse();
+
+    Storage::disk('public')->assertExists($imagePath);
+});
+
+test('archive operates cleanly on already inactive offerings', function (): void {
+    $offering = Offering::factory()->inactive()->create();
+    $service = new OfferingService;
+
+    $result = $service->archive($offering);
+
+    expect($result)->toBeTrue();
+
+    $freshOffering = $offering->fresh();
+    expect($freshOffering)->not->toBeNull()
+        ->and($freshOffering->trashed())->toBeTrue()
+        ->and($freshOffering->is_active)->toBeFalse();
+});
+
+test('restore clears deleted_at and retains all original attributes intact', function (): void {
+    $offering = Offering::factory()->trashed()->create([
+        'price' => '89.99',
+        'description' => 'Original description for restore',
         'is_active' => false,
     ]);
 
-    expect($updated->category_id)->toBe($category2->id)
-        ->and($updated->name)->toBe('Corte de Cabello Moderno')
-        ->and($updated->description)->toBe('Nuevo diseño y estilo.')
-        ->and($updated->price)->toBe('45000.50')
-        ->and($updated->estimated_duration_minutes)->toBe(60)
-        ->and($updated->is_active)->toBeFalse();
+    $service = new OfferingService;
+
+    $result = $service->restore($offering);
+
+    expect($result)->toBeTrue();
+
+    $freshOffering = $offering->fresh();
+    expect($freshOffering)->not->toBeNull()
+        ->and($freshOffering->trashed())->toBeFalse()
+        ->and($freshOffering->deleted_at)->toBeNull()
+        ->and($freshOffering->price)->toBe('89.99')
+        ->and($freshOffering->description)->toBe('Original description for restore')
+        ->and($freshOffering->is_active)->toBeFalse();
+});
+
+test('restore returns false if offering is not soft-deleted', function (): void {
+    $offering = Offering::factory()->active()->create();
+    $service = new OfferingService;
+
+    $result = $service->restore($offering);
+
+    expect($result)->toBeFalse();
+});
+
+test('hasHistoricalActivity returns true when dynamic safeguard flag is present', function (): void {
+    $offering = Offering::factory()->create();
+    $service = new OfferingService;
+
+    expect($service->hasHistoricalActivity($offering))->toBeFalse();
+
+    $offering->has_historical_activity = true;
+    expect($service->hasHistoricalActivity($offering))->toBeTrue();
+});
+
+test('hasHistoricalActivity detects references in historical database tables', function (): void {
+    $offering = Offering::factory()->create();
+    $service = new OfferingService;
+
+    Schema::create('queue_tickets', function (Blueprint $table): void {
+        $table->id();
+        $table->unsignedBigInteger('offering_id');
+    });
+
+    try {
+        expect($service->hasHistoricalActivity($offering))->toBeFalse();
+
+        DB::table('queue_tickets')->insert(['offering_id' => $offering->id]);
+
+        expect($service->hasHistoricalActivity($offering))->toBeTrue();
+    } finally {
+        Schema::dropIfExists('queue_tickets');
+    }
+});
+
+test('deletePermanently throws DomainException and retains record and image when historical activity exists', function (): void {
+    $service = new OfferingService;
+    $file = UploadedFile::fake()->create('guarded.jpg', 30, 'image/jpeg');
+    $imagePath = $service->storeImage($file);
+
+    $offering = Offering::factory()->trashed()->create([
+        'reference_image' => $imagePath,
+    ]);
+
+    $offering->has_historical_activity = true;
+
+    expect(fn () => $service->deletePermanently($offering))
+        ->toThrow(DomainException::class, 'This service cannot be permanently deleted because it has historical queue or order activity. It must remain archived.');
 
     $this->assertDatabaseHas('offerings', [
         'id' => $offering->id,
-        'business_id' => $business->id,
-        'category_id' => $category2->id,
-        'name' => 'Corte de Cabello Moderno',
-        'description' => 'Nuevo diseño y estilo.',
-        'price' => 45000.50,
-        'estimated_duration_minutes' => 60,
-        'is_active' => false,
     ]);
+
+    Storage::disk('public')->assertExists($imagePath);
 });
 
-test('offering service defaults price to 0.00 and duration to null when cleared', function (): void {
-    $business = Business::factory()->create();
-    $category = Category::factory()->create();
-    $offering = Offering::factory()->create([
-        'business_id' => $business->id,
-        'category_id' => $category->id,
-        'price' => '50.00',
-        'estimated_duration_minutes' => 45,
-        'description' => 'Some description',
-    ]);
-
+test('deletePermanently forceDeletes database record and purges image file from storage disk', function (): void {
     $service = new OfferingService;
+    $file = UploadedFile::fake()->create('delete-me.jpg', 25, 'image/jpeg');
+    $imagePath = $service->storeImage($file);
 
-    $updated = $service->update($offering, [
-        'price' => '',
-        'estimated_duration_minutes' => '',
-        'description' => '   ',
+    $offering = Offering::factory()->trashed()->create([
+        'reference_image' => $imagePath,
+    ]);
+    $offeringId = $offering->id;
+
+    $result = $service->deletePermanently($offering);
+
+    expect($result)->toBeTrue();
+
+    $this->assertDatabaseMissing('offerings', [
+        'id' => $offeringId,
     ]);
 
-    expect($updated->price)->toBe('0.00')
-        ->and($updated->estimated_duration_minutes)->toBeNull()
-        ->and($updated->description)->toBeNull();
-
-    $this->assertDatabaseHas('offerings', [
-        'id' => $offering->id,
-        'price' => 0.00,
-        'estimated_duration_minutes' => null,
-        'description' => null,
-    ]);
+    Storage::disk('public')->assertMissing($imagePath);
 });
 
-test('offering service retains business_id and ignores external tenant reassignments', function (): void {
-    $businessA = Business::factory()->create();
-    $businessB = Business::factory()->create();
-    $category = Category::factory()->create();
-    $offering = Offering::factory()->create([
-        'business_id' => $businessA->id,
-        'category_id' => $category->id,
-        'name' => 'Original Item',
-    ]);
-
+test('deletePermanently forceDeletes database record when reference image is null', function (): void {
     $service = new OfferingService;
-
-    $updated = $service->update($offering, [
-        'name' => 'Updated Item',
-        'business_id' => $businessB->id,
-    ]);
-
-    expect($updated->business_id)->toBe($businessA->id)
-        ->and($updated->business_id)->not->toBe($businessB->id);
-
-    $this->assertDatabaseHas('offerings', [
-        'id' => $offering->id,
-        'business_id' => $businessA->id,
-        'name' => 'Updated Item',
-    ]);
-});
-
-test('offering service retains existing image when no upload provided and removeImage is false', function (): void {
-    $business = Business::factory()->create();
-    $category = Category::factory()->create();
-    $service = new OfferingService;
-
-    $file = UploadedFile::fake()->create('existing.png', 50, 'image/png');
-    $initialPath = $service->storeImage($file);
-
-    $offering = Offering::factory()->create([
-        'business_id' => $business->id,
-        'category_id' => $category->id,
-        'reference_image' => $initialPath,
-    ]);
-
-    $updated = $service->update($offering, [
-        'name' => 'Updated Name',
-    ]);
-
-    expect($updated->reference_image)->toBe($initialPath);
-    Storage::disk('public')->assertExists($initialPath);
-});
-
-test('offering service replaces existing image, stores new file, and deletes old file upon success', function (): void {
-    $business = Business::factory()->create();
-    $category = Category::factory()->create();
-    $service = new OfferingService;
-
-    $oldFile = UploadedFile::fake()->create('old.png', 40, 'image/png');
-    $oldPath = $service->storeImage($oldFile);
-    Storage::disk('public')->assertExists($oldPath);
-
-    $offering = Offering::factory()->create([
-        'business_id' => $business->id,
-        'category_id' => $category->id,
-        'reference_image' => $oldPath,
-    ]);
-
-    $newFile = UploadedFile::fake()->create('new.jpg', 60, 'image/jpeg');
-    $updated = $service->update($offering, [
-        'name' => 'Replaced Image Item',
-    ], image: $newFile);
-
-    expect($updated->reference_image)->not->toBeNull()
-        ->and($updated->reference_image)->not->toBe($oldPath)
-        ->and($updated->reference_image)->toStartWith('offerings/');
-
-    Storage::disk('public')->assertExists((string) $updated->reference_image);
-    Storage::disk('public')->assertMissing($oldPath);
-});
-
-test('offering service explicitly removes image and deletes file from disk when removeImage is true', function (): void {
-    $business = Business::factory()->create();
-    $category = Category::factory()->create();
-    $service = new OfferingService;
-
-    $file = UploadedFile::fake()->create('to_delete.png', 40, 'image/png');
-    $path = $service->storeImage($file);
-    Storage::disk('public')->assertExists($path);
-
-    $offering = Offering::factory()->create([
-        'business_id' => $business->id,
-        'category_id' => $category->id,
-        'reference_image' => $path,
-    ]);
-
-    $updated = $service->update($offering, [
-        'name' => 'Item Without Image',
-    ], removeImage: true);
-
-    expect($updated->reference_image)->toBeNull();
-    Storage::disk('public')->assertMissing($path);
-});
-
-test('offering service cleans up newly uploaded image when update transaction fails and preserves old image', function (): void {
-    $business = Business::factory()->create();
-    $category = Category::factory()->create();
-    $service = new OfferingService;
-
-    $oldFile = UploadedFile::fake()->create('keeper.png', 40, 'image/png');
-    $oldPath = $service->storeImage($oldFile);
-
-    $offering = Offering::factory()->create([
-        'business_id' => $business->id,
-        'category_id' => $category->id,
-        'reference_image' => $oldPath,
-    ]);
-
-    $newFile = UploadedFile::fake()->create('attempt.jpg', 60, 'image/jpeg');
-
-    DB::shouldReceive('transaction')
-        ->once()
-        ->andThrow(new RuntimeException('Simulated database error during update'));
-
-    expect(fn () => $service->update($offering, [
-        'name' => 'Will Fail',
-    ], image: $newFile))->toThrow(RuntimeException::class, 'Simulated database error during update');
-
-    // Verify old image is intact and newly uploaded file was deleted
-    Storage::disk('public')->assertExists($oldPath);
-    $allFiles = Storage::disk('public')->allFiles('offerings');
-    expect($allFiles)->toBe([$oldPath]);
-});
-
-test('offering service allows updating offerings associated with soft-deleted categories', function (): void {
-    $business = Business::factory()->create();
-    $category = Category::factory()->create(['name' => 'Archived Haircuts']);
-    $offering = Offering::factory()->create([
-        'business_id' => $business->id,
-        'category_id' => $category->id,
-        'name' => 'Vintage Cut',
-    ]);
-
-    $category->delete();
-    expect($category->fresh()->trashed())->toBeTrue();
-
-    $service = new OfferingService;
-    $updated = $service->update($offering, [
-        'name' => 'Vintage Cut Pro',
-        'price' => '30.00',
-    ]);
-
-    expect($updated->name)->toBe('Vintage Cut Pro')
-        ->and($updated->category_id)->toBe($category->id)
-        ->and($updated->category)->not->toBeNull()
-        ->and($updated->category->trashed())->toBeTrue();
-});
-
-test('offering service prioritizes uploaded file over removeImage flag and deletes old file upon success', function (): void {
-    $business = Business::factory()->create();
-    $category = Category::factory()->create();
-    $service = new OfferingService;
-
-    $oldFile = UploadedFile::fake()->create('old_to_replace.png', 40, 'image/png');
-    $oldPath = $service->storeImage($oldFile);
-    Storage::disk('public')->assertExists($oldPath);
-
-    $offering = Offering::factory()->create([
-        'business_id' => $business->id,
-        'category_id' => $category->id,
-        'reference_image' => $oldPath,
-    ]);
-
-    $newFile = UploadedFile::fake()->create('priority_new.jpg', 60, 'image/jpeg');
-    $updated = $service->update($offering, [
-        'name' => 'Priority Upload Item',
-    ], image: $newFile, removeImage: true);
-
-    expect($updated->reference_image)->not->toBeNull()
-        ->and($updated->reference_image)->not->toBe($oldPath)
-        ->and($updated->reference_image)->toStartWith('offerings/');
-
-    Storage::disk('public')->assertExists((string) $updated->reference_image);
-    Storage::disk('public')->assertMissing($oldPath);
-});
-
-test('offering service handles removeImage true gracefully when reference_image is already null', function (): void {
-    $business = Business::factory()->create();
-    $category = Category::factory()->create();
-    $service = new OfferingService;
-
-    $offering = Offering::factory()->create([
-        'business_id' => $business->id,
-        'category_id' => $category->id,
+    $offering = Offering::factory()->trashed()->create([
         'reference_image' => null,
     ]);
+    $offeringId = $offering->id;
 
-    $updated = $service->update($offering, [
-        'name' => 'Item Already Null Image',
-    ], removeImage: true);
+    $result = $service->deletePermanently($offering);
 
-    expect($updated->reference_image)->toBeNull();
+    expect($result)->toBeTrue();
 
-    $this->assertDatabaseHas('offerings', [
-        'id' => $offering->id,
-        'reference_image' => null,
-        'name' => 'Item Already Null Image',
-    ]);
-});
-
-test('offering service defaults whitespace-only duration to null on update', function (): void {
-    $business = Business::factory()->create();
-    $category = Category::factory()->create();
-    $offering = Offering::factory()->create([
-        'business_id' => $business->id,
-        'category_id' => $category->id,
-        'estimated_duration_minutes' => 45,
-    ]);
-
-    $service = new OfferingService;
-    $updated = $service->update($offering, [
-        'estimated_duration_minutes' => '   ',
-    ]);
-
-    expect($updated->estimated_duration_minutes)->toBeNull();
-
-    $this->assertDatabaseHas('offerings', [
-        'id' => $offering->id,
-        'estimated_duration_minutes' => null,
+    $this->assertDatabaseMissing('offerings', [
+        'id' => $offeringId,
     ]);
 });

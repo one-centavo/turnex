@@ -683,5 +683,5 @@ test('offerings index table renders Editar action button linking to offering edi
         ->assertSee($offering->name)
         ->assertSee(route('business.offerings.edit', $offering))
         ->assertSee('Editar')
-        ->assertSee('data-test="edit-offering-button-'.$offering->id.'"', false);
+        ->assertSee('data-test="edit-offering-'.$offering->id.'"', false);
 });

@@ -11,6 +11,7 @@ use Carbon\CarbonInterface;
 use Database\Factories\BusinessFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -27,6 +28,7 @@ use Illuminate\Support\Str;
  * @property string|null $tax_id
  * @property string|null $dv
  * @property string $business_name
+ * @property string $slug
  * @property BusinessCategory $business_category
  * @property string $owner_first_name
  * @property string|null $owner_middle_name
@@ -56,6 +58,7 @@ use Illuminate\Support\Str;
     'tax_id',
     'dv',
     'business_name',
+    'slug',
     'business_category',
     'owner_first_name',
     'owner_middle_name',
@@ -96,6 +99,44 @@ class Business extends Authenticatable
             'reviewed_at' => 'datetime',
             'password' => 'hashed',
         ];
+    }
+
+    /**
+     * The "booted" method of the model.
+     */
+    protected static function booted(): void
+    {
+        static::creating(function (Business $business): void {
+            if (blank($business->slug)) {
+                $business->slug = static::generateUniqueSlug($business->business_name, $business->id);
+            }
+        });
+    }
+
+    /**
+     * Generate a unique slug for the business.
+     */
+    public static function generateUniqueSlug(string $name, ?int $excludeId = null): string
+    {
+        $baseSlug = Str::limit(Str::slug($name) ?: 'business', 150, '');
+        if ($baseSlug === '') {
+            $baseSlug = 'business';
+        }
+
+        $slug = $baseSlug;
+        $counter = 1;
+
+        while (static::query()
+            ->where('slug', $slug)
+            ->when($excludeId !== null, function (Builder $query) use ($excludeId): void {
+                $query->where('id', '!=', $excludeId);
+            })
+            ->exists()) {
+            $slug = "{$baseSlug}-{$counter}";
+            $counter++;
+        }
+
+        return $slug;
     }
 
     /**

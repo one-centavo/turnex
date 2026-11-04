@@ -483,15 +483,7 @@ new #[Title('Productos y Servicios')] #[Layout('layouts.business')] class extend
                     <flux:table.column>{{ __('Precio') }}</flux:table.column>
                     <flux:table.column>{{ __('Duración') }}</flux:table.column>
                     <flux:table.column>{{ __('Estado') }}</flux:table.column>
-                    <flux:table.column
-                        sortable
-                        :sorted="$sortField === 'created_at'"
-                        :direction="$sortDirection"
-                        wire:click="sortBy('created_at')"
-                    >
-                        {{ __('Fecha') }}
-                    </flux:table.column>
-                    <flux:table.column align="end">
+                    <flux:table.column>
                         {{ __('Acciones') }}
                     </flux:table.column>
                 </flux:table.columns>
@@ -548,12 +540,8 @@ new #[Title('Productos y Servicios')] #[Layout('layouts.business')] class extend
                                 @endif
                             </flux:table.cell>
 
-                            <flux:table.cell class="text-text-secondary whitespace-nowrap">
-                                {{ $offering->created_at->format('d/m/Y') }}
-                            </flux:table.cell>
-
-                            <flux:table.cell align="end">
-                                <div class="flex items-center justify-end gap-2">
+                            <flux:table.cell>
+                                <div class="flex items-center gap-2">
                                     @if ($offering->trashed())
                                         <flux:button
                                             size="sm"

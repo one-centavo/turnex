@@ -231,7 +231,7 @@ test('adversarial: confirmPermanentDelete blocks modal and displays exact error 
         Schema::dropIfExists($table);
     }
 })->with([
-    'queue_tickets',
+    'pos_tickets',
     'ticket_offerings',
     'tickets',
     'order_items',

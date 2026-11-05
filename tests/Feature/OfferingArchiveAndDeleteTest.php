@@ -324,13 +324,13 @@ test('permanent deletion is blocked with alert when historical activity exists a
     ]);
 
     // Create a temporary historical table simulating past tickets
-    Schema::create('queue_tickets', function (Blueprint $table): void {
+    Schema::create('ticket_offerings', function (Blueprint $table): void {
         $table->id();
         $table->unsignedBigInteger('offering_id');
     });
 
     try {
-        DB::table('queue_tickets')->insert(['offering_id' => $archived->id]);
+        DB::table('ticket_offerings')->insert(['offering_id' => $archived->id]);
 
         $expectedMessage = 'This service cannot be permanently deleted because it has historical queue or order activity. It must remain archived.';
 
@@ -350,7 +350,7 @@ test('permanent deletion is blocked with alert when historical activity exists a
         ]);
         expect($archived->fresh()->trashed())->toBeTrue();
     } finally {
-        Schema::dropIfExists('queue_tickets');
+        Schema::dropIfExists('ticket_offerings');
     }
 });
 

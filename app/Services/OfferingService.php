@@ -328,7 +328,7 @@ class OfferingService
             return true;
         }
 
-        $relationMethods = ['queueTickets', 'tickets', 'orderItems', 'orders'];
+        $relationMethods = ['queueTicketItems', 'queueTickets', 'tickets', 'orderItems', 'orders'];
         foreach ($relationMethods as $method) {
             if (method_exists($offering, $method)) {
                 /** @var mixed $relation */
@@ -340,7 +340,8 @@ class OfferingService
         }
 
         $historicalTables = [
-            'queue_tickets',
+            'queue_ticket_items',
+            'pos_tickets',
             'ticket_offerings',
             'tickets',
             'order_items',

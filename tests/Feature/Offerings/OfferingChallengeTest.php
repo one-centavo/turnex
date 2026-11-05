@@ -244,7 +244,7 @@ test('hasHistoricalActivity() accurately checks all six historical database tabl
         Schema::dropIfExists($tableName);
     }
 })->with([
-    'queue_tickets',
+    'pos_tickets',
     'ticket_offerings',
     'tickets',
     'order_items',

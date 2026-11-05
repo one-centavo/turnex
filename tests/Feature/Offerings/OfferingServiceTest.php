@@ -511,7 +511,7 @@ test('hasHistoricalActivity detects references in historical database tables', f
     $offering = Offering::factory()->create();
     $service = new OfferingService;
 
-    Schema::create('queue_tickets', function (Blueprint $table): void {
+    Schema::create('ticket_offerings', function (Blueprint $table): void {
         $table->id();
         $table->unsignedBigInteger('offering_id');
     });
@@ -519,11 +519,11 @@ test('hasHistoricalActivity detects references in historical database tables', f
     try {
         expect($service->hasHistoricalActivity($offering))->toBeFalse();
 
-        DB::table('queue_tickets')->insert(['offering_id' => $offering->id]);
+        DB::table('ticket_offerings')->insert(['offering_id' => $offering->id]);
 
         expect($service->hasHistoricalActivity($offering))->toBeTrue();
     } finally {
-        Schema::dropIfExists('queue_tickets');
+        Schema::dropIfExists('ticket_offerings');
     }
 });
 

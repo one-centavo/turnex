@@ -86,6 +86,7 @@ test('it invalidates previous active codes when a new code is requested', functi
 });
 
 test('it enforces a 1-minute cooldown period and reports remaining seconds', function (): void {
+    $this->freezeTime();
     $this->service->generate('cooldown@turnex.test', ContactType::Email);
 
     // Immediate second attempt should be rejected

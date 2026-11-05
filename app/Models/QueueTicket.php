@@ -27,6 +27,7 @@ use Illuminate\Support\Carbon;
  * @property CarbonInterface|null $called_at
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
+ * @property int|null $turns_ahead
  * @property-read Business $business
  * @property-read Customer $customer
  * @property-read Collection<int, QueueTicketItem> $items
@@ -44,6 +45,11 @@ class QueueTicket extends Model
 {
     /** @use HasFactory<QueueTicketFactory> */
     use HasFactory;
+
+    /**
+     * The number of turns ahead in the queue (calculated dynamically).
+     */
+    public ?int $turns_ahead = null;
 
     /**
      * The model's default values for attributes.
@@ -114,6 +120,21 @@ class QueueTicket extends Model
             QueueTicketStatus::Called,
             QueueTicketStatus::InService,
             QueueTicketStatus::Skipped,
+        ]);
+    }
+
+    /**
+     * Scope query to only include terminal tickets.
+     *
+     * @param  Builder<QueueTicket>  $query
+     * @return Builder<QueueTicket>
+     */
+    public function scopeTerminal(Builder $query): Builder
+    {
+        return $query->whereIn('status', [
+            QueueTicketStatus::Completed,
+            QueueTicketStatus::NoShow,
+            QueueTicketStatus::Cancelled,
         ]);
     }
 

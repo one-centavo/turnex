@@ -14,6 +14,10 @@ Route::middleware(['auth:web,customer,business'])->group(function () {
             return redirect()->route('business.dashboard', request()->query());
         }
 
+        if (Auth::guard('customer')->check()) {
+            return redirect()->route('customer.tickets', request()->query());
+        }
+
         return view('dashboard');
     })->name('dashboard');
 });
@@ -57,6 +61,18 @@ Route::post('business/logout', function (BusinessAuthService $businessAuthServic
 
     return redirect()->route('business.login');
 })->name('business.logout');
+
+Route::post('customer/logout', function () {
+    Auth::guard('customer')->logout();
+    request()->session()->invalidate();
+    request()->session()->regenerateToken();
+
+    return redirect()->route('customer.login');
+})->name('customer.logout');
+
+Route::middleware('auth:customer')->group(function () {
+    Route::livewire('my-tickets', 'pages::customer.tickets')->name('customer.tickets');
+});
 
 Route::middleware(['auth:business'])->group(function () {
     Route::view('business/dashboard', 'pages.business.dashboard')->name('business.dashboard');

@@ -51,6 +51,7 @@ use Illuminate\Support\Str;
  * @property Carbon|null $updated_at
  * @property-read User|null $reviewer
  * @property-read Collection<int, Offering> $offerings
+ * @property-read Collection<int, QueueTicket> $queueTickets
  */
 #[Fillable([
     'reviewed_by',
@@ -157,6 +158,16 @@ class Business extends Authenticatable
     public function offerings(): HasMany
     {
         return $this->hasMany(Offering::class);
+    }
+
+    /**
+     * Get the queue tickets for the business.
+     *
+     * @return HasMany<QueueTicket, $this>
+     */
+    public function queueTickets(): HasMany
+    {
+        return $this->hasMany(QueueTicket::class);
     }
 
     /**

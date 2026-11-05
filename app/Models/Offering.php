@@ -7,9 +7,11 @@ namespace App\Models;
 use Database\Factories\OfferingFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Carbon;
 
@@ -28,6 +30,7 @@ use Illuminate\Support\Carbon;
  * @property Carbon|null $updated_at
  * @property-read Business $business
  * @property-read Category $category
+ * @property-read Collection<int, QueueTicketItem> $queueTicketItems
  */
 #[Fillable([
     'business_id',
@@ -86,6 +89,16 @@ class Offering extends Model
     public function category(): BelongsTo
     {
         return $this->belongsTo(Category::class)->withTrashed();
+    }
+
+    /**
+     * Get the queue ticket items associated with the offering.
+     *
+     * @return HasMany<QueueTicketItem, $this>
+     */
+    public function queueTicketItems(): HasMany
+    {
+        return $this->hasMany(QueueTicketItem::class);
     }
 
     /**

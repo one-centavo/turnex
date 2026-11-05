@@ -30,9 +30,19 @@ Route::livewire('login', 'pages::auth.customer.login')
     ->middleware('guest:customer')
     ->name('login');
 
+Route::livewire('customer/login', 'pages::auth.customer.login')
+    ->middleware('guest:customer')
+    ->name('customer.login');
+
 Route::livewire('register', 'pages::auth.customer.register')
     ->middleware('guest')
     ->name('register');
+
+Route::livewire('customer/register', 'pages::auth.customer.register')
+    ->middleware('guest')
+    ->name('customer.register');
+
+Route::livewire('tickets/{code}', 'pages::tickets.show')->name('tickets.show');
 
 Route::livewire('business/login', 'pages::auth.business.login')
     ->middleware('guest:business,web')

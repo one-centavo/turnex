@@ -19,12 +19,12 @@ Status and delivery sequence of TURNEX features. Provides visibility into "what 
 
 ## In Progress 🚧
 
-None.
+13. **013 · Virtual Queue & Digital Ticket** — Customer virtual queue joining, live ticket issuance (`TK-001`), and real-time queue position tracking.
 
 ## Up Next 🔜
 
-13. **013 · Virtual Queue & Digital Ticket** — Customer virtual queue joining, live ticket issuance (`TK-001`), and real-time queue position tracking.
 14. **014 · Business Live Queue Operations** — Live ticket queue management for merchants, including calling next customers, in-service status, and completion from the operations dashboard.
+15. **015 · Public Queue Display Board** — Waiting room TV display board for venues showing currently called tickets and live queue sequence.
 
 ## Backlog / Ideas 💡
 

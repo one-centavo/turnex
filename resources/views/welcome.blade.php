@@ -10,15 +10,7 @@
     {{-- Top Navigation Header (Full Width) --}}
     <header class="w-full px-6 sm:px-8 lg:px-12 py-5 flex items-center justify-between">
         {{-- Turnex Brand Logo --}}
-        <a href="{{ route('home') }}"
-            class="group inline-flex flex-col focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-blue-600 rounded-md p-1">
-            <span class="font-black tracking-tight text-xl sm:text-2xl text-slate-900 dark:text-slate-100 leading-none">
-                TURN<span class="text-blue-600 dark:text-blue-500">EX</span>
-            </span>
-            <span class="font-mono text-xs tracking-widest text-slate-500 dark:text-slate-400 uppercase mt-1">
-                Queue Platform
-            </span>
-        </a>
+        <x-app-brand />
 
         {{-- Actions: Authentication Navigation (Two Interactive Dropdown Menus Only) --}}
         <div class="flex items-center gap-2 sm:gap-3">

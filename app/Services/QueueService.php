@@ -11,6 +11,7 @@ use App\Models\Offering;
 use App\Models\QueueTicket;
 use Carbon\Carbon;
 use DomainException;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
@@ -186,5 +187,115 @@ class QueueService
         $ticket->status = QueueTicketStatus::Cancelled;
 
         return $ticket->save();
+    }
+
+    /**
+     * Retrieve all active queue tickets for the given customer sorted by urgency.
+     *
+     * @return Collection<int, QueueTicket>
+     */
+    public function getActiveTicketsForCustomer(Customer $customer): Collection
+    {
+        /** @var Collection<int, QueueTicket> $tickets */
+        $tickets = QueueTicket::query()
+            ->active()
+            ->where('customer_id', $customer->id)
+            ->with([
+                'business',
+                'items.offering' => function ($query): void {
+                    $query->withTrashed();
+                },
+            ])
+            ->get();
+
+        foreach ($tickets as $ticket) {
+            $ticket->turns_ahead = $this->calculateQueuePosition($ticket);
+        }
+
+        /** @var Collection<int, QueueTicket> */
+        return $tickets->sort(function (QueueTicket $a, QueueTicket $b): int {
+            $tierA = $this->getUrgencyTier($a);
+            $tierB = $this->getUrgencyTier($b);
+
+            if ($tierA !== $tierB) {
+                return $tierA <=> $tierB;
+            }
+
+            if ($tierA === 1) {
+                $subA = $a->status === QueueTicketStatus::Called ? 1 : 2;
+                $subB = $b->status === QueueTicketStatus::Called ? 1 : 2;
+
+                if ($subA !== $subB) {
+                    return $subA <=> $subB;
+                }
+
+                return $a->id <=> $b->id;
+            }
+
+            if ($tierA === 2) {
+                $turnsA = $a->turns_ahead ?? 0;
+                $turnsB = $b->turns_ahead ?? 0;
+
+                if ($turnsA !== $turnsB) {
+                    return $turnsA <=> $turnsB;
+                }
+
+                $statusPriority = fn (QueueTicketStatus $status): int => match ($status) {
+                    QueueTicketStatus::InService => 1,
+                    QueueTicketStatus::Preparing => 2,
+                    QueueTicketStatus::Pending => 3,
+                    default => 4,
+                };
+
+                $prioA = $statusPriority($a->status);
+                $prioB = $statusPriority($b->status);
+
+                if ($prioA !== $prioB) {
+                    return $prioA <=> $prioB;
+                }
+
+                return $a->id <=> $b->id;
+            }
+
+            return $a->id <=> $b->id;
+        })->values();
+    }
+
+    /**
+     * Retrieve paginated historical queue tickets for the given customer.
+     *
+     * @return LengthAwarePaginator<int, QueueTicket>
+     */
+    public function getHistoricalTicketsForCustomer(Customer $customer, int $perPage = 10): LengthAwarePaginator
+    {
+        return QueueTicket::query()
+            ->terminal()
+            ->where('customer_id', $customer->id)
+            ->with([
+                'business',
+                'items.offering' => function ($query): void {
+                    $query->withTrashed();
+                },
+            ])
+            ->orderByDesc('created_at')
+            ->orderByDesc('id')
+            ->paginate($perPage);
+    }
+
+    /**
+     * Determine the urgency tier for an active ticket.
+     *
+     * Tier 1: Actionable states (Called, Ready)
+     * Tier 2: In-progress and waiting states (InService, Preparing, Pending)
+     * Tier 3: Postponed (Skipped)
+     */
+    private function getUrgencyTier(QueueTicket $ticket): int
+    {
+        return match ($ticket->status) {
+            QueueTicketStatus::Called, QueueTicketStatus::Ready => 1,
+            QueueTicketStatus::InService, QueueTicketStatus::Preparing, QueueTicketStatus::Pending => 2,
+            QueueTicketStatus::Skipped => 3,
+            default => 4,
+        };
     }
 }

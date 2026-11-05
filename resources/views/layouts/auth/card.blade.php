@@ -8,14 +8,7 @@
             <div class="flex w-full max-w-md flex-col gap-5">
                 {{-- Turnex Brand Header --}}
                 <div class="flex justify-center">
-                    <a href="{{ route('home') }}" class="group inline-flex flex-col items-center focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-blue-600 rounded-md p-1" wire:navigate>
-                        <span class="font-black tracking-tight text-2xl text-slate-900 dark:text-slate-100 leading-none">
-                            TURN<span class="text-blue-600 dark:text-blue-500">EX</span>
-                        </span>
-                        <span class="font-mono text-[10px] tracking-[0.25em] text-slate-500 dark:text-slate-400 uppercase mt-1">
-                            Queue Platform
-                        </span>
-                    </a>
+                    <x-app-brand align="center" />
                 </div>
 
                 {{-- Card Container conforming to Design System: 1px border, rounded-lg, flat surface --}}

@@ -79,6 +79,10 @@
     --color-accent-foreground: #ffffff;
 }
 
+@utility safe-bottom {
+    padding-bottom: max(0.5rem, env(safe-area-inset-bottom, 0px));
+}
+
 @layer base {
     *,
     ::after,

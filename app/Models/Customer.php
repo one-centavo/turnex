@@ -8,7 +8,9 @@ use Carbon\CarbonInterface;
 use Database\Factories\CustomerFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Carbon;
@@ -27,6 +29,7 @@ use Illuminate\Support\Str;
  * @property CarbonInterface|null $phone_verified_at
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
+ * @property-read Collection<int, QueueTicket> $queueTickets
  */
 #[Fillable([
     'first_name',
@@ -57,6 +60,16 @@ class Customer extends Authenticatable
             'phone_verified_at' => 'datetime',
             'password' => 'hashed',
         ];
+    }
+
+    /**
+     * Get the queue tickets associated with the customer.
+     *
+     * @return HasMany<QueueTicket, $this>
+     */
+    public function queueTickets(): HasMany
+    {
+        return $this->hasMany(QueueTicket::class);
     }
 
     /**

@@ -5,8 +5,11 @@ declare(strict_types=1);
 use App\Enums\VerificationStatus;
 use App\Models\Business;
 use App\Models\Category;
+use App\Models\Customer;
 use App\Models\Offering;
+use App\Services\QueueService;
 use App\Services\StorefrontService;
+use Flux\Flux;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
@@ -31,6 +34,15 @@ new #[Title('Catálogo Comercial')] #[Layout('layouts.storefront')] class extend
 
     #[Url]
     public ?int $selectedCategoryId = null;
+
+    /**
+     * @var array<int|string, int>
+     */
+    public array $selectedOfferings = [];
+
+    public ?string $existingTicketCode = null;
+
+    public ?string $existingTicketNumber = null;
 
     public function mount(string $slug, StorefrontService $storefrontService): void
     {
@@ -110,6 +122,174 @@ new #[Title('Catálogo Comercial')] #[Layout('layouts.storefront')] class extend
     {
         return filled(trim($this->search)) || $this->selectedCategoryId !== null;
     }
+
+    public function addOffering(int $offeringId): void
+    {
+        $current = $this->selectedOfferings[$offeringId] ?? 0;
+        $this->selectedOfferings[$offeringId] = $current + 1;
+    }
+
+    public function removeOffering(int $offeringId): void
+    {
+        unset($this->selectedOfferings[$offeringId]);
+    }
+
+    public function incrementQuantity(int $offeringId): void
+    {
+        $this->addOffering($offeringId);
+    }
+
+    public function decrementQuantity(int $offeringId): void
+    {
+        if (! isset($this->selectedOfferings[$offeringId])) {
+            return;
+        }
+
+        if ($this->selectedOfferings[$offeringId] <= 1) {
+            unset($this->selectedOfferings[$offeringId]);
+        } else {
+            $this->selectedOfferings[$offeringId]--;
+        }
+    }
+
+    #[Computed]
+    public function selectedCount(): int
+    {
+        return (int) array_sum($this->selectedOfferings);
+    }
+
+    /**
+     * @return list<array{offering: Offering, quantity: int, subtotal: float}>
+     */
+    #[Computed]
+    public function selectedSummary(): array
+    {
+        if (empty($this->selectedOfferings) || ! $this->business) {
+            return [];
+        }
+
+        $offeringIds = array_keys(array_filter($this->selectedOfferings, fn (int $qty): bool => $qty > 0));
+
+        if (empty($offeringIds)) {
+            return [];
+        }
+
+        $offerings = Offering::query()
+            ->where('business_id', $this->business->id)
+            ->where('is_active', true)
+            ->whereIn('id', $offeringIds)
+            ->get()
+            ->keyBy('id');
+
+        $summary = [];
+        foreach ($this->selectedOfferings as $id => $quantity) {
+            $offering = $offerings->get((int) $id);
+            if ($offering !== null && $quantity > 0) {
+                $subtotal = ((float) $offering->price) * $quantity;
+                $summary[] = [
+                    'offering' => $offering,
+                    'quantity' => (int) $quantity,
+                    'subtotal' => $subtotal,
+                ];
+            }
+        }
+
+        return $summary;
+    }
+
+    #[Computed]
+    public function selectedTotal(): float
+    {
+        return (float) array_reduce($this->selectedSummary, function (float $carry, array $item): float {
+            return $carry + (float) $item['subtotal'];
+        }, 0.0);
+    }
+
+    public function requestTurn(QueueService $queueService): void
+    {
+        if ($this->selectedCount === 0) {
+            return;
+        }
+
+        if (! Auth::guard('customer')->check()) {
+            $this->modal('auth-required-modal')->show();
+
+            return;
+        }
+
+        /** @var Customer $customer */
+        $customer = Auth::guard('customer')->user();
+
+        if ($this->business === null) {
+            return;
+        }
+
+        $activeTicket = $queueService->getActiveTicketForCustomer($this->business, $customer);
+        if ($activeTicket !== null) {
+            $this->existingTicketCode = $activeTicket->ticket_code;
+            $this->existingTicketNumber = $activeTicket->ticket_number;
+            $this->modal('active-ticket-modal')->show();
+
+            return;
+        }
+
+        $this->modal('confirm-turn-modal')->show();
+    }
+
+    public function confirmTurn(QueueService $queueService): mixed
+    {
+        if (! Auth::guard('customer')->check()) {
+            $this->modal('confirm-turn-modal')->close();
+            $this->modal('auth-required-modal')->show();
+
+            return null;
+        }
+
+        /** @var Customer $customer */
+        $customer = Auth::guard('customer')->user();
+
+        if ($this->business === null || empty($this->selectedOfferings)) {
+            return null;
+        }
+
+        $items = [];
+        foreach ($this->selectedOfferings as $offeringId => $quantity) {
+            if ($quantity > 0) {
+                $items[] = [
+                    'offering_id' => (int) $offeringId,
+                    'quantity' => (int) $quantity,
+                ];
+            }
+        }
+
+        if (empty($items)) {
+            return null;
+        }
+
+        try {
+            $ticket = $queueService->createTicket($this->business, $customer, $items);
+        } catch (\DomainException $e) {
+            $activeTicket = $queueService->getActiveTicketForCustomer($this->business, $customer);
+            if ($activeTicket !== null) {
+                $this->existingTicketCode = $activeTicket->ticket_code;
+                $this->existingTicketNumber = $activeTicket->ticket_number;
+                $this->modal('confirm-turn-modal')->close();
+                $this->modal('active-ticket-modal')->show();
+
+                return null;
+            }
+
+            $this->modal('confirm-turn-modal')->close();
+            Flux::toast(variant: 'danger', text: $e->getMessage());
+
+            return null;
+        }
+
+        $this->selectedOfferings = [];
+        $this->modal('confirm-turn-modal')->close();
+
+        return $this->redirect(route('tickets.show', ['code' => $ticket->ticket_code]), navigate: true);
+    }
 };
 ?>
 
@@ -170,7 +350,7 @@ new #[Title('Catálogo Comercial')] #[Layout('layouts.storefront')] class extend
         </header>
 
         {{-- Main Content --}}
-        <main class="flex-1 pb-16">
+        <main @class(['flex-1', 'pb-32' => $this->selectedCount > 0, 'pb-16' => $this->selectedCount === 0])>
             @if ($this->business)
                 {{-- Business Cover --}}
                 <div class="relative w-full h-44 sm:h-60 md:h-72 bg-surface-subtle overflow-hidden">
@@ -356,7 +536,7 @@ new #[Title('Catálogo Comercial')] #[Layout('layouts.storefront')] class extend
                                             </p>
                                         @endif
 
-                                        <div class="mt-auto pt-4 flex items-center justify-between border-t border-border-subtle">
+                                        <div class="mt-auto pt-4 flex items-center justify-between gap-3 border-t border-border-subtle">
                                             <div>
                                                 @if ((float) $offering->price === 0.0 || $offering->price == 0)
                                                     <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-surface-subtle text-text-secondary">
@@ -367,14 +547,54 @@ new #[Title('Catálogo Comercial')] #[Layout('layouts.storefront')] class extend
                                                         $ {{ number_format((float) $offering->price, 0, ',', '.') }}
                                                     </span>
                                                 @endif
+
+                                                @if ($offering->estimated_duration_minutes)
+                                                    <span class="block text-xs text-text-secondary font-medium mt-0.5">
+                                                        ⏱ {{ $offering->estimated_duration_minutes }} min
+                                                    </span>
+                                                @endif
                                             </div>
 
-                                            @if ($offering->estimated_duration_minutes)
-                                                <span class="inline-flex items-center gap-1 text-xs text-text-secondary font-medium">
-                                                    <span>⏱</span>
-                                                    <span>{{ $offering->estimated_duration_minutes }} min</span>
-                                                </span>
-                                            @endif
+                                            {{-- Quantity Selector or Add Button --}}
+                                            @php
+                                                $qty = $selectedOfferings[$offering->id] ?? 0;
+                                            @endphp
+
+                                            <div>
+                                                @if ($qty === 0)
+                                                    <flux:button
+                                                        size="sm"
+                                                        variant="subtle"
+                                                        icon="plus"
+                                                        wire:click="addOffering({{ $offering->id }})"
+                                                        class="cursor-pointer"
+                                                    >
+                                                        {{ __('Agregar') }}
+                                                    </flux:button>
+                                                @else
+                                                    <div class="inline-flex items-center rounded-lg border border-border-subtle bg-surface-subtle p-0.5">
+                                                        <button
+                                                            type="button"
+                                                            wire:click="decrementQuantity({{ $offering->id }})"
+                                                            class="flex size-7 items-center justify-center rounded-md text-text-secondary hover:text-text-primary hover:bg-surface-card transition-colors cursor-pointer"
+                                                            aria-label="{{ __('Disminuir cantidad') }}"
+                                                        >
+                                                            <flux:icon.minus class="size-3.5" />
+                                                        </button>
+                                                        <span class="w-7 text-center text-xs font-bold text-text-primary">
+                                                            {{ $qty }}
+                                                        </span>
+                                                        <button
+                                                            type="button"
+                                                            wire:click="incrementQuantity({{ $offering->id }})"
+                                                            class="flex size-7 items-center justify-center rounded-md text-text-secondary hover:text-text-primary hover:bg-surface-card transition-colors cursor-pointer"
+                                                            aria-label="{{ __('Aumentar cantidad') }}"
+                                                        >
+                                                            <flux:icon.plus class="size-3.5" />
+                                                        </button>
+                                                    </div>
+                                                @endif
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -384,6 +604,170 @@ new #[Title('Catálogo Comercial')] #[Layout('layouts.storefront')] class extend
                 </div>
             @endif
         </main>
+
+        {{-- Floating Summary Bar --}}
+        @if ($this->selectedCount > 0)
+            <div class="fixed bottom-0 inset-x-0 z-40 bg-surface-card/95 backdrop-blur-md border-t border-border-subtle shadow-lg">
+                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5 flex items-center justify-between gap-4">
+                    <div class="flex items-center gap-3">
+                        <div class="flex size-10 shrink-0 items-center justify-center rounded-xl bg-brand-primary/10 text-brand-primary">
+                            <flux:icon.ticket class="size-5" />
+                        </div>
+                        <div>
+                            <div class="text-xs font-medium text-text-secondary">
+                                {{ $this->selectedCount }} {{ $this->selectedCount === 1 ? __('ítem seleccionado') : __('ítems seleccionados') }}
+                            </div>
+                            <div class="text-base sm:text-lg font-extrabold text-text-primary leading-tight">
+                                $ {{ number_format($this->selectedTotal, 0, ',', '.') }}
+                            </div>
+                        </div>
+                    </div>
+
+                    <flux:button
+                        variant="primary"
+                        wire:click="requestTurn"
+                        icon-trailing="arrow-right"
+                        class="cursor-pointer"
+                    >
+                        {{ __('Solicitar Turno') }}
+                    </flux:button>
+                </div>
+            </div>
+        @endif
+
+        {{-- Modals --}}
+
+        {{-- 1. Auth Required Modal --}}
+        <flux:modal name="auth-required-modal" class="max-w-md">
+            <div class="space-y-6">
+                <div class="flex items-center gap-3">
+                    <div class="flex size-12 shrink-0 items-center justify-center rounded-xl bg-surface-subtle text-brand-primary">
+                        <flux:icon.user class="size-6" />
+                    </div>
+                    <div>
+                        <flux:heading size="lg">{{ __('Inicia sesión para pedir turno') }}</flux:heading>
+                        <flux:subheading class="mt-1 text-text-secondary">
+                            {{ __('Debes iniciar sesión para solicitar un turno') }}
+                        </flux:subheading>
+                    </div>
+                </div>
+
+                <p class="text-sm text-text-secondary leading-relaxed">
+                    {{ __('Para solicitar un turno y dar seguimiento a tu atención en tiempo real, ingresa con tu cuenta o regístrate.') }}
+                </p>
+
+                <div class="flex flex-col sm:flex-row items-center justify-end gap-3">
+                    <flux:modal.close>
+                        <flux:button variant="ghost" class="w-full sm:w-auto cursor-pointer">
+                            {{ __('Cancelar') }}
+                        </flux:button>
+                    </flux:modal.close>
+
+                    <flux:button href="{{ route('customer.login') }}" variant="subtle" class="w-full sm:w-auto">
+                        {{ __('Iniciar Sesión') }}
+                    </flux:button>
+
+                    <flux:button href="{{ route('customer.register') }}" variant="primary" class="w-full sm:w-auto">
+                        {{ __('Registrarse') }}
+                    </flux:button>
+                </div>
+            </div>
+        </flux:modal>
+
+        {{-- 2. Active Ticket Modal --}}
+        <flux:modal name="active-ticket-modal" class="max-w-md">
+            <div class="space-y-6">
+                <div class="flex items-center gap-3">
+                    <div class="flex size-12 shrink-0 items-center justify-center rounded-xl bg-amber-500/10 text-amber-500">
+                        <flux:icon.exclamation-triangle class="size-6" />
+                    </div>
+                    <div>
+                        <flux:heading size="lg">{{ __('Ya tienes un turno activo') }}</flux:heading>
+                        <flux:subheading class="mt-1 text-text-secondary">
+                            {{ __('Turno actual: ') }} <span class="font-bold text-text-primary">{{ $this->existingTicketNumber }}</span>
+                        </flux:subheading>
+                    </div>
+                </div>
+
+                <p class="text-sm text-text-secondary leading-relaxed">
+                    {{ __('Actualmente cuentas con un turno en proceso en este negocio. Solo puedes tener un turno activo a la vez por establecimiento.') }}
+                </p>
+
+                <div class="flex items-center justify-end gap-3">
+                    <flux:modal.close>
+                        <flux:button variant="ghost" class="cursor-pointer">
+                            {{ __('Cerrar') }}
+                        </flux:button>
+                    </flux:modal.close>
+
+                    @if ($this->existingTicketCode)
+                        <flux:button href="{{ route('tickets.show', $this->existingTicketCode) }}" variant="primary">
+                            {{ __('Ver mi turno') }}
+                        </flux:button>
+                    @endif
+                </div>
+            </div>
+        </flux:modal>
+
+        {{-- 3. Confirm Turn Modal --}}
+        <flux:modal name="confirm-turn-modal" class="max-w-lg">
+            <div class="space-y-6">
+                <div>
+                    <flux:heading size="lg">{{ __('Confirmar Solicitud de Turno') }}</flux:heading>
+                    <flux:subheading class="mt-1 text-text-secondary">
+                        {{ __('Revisa los productos o servicios seleccionados antes de unirte a la fila.') }}
+                    </flux:subheading>
+                </div>
+
+                <div class="max-h-60 overflow-y-auto divide-y divide-border-subtle rounded-xl border border-border-subtle bg-surface-subtle p-3 space-y-2">
+                    @foreach ($this->selectedSummary as $item)
+                        <div class="flex items-center justify-between py-2 text-sm">
+                            <div class="flex items-center gap-2 truncate">
+                                <span class="inline-flex size-6 items-center justify-center rounded-md bg-surface-card text-xs font-bold text-text-primary border border-border-subtle shrink-0">
+                                    {{ $item['quantity'] }}x
+                                </span>
+                                <span class="font-medium text-text-primary truncate">
+                                    {{ $item['offering']->name }}
+                                </span>
+                            </div>
+                            <span class="font-semibold text-text-primary shrink-0 ml-3">
+                                $ {{ number_format($item['subtotal'], 0, ',', '.') }}
+                            </span>
+                        </div>
+                    @endforeach
+                </div>
+
+                <div class="flex items-center justify-between border-t border-border-subtle pt-3">
+                    <span class="text-sm font-medium text-text-secondary">{{ __('Total estimado') }}</span>
+                    <span class="text-xl font-extrabold text-text-primary">
+                        $ {{ number_format($this->selectedTotal, 0, ',', '.') }}
+                    </span>
+                </div>
+
+                <div class="flex items-center justify-end gap-3">
+                    <flux:modal.close>
+                        <flux:button variant="ghost" class="cursor-pointer">
+                            {{ __('Volver') }}
+                        </flux:button>
+                    </flux:modal.close>
+
+                    <flux:button
+                        variant="primary"
+                        wire:click="confirmTurn"
+                        wire:loading.attr="disabled"
+                        class="cursor-pointer"
+                    >
+                        <span wire:loading.remove wire:target="confirmTurn">
+                            {{ __('Confirmar Turno') }}
+                        </span>
+                        <span wire:loading wire:target="confirmTurn" class="inline-flex items-center gap-2">
+                            <flux:icon.arrow-path class="size-4 animate-spin" />
+                            {{ __('Generando turno...') }}
+                        </span>
+                    </flux:button>
+                </div>
+            </div>
+        </flux:modal>
 
         {{-- Footer --}}
         <footer class="mt-auto border-t border-border-subtle py-8 text-center text-xs text-text-secondary">

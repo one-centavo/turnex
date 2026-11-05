@@ -1,0 +1,179 @@
+@startuml turnex-use-cases
+' TURNEX - Use Case Diagram
+' Scope: customer, business and automated system behaviour currently implemented.
+
+left to right direction
+
+title TURNEX - Use Case Diagram
+skinparam shadowing false
+skinparam actorStyle hollow
+skinparam defaultFontName "Helvetica"
+skinparam nodesep 25
+skinparam ranksep 45
+skinparam usecase {
+  BackgroundColor #F8FAFC
+  BorderColor #475569
+  ArrowColor #475569
+}
+skinparam rectangle {
+  BackgroundColor #FFFFFF
+  BorderColor #1E293B
+}
+
+actor "Customer" as Customer
+actor "Business" as Business
+actor "System" as System
+
+rectangle "TURNEX" {
+
+  rectangle "Customer experience" {
+    usecase "Register customer account" as UC_REG_CUSTOMER #EFF6FF
+    usecase "Sign in as customer" as UC_LOGIN_CUSTOMER #EFF6FF
+    usecase "Sign in with Google" as UC_GOOGLE #EFF6FF
+    usecase "Edit email during registration" as UC_EDIT_EMAIL #FFFBEB
+    usecase "Resend verification code" as UC_RESEND #FFFBEB
+    usecase "Browse storefront catalog" as UC_BROWSE_CATALOG #EFF6FF
+    usecase "Search and filter catalog" as UC_SEARCH_CATALOG #EFF6FF
+    usecase "Select offerings for a turn" as UC_SELECT_OFFERINGS #EFF6FF
+    usecase "Join virtual queue" as UC_JOIN_QUEUE #EFF6FF
+    usecase "Track digital ticket" as UC_TRACK_TICKET #EFF6FF
+    usecase "Cancel digital ticket" as UC_CANCEL_TICKET #EFF6FF
+  }
+
+  rectangle "Business back office" {
+    usecase "Register business account" as UC_REG_BUSINESS #ECFDF5
+    usecase "Sign in as business" as UC_LOGIN_BUSINESS #ECFDF5
+    usecase "Sign out" as UC_LOGOUT #ECFDF5
+    usecase "View business dashboard" as UC_DASHBOARD #ECFDF5
+    usecase "Create offering" as UC_CREATE_OFFERING #ECFDF5
+    usecase "Edit offering" as UC_EDIT_OFFERING #ECFDF5
+    usecase "Browse and filter offerings" as UC_LIST_OFFERINGS #ECFDF5
+    usecase "Archive offering" as UC_ARCHIVE_OFFERING #ECFDF5
+    usecase "Restore offering" as UC_RESTORE_OFFERING #ECFDF5
+    usecase "Delete offering permanently" as UC_DELETE_OFFERING #ECFDF5
+    usecase "Preview own storefront" as UC_PREVIEW_STOREFRONT #ECFDF5
+  }
+
+  rectangle "Automated system processes" {
+    usecase "Generate and dispatch verification code" as UC_OTP_SEND
+    usecase "Verify one-time code" as UC_OTP_VERIFY
+    usecase "Normalize input data" as UC_NORMALIZE
+    usecase "Enforce login throttling" as UC_THROTTLE
+    usecase "Generate unique business slug" as UC_SLUG
+    usecase "Send welcome notification" as UC_WELCOME
+    usecase "Check storefront visibility" as UC_VISIBILITY
+    usecase "Issue digital ticket" as UC_ISSUE_TICKET
+    usecase "Enforce one active ticket per business" as UC_ONE_TICKET
+    usecase "Calculate queue position" as UC_POSITION
+  }
+}
+
+' ---------------------------------------------------------------------------
+' Customer associations
+' ---------------------------------------------------------------------------
+
+Customer -- UC_REG_CUSTOMER
+Customer -- UC_LOGIN_CUSTOMER
+Customer -- UC_GOOGLE
+Customer -- UC_BROWSE_CATALOG
+Customer -- UC_SEARCH_CATALOG
+Customer -- UC_SELECT_OFFERINGS
+Customer -- UC_JOIN_QUEUE
+Customer -- UC_TRACK_TICKET
+Customer -- UC_CANCEL_TICKET
+
+' ---------------------------------------------------------------------------
+' Business associations
+' ---------------------------------------------------------------------------
+
+Business -- UC_REG_BUSINESS
+Business -- UC_LOGIN_BUSINESS
+Business -- UC_LOGOUT
+Business -- UC_DASHBOARD
+Business -- UC_CREATE_OFFERING
+Business -- UC_EDIT_OFFERING
+Business -- UC_LIST_OFFERINGS
+Business -- UC_ARCHIVE_OFFERING
+Business -- UC_RESTORE_OFFERING
+Business -- UC_DELETE_OFFERING
+Business -- UC_PREVIEW_STOREFRONT
+
+' ---------------------------------------------------------------------------
+' System associations (target on the right keeps the actor outside the boundary)
+' ---------------------------------------------------------------------------
+
+UC_OTP_SEND -- System
+UC_OTP_VERIFY -- System
+UC_NORMALIZE -- System
+UC_THROTTLE -- System
+UC_SLUG -- System
+UC_WELCOME -- System
+UC_VISIBILITY -- System
+UC_ISSUE_TICKET -- System
+UC_ONE_TICKET -- System
+UC_POSITION -- System
+
+' ---------------------------------------------------------------------------
+' Included behaviour
+' ---------------------------------------------------------------------------
+
+UC_REG_CUSTOMER ..> UC_OTP_SEND : <<include>>
+UC_REG_CUSTOMER ..> UC_OTP_VERIFY : <<include>>
+UC_REG_CUSTOMER ..> UC_NORMALIZE : <<include>>
+UC_REG_CUSTOMER ..> UC_WELCOME : <<include>>
+
+UC_REG_BUSINESS ..> UC_OTP_SEND : <<include>>
+UC_REG_BUSINESS ..> UC_OTP_VERIFY : <<include>>
+UC_REG_BUSINESS ..> UC_NORMALIZE : <<include>>
+UC_REG_BUSINESS ..> UC_SLUG : <<include>>
+UC_REG_BUSINESS ..> UC_WELCOME : <<include>>
+
+UC_LOGIN_CUSTOMER ..> UC_THROTTLE : <<include>>
+UC_LOGIN_BUSINESS ..> UC_THROTTLE : <<include>>
+
+UC_BROWSE_CATALOG ..> UC_VISIBILITY : <<include>>
+
+UC_JOIN_QUEUE ..> UC_ISSUE_TICKET : <<include>>
+UC_JOIN_QUEUE ..> UC_ONE_TICKET : <<include>>
+
+UC_TRACK_TICKET ..> UC_POSITION : <<include>>
+
+' ---------------------------------------------------------------------------
+' Optional behaviour
+' ---------------------------------------------------------------------------
+
+UC_EDIT_EMAIL ..> UC_REG_CUSTOMER : <<extend>>
+UC_EDIT_EMAIL ..> UC_REG_BUSINESS : <<extend>>
+UC_EDIT_EMAIL ..> UC_OTP_SEND : <<include>>
+
+UC_RESEND ..> UC_REG_CUSTOMER : <<extend>>
+UC_RESEND ..> UC_REG_BUSINESS : <<extend>>
+UC_RESEND ..> UC_OTP_SEND : <<include>>
+
+UC_PREVIEW_STOREFRONT ..> UC_BROWSE_CATALOG : <<extend>>
+
+' ---------------------------------------------------------------------------
+' Scope and business rules
+' ---------------------------------------------------------------------------
+
+legend right
+  <b>Scope and business rules</b>
+  * Covers the customer, business and automated system behaviour
+    currently implemented.
+  * Colors: blue = customer, green = business, amber = shared
+    registration steps, gray = automated system processes.
+  * Sign in with Google delegates the handshake to Google OAuth 2.0.
+  * Registration normalizes every field and rejects emails already in use.
+  * Verification codes expire after 5 minutes, allow 5 attempts and
+    enforce a 60-second cooldown between dispatches.
+  * Catalog browsing is public; joining a queue requires an
+    authenticated customer and is blocked while an active ticket
+    exists for the same business.
+  * A customer can hold active tickets in different businesses.
+  * The tracking page refreshes the queue state every 5 seconds.
+  * Only the owner of an unapproved business can preview its storefront.
+  * Every back-office use case is scoped to the authenticated business.
+  * Permanent deletion is blocked when the offering has queue history.
+endlegend
+
+@enduml

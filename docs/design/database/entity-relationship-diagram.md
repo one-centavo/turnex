@@ -1,25 +1,25 @@
 ```mermaid
 erDiagram
-SYSTEM_USER ||--o{ BUSINESS : reviews
-BUSINESS ||--o{ OFFERINGS : offers
-BUSINESS ||--o| BUSINESS_BANK_ACCOUNT : has
-BUSINESS ||--o{ BUSINESS_DOCUMENT : submits
-CATEGORY ||--o{ OFFERINGS : classifies
+USERS ||--o{ BUSINESSES : reviews
+BUSINESSES ||--o{ OFFERINGS : offers
+CATEGORIES ||--o{ OFFERINGS : classifies
+BUSINESSES ||--o{ QUEUE_TICKETS : issues
+CUSTOMERS ||--o{ QUEUE_TICKETS : requests
+QUEUE_TICKETS ||--|{ QUEUE_TICKET_ITEMS : contains
+OFFERINGS ||--o{ QUEUE_TICKET_ITEMS : specifies
 
-    SYSTEM_USER {
+    USERS {
         BIGINT id PK "AUTO INCREMENT"
-        VARCHAR(60) first_name
-        VARCHAR(60) last_name
+        VARCHAR(255) name
         VARCHAR(255) email UK "UNIQUE"
+        TIMESTAMP email_verified_at "NULL"
         VARCHAR(255) password
-        VARCHAR(30) role "SUPERADMIN, ADMIN, AUDITOR"
-        BOOLEAN is_active "DEFAULT TRUE"
-        TIMESTAMP last_login_at "NULL"
-        TIMESTAMP created_at
-        TIMESTAMP updated_at
+        VARCHAR(100) remember_token "NULL"
+        TIMESTAMP created_at "NULL"
+        TIMESTAMP updated_at "NULL"
     }
 
-    CUSTOMER {
+    CUSTOMERS {
         BIGINT id PK "AUTO INCREMENT"
         VARCHAR(60) first_name
         VARCHAR(60) last_name
@@ -30,92 +30,97 @@ CATEGORY ||--o{ OFFERINGS : classifies
         VARCHAR(255) avatar_url "NULL"
         TIMESTAMP email_verified_at "NULL"
         TIMESTAMP phone_verified_at "NULL"
-        TIMESTAMP created_at
-        TIMESTAMP updated_at
+        VARCHAR(100) remember_token "NULL"
+        TIMESTAMP created_at "NULL"
+        TIMESTAMP updated_at "NULL"
     }
 
-    BUSINESS {
+    BUSINESSES {
         BIGINT id PK "AUTO INCREMENT"
-        BIGINT reviewed_by FK "NULL - References SYSTEM_USER"
+        BIGINT reviewed_by FK "NULL - References USERS"
         VARCHAR(20) person_type "NATURAL, JURIDICA - Default NATURAL"
         VARCHAR(20) tax_id "NULL - NIT or National ID for tax purposes"
         CHAR(1) dv "NULL - DIAN verification digit (0-9)"
         VARCHAR(150) business_name
-        VARCHAR(50) business_category
+        VARCHAR(160) slug UK "UNIQUE, NULL - Auto-generated public URL slug"
+        VARCHAR(50) business_category "restaurant, health_and_beauty, professional_services, retail, banking, other"
         VARCHAR(60) owner_first_name
         VARCHAR(60) owner_middle_name "NULL"
         VARCHAR(60) owner_last_name
         VARCHAR(60) owner_second_last_name "NULL"
         VARCHAR(255) email UK "UNIQUE"
-        VARCHAR(20) phone_number UK "UNIQUE - E.164 format"
+        VARCHAR(20) phone_number UK "UNIQUE, NULL - E.164 format"
         VARCHAR(255) location
         VARCHAR(255) logo_path "NULL"
         VARCHAR(255) cover_photo_path "NULL"
         VARCHAR(500) business_description "NULL"
-        VARCHAR(30) verification_status "PENDING_VERIFICATION, UNDER_REVIEW, APPROVED, ACTION_REQUIRED, REJECTED"
+        VARCHAR(30) verification_status "PENDING_VERIFICATION, UNDER_REVIEW, APPROVED, ACTION_REQUIRED, REJECTED - Default PENDING_VERIFICATION"
         TEXT rejection_reason "NULL"
         TIMESTAMP email_verified_at "NULL"
         TIMESTAMP phone_verified_at "NULL"
         VARCHAR(255) password
+        VARCHAR(100) remember_token "NULL"
         TIMESTAMP reviewed_at "NULL"
-        TIMESTAMP created_at
-        TIMESTAMP updated_at
+        TIMESTAMP created_at "NULL"
+        TIMESTAMP updated_at "NULL"
     }
 
-    BUSINESS_BANK_ACCOUNT {
+    CATEGORIES {
         BIGINT id PK "AUTO INCREMENT"
-        BIGINT business_id FK "UNIQUE"
-        VARCHAR(100) bank_name
-        VARCHAR(30) account_type "SAVINGS, CHECKING, ELECTRONIC_DEPOSIT"
-        VARCHAR(50) account_number
-        VARCHAR(150) account_holder_name
-        VARCHAR(30) account_holder_id
-        TIMESTAMP created_at
-        TIMESTAMP updated_at
-    }
-
-    BUSINESS_DOCUMENT {
-        BIGINT id PK "AUTO INCREMENT"
-        BIGINT business_id FK
-        VARCHAR(40) document_type "TAX_ID, REPRESENTATIVE_ID, BANK_CERTIFICATE, OPERATING_LICENSE"
-        VARCHAR(255) file_path
-        VARCHAR(20) status "PENDING, APPROVED, REJECTED"
-        VARCHAR(500) rejection_reason "NULL"
-        TIMESTAMP created_at
-        TIMESTAMP updated_at
-    }
-
-    CATEGORY {
-        BIGINT id PK "AUTO INCREMENT"
-        VARCHAR(60) name
+        VARCHAR(60) name UK "UNIQUE"
         VARCHAR(200) description "NULL"
         BOOLEAN is_active "DEFAULT TRUE"
-        TIMESTAMP created_at
-        TIMESTAMP updated_at
+        TIMESTAMP deleted_at "NULL - Soft delete"
+        TIMESTAMP created_at "NULL"
+        TIMESTAMP updated_at "NULL"
     }
 
     OFFERINGS {
         BIGINT id PK "AUTO INCREMENT"
-        BIGINT business_id FK
-        BIGINT category_id FK
+        BIGINT business_id FK "References BUSINESSES - ON DELETE CASCADE"
+        BIGINT category_id FK "References CATEGORIES - ON DELETE RESTRICT"
         VARCHAR(50) name
         VARCHAR(255) reference_image "NULL"
         VARCHAR(250) description "NULL"
-        DECIMAL price "10,2 - Default 0.00"
-        INT estimated_duration_minutes "NULL"
+        DECIMAL(10,2) price "DEFAULT 0.00"
+        INT estimated_duration_minutes "UNSIGNED, NULL"
         BOOLEAN is_active "DEFAULT TRUE"
-        TIMESTAMP created_at
-        TIMESTAMP updated_at
+        TIMESTAMP deleted_at "NULL - Soft delete"
+        TIMESTAMP created_at "NULL"
+        TIMESTAMP updated_at "NULL"
     }
 
-    SECURITY_CODE {
+    SECURITY_CODES {
         BIGINT id PK "AUTO INCREMENT"
         VARCHAR(255) contact_value "INDEX"
-        VARCHAR(20) contact_type "EMAIL, SMS, WHATSAPP"
-        VARCHAR(10) code
-        TINYINT attempts_count "DEFAULT 0"
+        VARCHAR(20) contact_type "email, sms, whatsapp"
+        VARCHAR(255) code "Hashed OTP"
+        TINYINT attempts_count "UNSIGNED, DEFAULT 0"
         TIMESTAMP expires_at
         TIMESTAMP used_at "NULL"
+        TIMESTAMP created_at "NULL"
+        TIMESTAMP updated_at "NULL"
+    }
+
+    QUEUE_TICKETS {
+        BIGINT id PK "AUTO INCREMENT"
+        BIGINT business_id FK "Mandatory - References BUSINESSES"
+        BIGINT customer_id FK "Mandatory - References CUSTOMERS"
+        VARCHAR(10) ticket_number "e.g. TK-001, daily reset"
+        VARCHAR(32) ticket_code UK "UNIQUE - Secure URL token"
+        VARCHAR(20) status "PENDING, PREPARING, READY, CALLED, IN_SERVICE, SKIPPED, COMPLETED, NO_SHOW, CANCELLED - Default PENDING"
+        DECIMAL(10,2) total_price "DEFAULT 0.00"
+        TIMESTAMP called_at "NULL - Timestamp when ticket is called"
+        TIMESTAMP created_at "NULL"
+        TIMESTAMP updated_at "NULL"
+    }
+
+    QUEUE_TICKET_ITEMS {
+        BIGINT id PK "AUTO INCREMENT"
+        BIGINT queue_ticket_id FK "References QUEUE_TICKETS"
+        BIGINT offering_id FK "References OFFERINGS"
+        INT quantity "UNSIGNED, DEFAULT 1"
+        DECIMAL(10,2) unit_price "DEFAULT 0.00 - Frozen unit price"
         TIMESTAMP created_at "NULL"
         TIMESTAMP updated_at "NULL"
     }

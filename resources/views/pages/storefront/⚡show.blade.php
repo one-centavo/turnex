@@ -328,12 +328,7 @@ new #[Title('Catálogo Comercial')] #[Layout('layouts.storefront')] class extend
         {{-- Top Navigation Bar --}}
         <header class="w-full border-b border-border-subtle bg-surface-card/80 backdrop-blur-md sticky top-0 z-30">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-                <a href="{{ route('home') }}" class="group inline-flex items-center gap-2 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-primary rounded-lg p-1">
-                    <x-app-logo-icon class="size-7 fill-current text-brand-primary" />
-                    <span class="font-black tracking-tight text-xl text-text-primary leading-none">
-                        TURN<span class="text-brand-primary">EX</span>
-                    </span>
-                </a>
+                <x-app-brand size="sm" />
 
                 <div class="flex items-center gap-3">
                     @if (auth('business')->check() || auth('customer')->check() || auth()->check())

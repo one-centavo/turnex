@@ -1,6 +1,6 @@
 # 014 · Customer Tickets Hub
 
-**Status:** Draft
+**Status:** Complete
 
 ## What it does
 
@@ -20,20 +20,20 @@ Customers who take turns at multiple venues or navigate away from an individual 
 
 ## Acceptance Criteria
 
-- [ ] Customers must be authenticated to access their personal tickets hub; unauthenticated visitors are redirected to sign in first.
-- [ ] Upon entering the tickets hub, the system defaults directly to the active turns section to prioritize immediate waiting information.
-- [ ] Active tickets are ordered by urgency: tickets requiring immediate customer action (called or ready for pickup) appear first, followed by pending tickets ordered by nearest queue proximity.
-- [ ] Each active ticket clearly displays the business identity, assigned ticket identifier, current waiting status, the number of people ahead in line, and the purchase total.
-- [ ] Active ticket statuses, line positions, and urgency alerts update periodically without requiring manual page reloads.
-- [ ] When a business calls the customer's ticket, the system presents an immediate, high-priority visual notice alerting them to approach the service area.
-- [ ] When an active ticket is postponed due to initial absence, the ticket communicates that it was skipped and directs the customer to present themselves to venue staff.
-- [ ] When an active ticket transitions to completed or cancelled while being viewed, the system displays a clear resolution notice with an acknowledgment action before moving the ticket to history.
-- [ ] Customers can inspect the itemized products or services and quantities of any active ticket on demand without leaving the hub.
-- [ ] Customers can navigate directly from any active ticket to its dedicated live tracking view.
-- [ ] Concurrent active tickets held across different businesses update independently.
-- [ ] Customers can view a paginated history section displaying past completed, cancelled, or unattended tickets sorted chronologically from newest to oldest.
-- [ ] Historical ticket records display accurate venue details and final statuses even if the venue or offerings were subsequently modified or archived.
-- [ ] Clear and welcoming guidance is shown when the customer has no active tickets or no past history.
+- [x] Customers must be authenticated to access their personal tickets hub; unauthenticated visitors are redirected to sign in first.
+- [x] Upon entering the tickets hub, the system defaults directly to the active turns section to prioritize immediate waiting information.
+- [x] Active tickets are ordered by urgency: tickets requiring immediate customer action (called or ready for pickup) appear first, followed by pending tickets ordered by nearest queue proximity.
+- [x] Each active ticket clearly displays the business identity, assigned ticket identifier, current waiting status, the number of people ahead in line, and the purchase total.
+- [x] Active ticket statuses, line positions, and urgency alerts update periodically without requiring manual page reloads.
+- [x] When a business calls the customer's ticket, the system presents an immediate, high-priority visual notice alerting them to approach the service area.
+- [x] When an active ticket is postponed due to initial absence, the ticket communicates that it was skipped and directs the customer to present themselves to venue staff.
+- [x] When an active ticket transitions to completed or cancelled while being viewed, the system displays a clear resolution notice with an acknowledgment action before moving the ticket to history.
+- [x] Customers can inspect the itemized products or services and quantities of any active ticket on demand without leaving the hub.
+- [x] Customers can navigate directly from any active ticket to its dedicated live tracking view.
+- [x] Concurrent active tickets held across different businesses update independently.
+- [x] Customers can view a paginated history section displaying past completed, cancelled, or unattended tickets sorted chronologically from newest to oldest.
+- [x] Historical ticket records display accurate venue details and final statuses even if the venue or offerings were subsequently modified or archived.
+- [x] Clear and welcoming guidance is shown when the customer has no active tickets or no past history.
 
 ## Out of Scope
 

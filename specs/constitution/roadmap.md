@@ -17,14 +17,18 @@ Status and delivery sequence of TURNEX features. Provides visibility into "what 
 11. **011 · Archive and Delete Business Offerings** — Lifecycle management for offerings with safe soft-delete archiving, restoration, and guarded permanent deletion (US05C).
 12. **012 · Public Business Storefront** — Public mobile-responsive commercial catalog with human-friendly URL slugs (`/b/{slug}`), business identity, reactive category filtering, and real-time search.
 
+13. **013 · Virtual Queue & Digital Ticket** — Customer virtual queue joining, live ticket issuance (`TK-001`), and real-time queue position tracking.
+14. **014 · Customer Tickets Hub** — Centralized customer portal for tracking active queue turns and reviewing ticket history.
+15. **015 · Explore Businesses Directory** — Public discovery hub to search and filter establishments by commercial category and line occupancy.
+16. **016 · Business Live Queue Operations** — Live ticket queue management cockpit for merchants, including two-step calling, in-service status, holds, no-shows, cancellation, and queue pause controls.
+
 ## In Progress 🚧
 
-13. **013 · Virtual Queue & Digital Ticket** — Customer virtual queue joining, live ticket issuance (`TK-001`), and real-time queue position tracking.
+None.
 
 ## Up Next 🔜
 
-14. **014 · Business Live Queue Operations** — Live ticket queue management for merchants, including calling next customers, in-service status, and completion from the operations dashboard.
-15. **015 · Public Queue Display Board** — Waiting room TV display board for venues showing currently called tickets and live queue sequence.
+17. **017 · Public Queue Display Board** — Waiting room TV display board for venues showing currently called tickets and live queue sequence.
 
 ## Backlog / Ideas 💡
 

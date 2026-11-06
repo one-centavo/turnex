@@ -195,6 +195,23 @@ test('createTicket rejects non-positive item quantity', function (): void {
     ]);
 })->throws(DomainException::class, 'Offering quantity must be at least 1.');
 
+test('createTicket rejects item quantity exceeding maximum limit', function (): void {
+    /** @var QueueService $service */
+    $service = app(QueueService::class);
+
+    $business = Business::factory()->create();
+    $customer = Customer::factory()->create();
+
+    $offering = Offering::factory()->create([
+        'business_id' => $business->id,
+        'is_active' => true,
+    ]);
+
+    $service->createTicket($business, $customer, [
+        ['offering_id' => $offering->id, 'quantity' => 51],
+    ]);
+})->throws(DomainException::class, 'Offering quantity cannot exceed 50.');
+
 test('createTicket rejects offerings that belong to another business', function (): void {
     /** @var QueueService $service */
     $service = app(QueueService::class);

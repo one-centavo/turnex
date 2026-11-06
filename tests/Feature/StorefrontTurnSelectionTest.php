@@ -60,6 +60,23 @@ test('storefront allows adding and adjusting offering quantities and computes to
         ->assertDontSee('Solicitar Turno');
 });
 
+test('storefront allows direct input updates and enforces quantity boundaries', function (): void {
+    Livewire::test('pages::storefront.show', ['slug' => $this->business->slug])
+        ->call('addOffering', $this->offering1->id)
+        ->assertSet('selectedOfferings', [$this->offering1->id => 1])
+        ->call('updateQuantity', $this->offering1->id, 10)
+        ->assertSet('selectedOfferings', [$this->offering1->id => 10])
+        ->call('updateQuantity', $this->offering1->id, 100)
+        ->assertSet('selectedOfferings', [$this->offering1->id => 50])
+        ->call('incrementQuantity', $this->offering1->id)
+        ->assertSet('selectedOfferings', [$this->offering1->id => 50])
+        ->call('updateQuantity', $this->offering1->id, -5)
+        ->assertSet('selectedOfferings', [])
+        ->call('addOffering', $this->offering1->id)
+        ->call('updateQuantity', $this->offering1->id, 0)
+        ->assertSet('selectedOfferings', []);
+});
+
 test('guest customer requesting turn is prompted to authenticate and ticket is not created', function (): void {
     Livewire::test('pages::storefront.show', ['slug' => $this->business->slug])
         ->call('addOffering', $this->offering1->id)

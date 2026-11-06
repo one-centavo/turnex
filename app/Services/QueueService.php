@@ -20,6 +20,8 @@ use Throwable;
 
 class QueueService
 {
+    public const int MAX_ITEM_QUANTITY = 50;
+
     /**
      * Generate the next daily sequential ticket number for the business (e.g. TK-001).
      */
@@ -111,6 +113,10 @@ class QueueService
                 $quantity = $item['quantity'];
                 if ($quantity < 1) {
                     throw new DomainException('Offering quantity must be at least 1.');
+                }
+
+                if ($quantity > self::MAX_ITEM_QUANTITY) {
+                    throw new DomainException('Offering quantity cannot exceed '.self::MAX_ITEM_QUANTITY.'.');
                 }
 
                 $offering = $offerings->get($item['offering_id']);

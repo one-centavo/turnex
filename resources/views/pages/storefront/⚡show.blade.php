@@ -21,6 +21,8 @@ use Livewire\Component;
 
 new #[Title('Catálogo Comercial')] #[Layout('layouts.storefront')] class extends Component
 {
+    public const int MAX_QUANTITY = 50;
+
     public string $slug = '';
 
     public ?int $businessId = null;
@@ -126,7 +128,9 @@ new #[Title('Catálogo Comercial')] #[Layout('layouts.storefront')] class extend
     public function addOffering(int $offeringId): void
     {
         $current = $this->selectedOfferings[$offeringId] ?? 0;
-        $this->selectedOfferings[$offeringId] = $current + 1;
+        if ($current < self::MAX_QUANTITY) {
+            $this->selectedOfferings[$offeringId] = min($current + 1, self::MAX_QUANTITY);
+        }
     }
 
     public function removeOffering(int $offeringId): void
@@ -150,6 +154,28 @@ new #[Title('Catálogo Comercial')] #[Layout('layouts.storefront')] class extend
         } else {
             $this->selectedOfferings[$offeringId]--;
         }
+    }
+
+    public function updateQuantity(int $offeringId, mixed $quantity): void
+    {
+        $qty = is_numeric($quantity) ? (int) $quantity : 0;
+
+        if ($qty <= 0) {
+            unset($this->selectedOfferings[$offeringId]);
+
+            return;
+        }
+
+        if ($qty > self::MAX_QUANTITY) {
+            $qty = self::MAX_QUANTITY;
+        }
+
+        $this->selectedOfferings[$offeringId] = $qty;
+    }
+
+    public function updatedSelectedOfferings(mixed $value, string|int $key): void
+    {
+        $this->updateQuantity((int) $key, $value);
     }
 
     #[Computed]
@@ -254,10 +280,15 @@ new #[Title('Catálogo Comercial')] #[Layout('layouts.storefront')] class extend
 
         $items = [];
         foreach ($this->selectedOfferings as $offeringId => $quantity) {
-            if ($quantity > 0) {
+            $qty = (int) $quantity;
+            if ($qty > 0) {
+                if ($qty > self::MAX_QUANTITY) {
+                    $qty = self::MAX_QUANTITY;
+                }
+
                 $items[] = [
                     'offering_id' => (int) $offeringId,
-                    'quantity' => (int) $quantity,
+                    'quantity' => $qty,
                 ];
             }
         }
@@ -567,7 +598,7 @@ new #[Title('Catálogo Comercial')] #[Layout('layouts.storefront')] class extend
                                                         {{ __('Agregar') }}
                                                     </flux:button>
                                                 @else
-                                                    <div class="inline-flex items-center rounded-lg border border-border-subtle bg-surface-subtle p-0.5">
+                                                    <div class="inline-flex items-center rounded-lg border border-border-subtle bg-surface-subtle p-0.5" wire:key="qty-selector-{{ $offering->id }}">
                                                         <button
                                                             type="button"
                                                             wire:click="decrementQuantity({{ $offering->id }})"
@@ -576,13 +607,23 @@ new #[Title('Catálogo Comercial')] #[Layout('layouts.storefront')] class extend
                                                         >
                                                             <flux:icon.minus class="size-3.5" />
                                                         </button>
-                                                        <span class="w-7 text-center text-xs font-bold text-text-primary">
-                                                            {{ $qty }}
-                                                        </span>
+                                                        <input
+                                                            type="number"
+                                                            min="0"
+                                                            max="{{ $this::MAX_QUANTITY }}"
+                                                            value="{{ $qty }}"
+                                                            wire:change="updateQuantity({{ $offering->id }}, $event.target.value)"
+                                                            wire:keydown.enter.prevent="updateQuantity({{ $offering->id }}, $event.target.value)"
+                                                            x-on:keydown="if ($event.key === '-' || $event.key === 'e' || $event.key === 'E' || $event.key === '+') $event.preventDefault();"
+                                                            x-on:input="if ($el.value > {{ $this::MAX_QUANTITY }}) $el.value = {{ $this::MAX_QUANTITY }};"
+                                                            class="w-10 text-center text-xs font-bold text-text-primary bg-transparent border-0 focus:outline-none focus:ring-1 focus:ring-brand-primary rounded py-0.5 px-0.5"
+                                                            aria-label="{{ __('Cantidad de :name', ['name' => $offering->name]) }}"
+                                                        />
                                                         <button
                                                             type="button"
                                                             wire:click="incrementQuantity({{ $offering->id }})"
-                                                            class="flex size-7 items-center justify-center rounded-md text-text-secondary hover:text-text-primary hover:bg-surface-card transition-colors cursor-pointer"
+                                                            @disabled($qty >= $this::MAX_QUANTITY)
+                                                            class="flex size-7 items-center justify-center rounded-md text-text-secondary hover:text-text-primary hover:bg-surface-card transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
                                                             aria-label="{{ __('Aumentar cantidad') }}"
                                                         >
                                                             <flux:icon.plus class="size-3.5" />

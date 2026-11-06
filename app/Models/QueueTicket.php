@@ -113,14 +113,7 @@ class QueueTicket extends Model
      */
     public function scopeActive(Builder $query): Builder
     {
-        return $query->whereIn('status', [
-            QueueTicketStatus::Pending,
-            QueueTicketStatus::Preparing,
-            QueueTicketStatus::Ready,
-            QueueTicketStatus::Called,
-            QueueTicketStatus::InService,
-            QueueTicketStatus::Skipped,
-        ]);
+        return $query->whereIn('status', QueueTicketStatus::activeStatuses());
     }
 
     /**

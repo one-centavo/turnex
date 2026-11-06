@@ -38,6 +38,9 @@ class QueueTicketFactory extends Factory
             'status' => QueueTicketStatus::Pending,
             'total_price' => 0.00,
             'called_at' => null,
+            'served_at' => null,
+            'completed_at' => null,
+            'cancelled_at' => null,
         ];
     }
 
@@ -91,7 +94,10 @@ class QueueTicketFactory extends Factory
      */
     public function inService(): static
     {
-        return $this->status(QueueTicketStatus::InService);
+        return $this->state(fn (array $attributes): array => [
+            'status' => QueueTicketStatus::InService,
+            'served_at' => now(),
+        ]);
     }
 
     /**
@@ -107,7 +113,10 @@ class QueueTicketFactory extends Factory
      */
     public function completed(): static
     {
-        return $this->status(QueueTicketStatus::Completed);
+        return $this->state(fn (array $attributes): array => [
+            'status' => QueueTicketStatus::Completed,
+            'completed_at' => now(),
+        ]);
     }
 
     /**
@@ -115,7 +124,10 @@ class QueueTicketFactory extends Factory
      */
     public function noShow(): static
     {
-        return $this->status(QueueTicketStatus::NoShow);
+        return $this->state(fn (array $attributes): array => [
+            'status' => QueueTicketStatus::NoShow,
+            'cancelled_at' => now(),
+        ]);
     }
 
     /**
@@ -123,6 +135,9 @@ class QueueTicketFactory extends Factory
      */
     public function cancelled(): static
     {
-        return $this->status(QueueTicketStatus::Cancelled);
+        return $this->state(fn (array $attributes): array => [
+            'status' => QueueTicketStatus::Cancelled,
+            'cancelled_at' => now(),
+        ]);
     }
 }

@@ -40,6 +40,7 @@ use Illuminate\Support\Str;
  * @property string|null $logo_path
  * @property string|null $cover_photo_path
  * @property string|null $business_description
+ * @property bool $is_queue_paused
  * @property VerificationStatus $verification_status
  * @property string|null $rejection_reason
  * @property CarbonInterface|null $email_verified_at
@@ -71,6 +72,7 @@ use Illuminate\Support\Str;
     'logo_path',
     'cover_photo_path',
     'business_description',
+    'is_queue_paused',
     'verification_status',
     'rejection_reason',
     'email_verified_at',
@@ -99,6 +101,7 @@ class Business extends Authenticatable
             'phone_verified_at' => 'datetime',
             'reviewed_at' => 'datetime',
             'password' => 'hashed',
+            'is_queue_paused' => 'boolean',
         ];
     }
 
@@ -279,5 +282,13 @@ class Business extends Authenticatable
         return Str::length($initials) > 1
             ? Str::substr($initials, 0, 1).Str::substr($initials, -1)
             : $initials;
+    }
+
+    /**
+     * Determine if customer queue intake is currently paused for this business.
+     */
+    public function isQueuePaused(): bool
+    {
+        return (bool) $this->is_queue_paused;
     }
 }

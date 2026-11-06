@@ -155,10 +155,30 @@ test('queue ticket factory states', function (): void {
         ->and($ready->status)->toBe(QueueTicketStatus::Ready)
         ->and($called->status)->toBe(QueueTicketStatus::Called)
         ->and($called->called_at)->not->toBeNull()
+        ->and($called->isCalled())->toBeTrue()
+        ->and($called->isInService())->toBeFalse()
+        ->and($called->isPostponed())->toBeFalse()
         ->and($inService->status)->toBe(QueueTicketStatus::InService)
+        ->and($inService->served_at)->not->toBeNull()
+        ->and($inService->isInService())->toBeTrue()
+        ->and($inService->isCalled())->toBeFalse()
         ->and($skipped->status)->toBe(QueueTicketStatus::Skipped)
+        ->and($skipped->isPostponed())->toBeTrue()
         ->and($completed->status)->toBe(QueueTicketStatus::Completed)
+        ->and($completed->completed_at)->not->toBeNull()
         ->and($completed->isTerminal())->toBeTrue()
         ->and($noShow->status)->toBe(QueueTicketStatus::NoShow)
-        ->and($cancelled->status)->toBe(QueueTicketStatus::Cancelled);
+        ->and($noShow->cancelled_at)->not->toBeNull()
+        ->and($cancelled->status)->toBe(QueueTicketStatus::Cancelled)
+        ->and($cancelled->cancelled_at)->not->toBeNull();
+});
+
+test('business queue pause state and helper method', function (): void {
+    $business = Business::factory()->create();
+    expect($business->is_queue_paused)->toBeFalse()
+        ->and($business->isQueuePaused())->toBeFalse();
+
+    $pausedBusiness = Business::factory()->queuePaused()->create();
+    expect($pausedBusiness->is_queue_paused)->toBeTrue()
+        ->and($pausedBusiness->isQueuePaused())->toBeTrue();
 });

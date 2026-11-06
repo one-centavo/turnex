@@ -25,6 +25,9 @@ use Illuminate\Support\Carbon;
  * @property QueueTicketStatus $status
  * @property string $total_price
  * @property CarbonInterface|null $called_at
+ * @property CarbonInterface|null $served_at
+ * @property CarbonInterface|null $completed_at
+ * @property CarbonInterface|null $cancelled_at
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  * @property int|null $turns_ahead
@@ -40,6 +43,9 @@ use Illuminate\Support\Carbon;
     'status',
     'total_price',
     'called_at',
+    'served_at',
+    'completed_at',
+    'cancelled_at',
 ])]
 class QueueTicket extends Model
 {
@@ -72,6 +78,9 @@ class QueueTicket extends Model
             'status' => QueueTicketStatus::class,
             'total_price' => 'decimal:2',
             'called_at' => 'datetime',
+            'served_at' => 'datetime',
+            'completed_at' => 'datetime',
+            'cancelled_at' => 'datetime',
         ];
     }
 
@@ -145,5 +154,29 @@ class QueueTicket extends Model
     public function isTerminal(): bool
     {
         return $this->status->isTerminal();
+    }
+
+    /**
+     * Determine if the ticket has been called to the counter.
+     */
+    public function isCalled(): bool
+    {
+        return $this->status === QueueTicketStatus::Called;
+    }
+
+    /**
+     * Determine if the ticket is currently in service at the counter.
+     */
+    public function isInService(): bool
+    {
+        return $this->status === QueueTicketStatus::InService;
+    }
+
+    /**
+     * Determine if the ticket is currently postponed (skipped).
+     */
+    public function isPostponed(): bool
+    {
+        return $this->status === QueueTicketStatus::Skipped;
     }
 }

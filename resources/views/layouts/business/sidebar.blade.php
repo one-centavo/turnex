@@ -12,7 +12,7 @@
     <body class="min-h-screen bg-surface-canvas text-text-primary antialiased">
         <flux:sidebar
             sticky
-            collapsible="true"
+            :collapsible="true"
             class="border-e border-border-subtle bg-surface-card transition-all! duration-200 ease-in-out in-data-flux-sidebar-collapsed-desktop:cursor-pointer!"
         >
             <flux:sidebar.header class="min-h-12 gap-2 in-data-flux-sidebar-collapsed-desktop:justify-center">

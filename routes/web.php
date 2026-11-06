@@ -6,6 +6,8 @@ use Illuminate\Support\Facades\Route;
 
 Route::view('/', 'welcome')->name('home');
 
+Route::livewire('explore', 'pages::explore.index')->name('explore');
+
 Route::livewire('b/{slug}', 'pages::storefront.show')->name('storefront.show');
 
 Route::middleware(['auth:web,customer,business'])->group(function () {

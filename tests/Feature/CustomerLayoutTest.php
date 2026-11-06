@@ -42,6 +42,10 @@ test('customer layout renders fallback initials when guest', function (): void {
     $view->assertSee('Explorar');
     $view->assertSee('Mis Turnos');
     $view->assertSee('Perfil');
+    $view->assertSee('Iniciar sesión');
+    $view->assertSee('Registrarse');
+    $view->assertSee(route('customer.login'));
+    $view->assertSee(route('customer.register'));
 });
 
 test('customer logout post route invalidates session and redirects to customer login', function (): void {
@@ -68,4 +72,20 @@ test('customer layout highlights active route in desktop and mobile bottom navig
         ->assertSee('data-test="mobile-nav-explore"', false)
         ->assertSee('data-test="mobile-nav-profile"', false)
         ->assertSee('text-brand-primary');
+});
+
+test('explore route is publicly accessible and highlights explore navigation tab', function (): void {
+    $this->get(route('explore'))
+        ->assertOk()
+        ->assertSee('data-test="mobile-nav-explore"', false)
+        ->assertSee('data-test="customer-login-link"', false)
+        ->assertSee('data-test="customer-register-link"', false)
+        ->assertSee('text-brand-primary');
+});
+
+test('welcome page renders explore navigation link', function (): void {
+    $this->get(route('home'))
+        ->assertOk()
+        ->assertSee(route('explore'))
+        ->assertSee('Explorar');
 });

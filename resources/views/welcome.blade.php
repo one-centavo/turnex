@@ -9,8 +9,21 @@
     class="min-h-screen flex flex-col justify-between bg-surface-canvas text-text-primary antialiased selection:bg-blue-600 selection:text-white font-sans">
     {{-- Top Navigation Header (Full Width) --}}
     <header class="w-full px-6 sm:px-8 lg:px-12 py-5 flex items-center justify-between">
-        {{-- Turnex Brand Logo --}}
-        <x-app-brand />
+        {{-- Turnex Brand Logo & Navigation --}}
+        <div class="flex items-center gap-4 sm:gap-8">
+            <x-app-brand />
+
+            <nav class="flex items-center">
+                <a
+                    href="{{ route('explore') }}"
+                    wire:navigate
+                    class="text-sm font-medium text-text-secondary hover:text-text-primary transition-colors inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md hover:bg-surface-subtle"
+                >
+                    <flux:icon.magnifying-glass class="size-4 text-text-secondary" />
+                    <span>{{ __('Explorar') }}</span>
+                </a>
+            </nav>
+        </div>
 
         {{-- Actions: Authentication Navigation (Two Interactive Dropdown Menus Only) --}}
         <div class="flex items-center gap-2 sm:gap-3">

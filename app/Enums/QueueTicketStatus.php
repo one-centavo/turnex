@@ -17,6 +17,23 @@ enum QueueTicketStatus: string
     case Cancelled = 'CANCELLED';
 
     /**
+     * Get all active queue ticket statuses.
+     *
+     * @return array<int, self>
+     */
+    public static function activeStatuses(): array
+    {
+        return [
+            self::Pending,
+            self::Preparing,
+            self::Ready,
+            self::Called,
+            self::InService,
+            self::Skipped,
+        ];
+    }
+
+    /**
      * Determine if the ticket status is active.
      */
     public function isActive(): bool

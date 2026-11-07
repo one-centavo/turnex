@@ -14,7 +14,7 @@ use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
 use Livewire\Component;
 
-new #[Title('Mi Turno Digital')] #[Layout('layouts.storefront')] class extends Component
+new #[Title('Mi Turno Digital')] #[Layout('layouts.customer')] class extends Component
 {
     public string $code = '';
 
@@ -82,24 +82,6 @@ new #[Title('Mi Turno Digital')] #[Layout('layouts.storefront')] class extends C
 ?>
 
 <div wire:poll.5s class="min-h-screen flex flex-col bg-surface-canvas">
-    {{-- Top Navigation Bar --}}
-    <header class="w-full border-b border-border-subtle bg-surface-card/80 backdrop-blur-md sticky top-0 z-30">
-        <div class="max-w-4xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
-            <x-app-brand size="sm" />
-
-            @if ($this->ticket && $this->ticket->business)
-                <flux:button
-                    href="{{ route('storefront.show', $this->ticket->business->slug) }}"
-                    variant="subtle"
-                    size="sm"
-                    icon="building-storefront"
-                >
-                    {{ __('Ver Catálogo') }}
-                </flux:button>
-            @endif
-        </div>
-    </header>
-
     {{-- Main Container --}}
     <main class="flex-1 py-8 sm:py-12 px-4 sm:px-6">
         <div class="max-w-lg mx-auto space-y-6">
@@ -283,9 +265,15 @@ new #[Title('Mi Turno Digital')] #[Layout('layouts.storefront')] class extends C
 
                 {{-- Voluntary Cancellation --}}
                 @if ($this->ticket->isActive() && auth('customer')->id() === $this->ticket->customer_id)
-                    <div class="pt-2 text-center">
+                    <div class="pt-4 text-center">
                         <flux:modal.trigger name="confirm-cancel-turn-modal">
-                            <flux:button variant="ghost" class="text-rose-600 hover:text-rose-700 dark:text-rose-400 cursor-pointer text-xs sm:text-sm">
+                            <flux:button
+                                variant="ghost"
+                                color="red"
+                                icon="x-circle"
+                                class="cursor-pointer text-xs sm:text-sm text-red-500! hover:text-red-600! dark:text-red-400! hover:bg-red-500/10! transition-colors font-medium"
+                                data-test="cancel-turn-btn"
+                            >
                                 {{ __('Cancelar turno') }}
                             </flux:button>
                         </flux:modal.trigger>

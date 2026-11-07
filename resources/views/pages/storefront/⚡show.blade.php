@@ -19,7 +19,7 @@ use Livewire\Attributes\Title;
 use Livewire\Attributes\Url;
 use Livewire\Component;
 
-new #[Title('Catálogo Comercial')] #[Layout('layouts.storefront')] class extends Component
+new #[Title('Catálogo Comercial')] #[Layout('layouts.customer')] class extends Component
 {
     public const int MAX_QUANTITY = 50;
 
@@ -355,25 +355,6 @@ new #[Title('Catálogo Comercial')] #[Layout('layouts.storefront')] class extend
                 </div>
             </div>
         @endif
-
-        {{-- Top Navigation Bar --}}
-        <header class="w-full border-b border-border-subtle bg-surface-card/80 backdrop-blur-md sticky top-0 z-30">
-            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-                <x-app-brand size="sm" />
-
-                <div class="flex items-center gap-3">
-                    @if (auth('business')->check() || auth('customer')->check() || auth()->check())
-                        <flux:button href="{{ route('dashboard') }}" variant="subtle" size="sm" icon="squares-2x2">
-                            {{ __('Mi Panel') }}
-                        </flux:button>
-                    @else
-                        <flux:button href="{{ route('login') }}" variant="subtle" size="sm">
-                            {{ __('Iniciar Sesión') }}
-                        </flux:button>
-                    @endif
-                </div>
-            </div>
-        </header>
 
         {{-- Main Content --}}
         <main @class(['flex-1', 'pb-32' => $this->selectedCount > 0, 'pb-16' => $this->selectedCount === 0])>

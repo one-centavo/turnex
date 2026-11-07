@@ -78,6 +78,10 @@ Route::middleware('auth:customer')->group(function () {
 
 Route::middleware(['auth:business'])->group(function () {
     Route::view('business/dashboard', 'pages.business.dashboard')->name('business.dashboard');
+    Route::livewire('business/queue', 'pages::business.queue.index')->name('business.queue.index');
+    Route::get('business/live-queue', function () {
+        return redirect()->route('business.queue.index');
+    });
     Route::livewire('business/offerings', 'pages::business.offerings.index')->name('business.offerings.index');
     Route::livewire('business/offerings/create', 'pages::business.offerings.create')->name('business.offerings.create');
     Route::livewire('business/offerings/{offering}/edit', 'pages::business.offerings.edit')->name('business.offerings.edit');

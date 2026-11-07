@@ -26,28 +26,30 @@
         @include('partials.head')
     </head>
     <body class="min-h-screen bg-surface-canvas text-text-primary font-sans antialiased selection:bg-brand-primary selection:text-white">
-        <!-- Top Navigation Header -->
-        <header class="sticky top-0 z-30 border-b border-border-subtle bg-surface-card/90 backdrop-blur-md">
-            <div class="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
-                <div class="flex items-center gap-8">
+        <!-- Top Navigation Header (Desktop & Mobile) -->
+        <header class="sticky top-0 z-30 border-b border-border-subtle bg-surface-card/95 backdrop-blur-md">
+            <div class="w-full flex items-center justify-between px-4 sm:px-6 lg:px-8 h-14 md:h-16">
+                <div class="flex items-center gap-4 sm:gap-8">
                     <x-app-brand :href="$customer ? $ticketsUrl : $exploreUrl" size="sm" />
 
                     <!-- Desktop Navigation Links -->
-                    <nav class="hidden md:flex items-center gap-6">
+                    <nav class="hidden md:flex items-center gap-2">
                         <a
                             href="{{ $exploreUrl }}"
                             wire:navigate
-                            class="text-sm font-medium transition-colors {{ $isExploreActive ? 'text-brand-primary' : 'text-text-secondary hover:text-text-primary' }}"
+                            class="text-sm font-medium transition-colors inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg {{ $isExploreActive ? 'text-brand-primary bg-brand-primary/10 font-semibold' : 'text-text-secondary hover:text-text-primary hover:bg-surface-subtle' }}"
                         >
-                            Explorar
+                            <flux:icon.magnifying-glass class="size-4 shrink-0" />
+                            <span>{{ __('Explorar') }}</span>
                         </a>
 
                         <a
                             href="{{ $customer ? $ticketsUrl : $loginUrl }}"
                             wire:navigate
-                            class="text-sm font-medium transition-colors {{ $isTicketsActive ? 'text-brand-primary' : 'text-text-secondary hover:text-text-primary' }}"
+                            class="text-sm font-medium transition-colors inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg {{ $isTicketsActive ? 'text-brand-primary bg-brand-primary/10 font-semibold' : 'text-text-secondary hover:text-text-primary hover:bg-surface-subtle' }}"
                         >
-                            Mis Turnos
+                            <flux:icon.ticket class="size-4 shrink-0" />
+                            <span>{{ __('Mis Turnos') }}</span>
                         </a>
                     </nav>
                 </div>
@@ -61,7 +63,7 @@
                                 :initials="$customerInitials"
                                 :avatar="$customerAvatar"
                                 icon-trailing="chevron-down"
-                                class="cursor-pointer max-md:[&>span]:hidden max-md:[&>div:last-child]:hidden"
+                                class="cursor-pointer max-md:[&>span]:hidden"
                                 data-test="customer-menu-button"
                             />
 
@@ -85,7 +87,7 @@
 
                                 @if(Route::has('customer.profile'))
                                     <flux:menu.item :href="route('customer.profile')" icon="user" wire:navigate>
-                                        Perfil
+                                        {{ __('Perfil') }}
                                     </flux:menu.item>
                                     <flux:menu.separator />
                                 @endif
@@ -99,7 +101,7 @@
                                         class="w-full cursor-pointer text-red-500 hover:text-red-600 dark:text-red-400"
                                         data-test="customer-logout-button"
                                     >
-                                        Cerrar Sesión
+                                        {{ __('Cerrar Sesión') }}
                                     </flux:menu.item>
                                 </form>
                             </flux:menu>
@@ -112,7 +114,7 @@
                                 class="text-sm font-medium text-text-secondary hover:text-text-primary transition-colors px-3 py-1.5"
                                 data-test="customer-login-link"
                             >
-                                Iniciar sesión
+                                {{ __('Iniciar sesión') }}
                             </a>
 
                             <a
@@ -121,7 +123,7 @@
                                 class="inline-flex items-center justify-center h-9 px-4 text-sm font-semibold rounded-md bg-brand-primary hover:opacity-90 text-white transition-opacity focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-primary shadow-xs"
                                 data-test="customer-register-link"
                             >
-                                Registrarse
+                                {{ __('Registrarse') }}
                             </a>
                         </div>
                     @endif
@@ -130,41 +132,41 @@
         </header>
 
         <!-- Main Content Area -->
-        <main class="pb-24 md:pb-12">
+        <main class="min-h-[calc(100vh-4rem)] pb-24 md:pb-12">
             {{ $slot }}
         </main>
 
         <!-- Mobile Bottom Navigation Bar -->
-        <nav aria-label="Navegación móvil" class="fixed bottom-0 inset-x-0 z-40 md:hidden bg-surface-card/90 backdrop-blur-md border-t border-border-subtle px-4 py-2 safe-bottom">
+        <nav aria-label="Navegación móvil" class="fixed bottom-0 inset-x-0 z-40 md:hidden bg-surface-card/95 backdrop-blur-md border-t border-border-subtle px-4 py-2 safe-bottom">
             <div class="grid grid-cols-3 items-center">
                 <a
                     href="{{ $exploreUrl }}"
                     wire:navigate
-                    class="flex flex-col items-center justify-center gap-1 py-1 text-xs font-medium transition-colors {{ $isExploreActive ? 'text-brand-primary' : 'text-text-secondary hover:text-text-primary' }}"
+                    class="flex flex-col items-center justify-center gap-1 py-1 text-xs font-medium transition-colors {{ $isExploreActive ? 'text-brand-primary font-semibold' : 'text-text-secondary hover:text-text-primary' }}"
                     data-test="mobile-nav-explore"
                 >
                     <flux:icon.magnifying-glass class="size-5" />
-                    <span>Explorar</span>
+                    <span>{{ __('Explorar') }}</span>
                 </a>
 
                 <a
                     href="{{ $customer ? $ticketsUrl : $loginUrl }}"
                     wire:navigate
-                    class="flex flex-col items-center justify-center gap-1 py-1 text-xs font-medium transition-colors {{ $isTicketsActive ? 'text-brand-primary' : 'text-text-secondary hover:text-text-primary' }}"
+                    class="flex flex-col items-center justify-center gap-1 py-1 text-xs font-medium transition-colors {{ $isTicketsActive ? 'text-brand-primary font-semibold' : 'text-text-secondary hover:text-text-primary' }}"
                     data-test="mobile-nav-tickets"
                 >
                     <flux:icon.ticket class="size-5" />
-                    <span>Mis Turnos</span>
+                    <span>{{ __('Mis Turnos') }}</span>
                 </a>
 
                 <a
                     href="{{ $customer ? $profileUrl : $loginUrl }}"
                     wire:navigate
-                    class="flex flex-col items-center justify-center gap-1 py-1 text-xs font-medium transition-colors {{ $isProfileActive ? 'text-brand-primary' : 'text-text-secondary hover:text-text-primary' }}"
+                    class="flex flex-col items-center justify-center gap-1 py-1 text-xs font-medium transition-colors {{ $isProfileActive ? 'text-brand-primary font-semibold' : 'text-text-secondary hover:text-text-primary' }}"
                     data-test="mobile-nav-profile"
                 >
                     <flux:icon.user class="size-5" />
-                    <span>Perfil</span>
+                    <span>{{ __('Perfil') }}</span>
                 </a>
             </div>
         </nav>

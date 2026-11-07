@@ -50,6 +50,7 @@ class BusinessFactory extends Factory
             'logo_path' => null,
             'cover_photo_path' => null,
             'business_description' => fake()->optional()->sentence(),
+            'is_queue_paused' => false,
             'verification_status' => VerificationStatus::PendingVerification,
             'rejection_reason' => null,
             'email_verified_at' => null,
@@ -141,6 +142,16 @@ class BusinessFactory extends Factory
             'verification_status' => VerificationStatus::Rejected,
             'rejection_reason' => $reason,
             'reviewed_at' => now(),
+        ]);
+    }
+
+    /**
+     * Indicate that the business has paused queue intake.
+     */
+    public function queuePaused(): static
+    {
+        return $this->state(fn (array $attributes): array => [
+            'is_queue_paused' => true,
         ]);
     }
 }

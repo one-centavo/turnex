@@ -8,7 +8,7 @@
 <body
     class="min-h-screen flex flex-col justify-between bg-surface-canvas text-text-primary antialiased selection:bg-blue-600 selection:text-white font-sans">
     {{-- Top Navigation Header (Full Width) --}}
-    <header class="w-full px-6 sm:px-8 lg:px-12 py-5 flex items-center justify-between">
+    <header class="w-full px-4 sm:px-8 lg:px-12 py-3 md:py-5 flex items-center justify-between">
         {{-- Turnex Brand Logo & Navigation --}}
         <div class="flex items-center gap-4 sm:gap-8">
             <x-app-brand />
